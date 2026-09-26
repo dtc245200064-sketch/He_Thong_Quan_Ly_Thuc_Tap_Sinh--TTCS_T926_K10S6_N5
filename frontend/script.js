@@ -17,13 +17,13 @@ function togglePass() {
   if (passInput.type === 'password') {
     passInput.type = 'text';
     if (eyeImg) {
-      eyeImg.src = 'images/eye-off.svg';
+      eyeImg.src = 'image/eye-off.svg';
       eyeImg.alt = 'Ẩn mật khẩu';
     }
   } else {
     passInput.type = 'password';
     if (eyeImg) {
-      eyeImg.src = 'images/eye.svg';
+      eyeImg.src = 'image/eye.svg';
       eyeImg.alt = 'Hiện mật khẩu';
     }
   }
