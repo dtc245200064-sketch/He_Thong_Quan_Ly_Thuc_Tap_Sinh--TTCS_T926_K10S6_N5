@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HR Manager - Quản lý thực tập sinh</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Thư viện Font Awesome 6 Icons qua CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body>
+
+  <div class="app-layout">
+
+    <!-- ==================== SIDEBAR (HR MANAGER) ==================== -->
+    <aside class="sidebar">
+      <!-- Logo thương hiệu -->
+      <div class="sidebar-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-user-tie"></i>
+        </div>
+        <div class="brand-info">
+          <span class="brand-text">HR MANAGER</span>
+          <span class="brand-sub">Quản lý thực tập sinh</span>
+        </div>
+      </div>
+
+      <!-- Khung hiển thị vai trò -->
+      <div class="role-box">
+        <span class="role-label">Phân quyền hệ thống</span>
+        <div class="role-value">
+          <span class="status-dot"></span>
+          <span>HR Manager</span>
+        </div>
+      </div>
+
+      <!-- Danh mục điều hướng: Đúng 3 tab của Tuần 1 -->
+      <nav class="sidebar-menu">
+        <!-- 1. Tổng quan -->
+        <a href="javascript:void(0)" class="menu-item active" id="navOverview" onclick="switchTab('overview')">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>1. Tổng quan</span>
+        </a>
+
+        <!-- 2. Tiếp nhận & Xét duyệt -->
+        <a href="javascript:void(0)" class="menu-item" id="navReview" onclick="switchTab('review')">
+          <i class="fa-solid fa-clipboard-check"></i>
+          <span>2. Tiếp nhận & Xét duyệt</span>
+          <span class="menu-badge" id="sidebarPendingBadge">5</span>
+        </a>
+
+        <!-- 3. Thực tập sinh -->
+        <a href="javascript:void(0)" class="menu-item" id="navInterns" onclick="switchTab('interns')">
+          <i class="fa-solid fa-user-graduate"></i>
+          <span>3. Thực tập sinh</span>
+          <span class="menu-badge-sub" id="sidebarTotalBadge">7</span>
+        </a>
+      </nav>
+
+      <!-- Thông tin cá nhân cuối sidebar -->
+      <div class="user-profile" onclick="openProfileModal()" title="Xem & chỉnh sửa hồ sơ">
+        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
+          alt="Avatar" class="user-avatar" id="sidebarAvatar">
+        <div class="user-info">
+          <span class="user-name" id="sidebarName">Nguyễn Thị Hoa</span>
+          <span class="user-role" id="sidebarRole">HR Manager</span>
+        </div>
+        <i class="fa-solid fa-chevron-right profile-arrow"></i>
+      </div>
+
+      <!-- Nút Đăng xuất -->
+      <button type="button" class="sidebar-logout" onclick="openModal('logoutModal')" title="Đăng xuất khỏi hệ thống">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Đăng xuất</span>
+      </button>
+    </aside>
+
+    <!-- ==================== NỘI DUNG CHÍNH (MAIN CONTENT) ==================== -->
+    <main class="main-content">
+
+      <!-- ==================== 1. TAB TỔNG QUAN ==================== -->
+      <section id="overviewTab" class="tab-pane active">
+        <header class="content-header">
+          <div>
+            <h1 class="page-title">Tổng quan hệ thống</h1>
+            <p class="page-subtitle">Thống kê nhanh các chỉ số thực tập sinh và tiến độ phê duyệt hồ sơ</p>
+          </div>
+          <div class="header-actions">
+            <span class="date-chip">
+              <i class="fa-regular fa-calendar-days"></i>
+              <span>Hôm nay: <strong id="todayDisplay">26/09/2026</strong></span>
+            </span>
+          </div>
+        </header>
+
+        <!-- 4 Thẻ chỉ số nhanh -->
+        <div class="stats-grid">
+          <!-- Thẻ 1: Tổng số thực tập sinh -->
+          <div class="stat-card stat-total" onclick="switchTab('interns')" title="Xem danh sách thực tập sinh">
+            <div class="stat-icon blue">
+              <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-label">Thẻ 1: Tổng số thực tập sinh</span>
+              <div class="stat-row">
+                <span class="stat-number" id="statTotal">7</span>
+                <span class="stat-sub-badge">Đang quản lý</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Thẻ 2: Hồ sơ chờ xét duyệt -->
+          <div class="stat-card stat-pending" onclick="switchTab('review')" title="Xem danh sách chờ xét duyệt">
+            <div class="stat-icon amber">
+              <i class="fa-solid fa-clock"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-label">Thẻ 2: Hồ sơ chờ xét duyệt</span>
+              <div class="stat-row">
+                <span class="stat-number text-amber" id="statPending">5</span>
+                <span class="stat-sub-badge warning">Cần xử lý gấp</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Thẻ 3: Đang thực tập -->
+          <div class="stat-card stat-active" onclick="switchTab('interns')" title="Xem thực tập sinh đang hoạt động">
+            <div class="stat-icon green">
+              <i class="fa-solid fa-user-check"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-label">Thẻ 3: Đang thực tập</span>
+              <div class="stat-row">
+                <span class="stat-number text-green" id="statActive">5</span>
+                <span class="stat-sub-badge success">Hoạt động tốt</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Thẻ 4: Đã hoàn thành / Kết thúc -->
+          <div class="stat-card stat-finished" onclick="switchTab('interns')" title="Xem thực tập sinh đã kết thúc">
+            <div class="stat-icon purple">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-label">Thẻ 4: Đã hoàn thành / Kết thúc</span>
+              <div class="stat-row">
+                <span class="stat-number text-purple" id="statFinished">2</span>
+                <span class="stat-sub-badge default">Hoàn tất</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng nhỏ hiển thị 3-5 hồ sơ cần duyệt gấp -->
+        <div class="overview-card">
+          <div class="overview-header">
+            <div>
+              <div class="card-title-flex">
+                <span class="urgent-pulse"></span>
+                <h2 class="overview-title">Hồ sơ cần duyệt gấp</h2>
+              </div>
+              <p class="overview-subtitle">Danh sách 3–5 hồ sơ ứng viên mới nộp gần đây nhất cần HR Manager thẩm duyệt
+              </p>
+            </div>
+            <button type="button" class="btn-view-all" onclick="switchTab('review')">
+              <span>Xem tất cả hồ sơ chờ duyệt</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>HỌ TÊN ỨNG VIÊN</th>
+                  <th>TRƯỜNG & NGÀNH</th>
+                  <th>VỊ TRÍ ỨNG TUYỂN</th>
+                  <th>NGÀY NỘP</th>
+                  <th>TRẠNG THÁI</th>
+                  <th class="text-center">HÀNH ĐỘNG</th>
+                </tr>
+              </thead>
+              <tbody id="recentTableBody">
+                <!-- Render từ dashboard.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 2. TAB TIẾP NHẬN & XÉT DUYỆT ==================== -->
+      <section id="reviewTab" class="tab-pane">
+        <header class="content-header">
+          <div>
+            <h1 class="page-title">Tiếp nhận & Xét duyệt</h1>
+            <p class="page-subtitle">Xem xét tài liệu, duyệt hồ sơ ứng viên hoặc từ chối kèm lý do phản hồi</p>
+          </div>
+          <div class="badge-header-info">
+            <span class="status-badge status-pending" id="reviewCountBadge">5 hồ sơ chờ xét duyệt</span>
+          </div>
+        </header>
+
+        <!-- Thanh tìm kiếm & lọc của tab Tiếp nhận -->
+        <div class="toolbar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="reviewSearchInput" placeholder="Tìm theo tên ứng viên, trường, ngành, vị trí..."
+              title="Tìm theo tên ứng viên, trường, ngành, vị trí"
+              aria-label="Tìm theo tên ứng viên, trường, ngành, vị trí" oninput="filterReviewData()">
+          </div>
+
+          <div class="filter-group">
+            <select id="reviewStatusFilter" class="select-box" title="Lọc theo trạng thái hồ sơ"
+              aria-label="Lọc theo trạng thái hồ sơ" onchange="filterReviewData()">
+              <option value="">Tất cả trạng thái hồ sơ</option>
+              <option value="Chờ xét duyệt" selected>Chờ xét duyệt</option>
+              <option value="Đã duyệt">Đã duyệt</option>
+              <option value="Đã từ chối">Đã từ chối</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Bảng danh sách hồ sơ mới nộp -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ỨNG VIÊN</th>
+                <th>TRƯỜNG & NGÀNH</th>
+                <th>VỊ TRÍ ỨNG TUYỂN</th>
+                <th>NGÀY NỘP</th>
+                <th>TÀI LIỆU ĐÍNH KÈM</th>
+                <th>TRẠNG THÁI</th>
+                <th class="text-center">THAO TÁC DUYỆT / TỪ CHỐI</th>
+              </tr>
+            </thead>
+            <tbody id="reviewTableBody">
+              <!-- Render tự động từ dashboard.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ==================== 3. TAB THỰC TẬP SINH ==================== -->
+      <section id="internsTab" class="tab-pane">
+        <header class="content-header">
+          <div>
+            <h1 class="page-title">Danh sách thực tập sinh</h1>
+            <p class="page-subtitle">Hồ sơ danh sách chính thức (<span id="internCount">7</span> thực tập sinh)</p>
+          </div>
+          <button type="button" class="btn-primary" onclick="openAddModal()">
+            <i class="fa-solid fa-plus"></i>
+            <span>Thêm mới thực tập sinh</span>
+          </button>
+        </header>
+
+        <!-- Thanh tìm kiếm và 2 dropdown lọc: Lọc theo trường + Lọc theo ngành -->
+        <section class="toolbar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên thực tập sinh, trường, ngành..."
+              title="Tìm kiếm theo tên thực tập sinh, trường, ngành"
+              aria-label="Tìm kiếm theo tên thực tập sinh, trường, ngành" oninput="filterData()">
+          </div>
+
+          <div class="filter-group">
+            <!-- Dropdown 1: Lọc theo trường -->
+            <select id="schoolFilter" class="select-box" title="Lọc theo trường đại học"
+              aria-label="Lọc theo trường đại học" onchange="filterData()">
+              <option value="">Tất cả trường</option>
+              <option value="ĐH Bách Khoa HN">ĐH Bách Khoa HN</option>
+              <option value="ĐH Kinh tế Quốc dân">ĐH Kinh tế Quốc dân</option>
+              <option value="ĐH FPT">ĐH FPT</option>
+              <option value="ĐH Ngoại thương">ĐH Ngoại thương</option>
+              <option value="ĐH Công nghệ">ĐH Công nghệ</option>
+              <option value="ĐH Kinh tế TP.HCM">ĐH Kinh tế TP.HCM</option>
+            </select>
+
+            <!-- Dropdown 2: Lọc theo ngành -->
+            <select id="majorFilter" class="select-box" title="Lọc theo ngành học" aria-label="Lọc theo ngành học"
+              onchange="filterData()">
+              <option value="">Tất cả ngành</option>
+              <option value="CNTT">CNTT</option>
+              <option value="Kỹ thuật phần mềm">Kỹ thuật phần mềm</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Kế toán">Kế toán</option>
+              <option value="Quản trị kinh doanh">Quản trị kinh doanh</option>
+              <option value="An toàn thông tin">An toàn thông tin</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- Bảng danh sách thực tập sinh -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>THỰC TẬP SINH</th>
+                <th>TRƯỜNG</th>
+                <th>NGÀNH HỌC</th>
+                <th>PHÒNG BAN</th>
+                <th>MENTOR</th>
+                <th>THỜI GIAN</th>
+                <th>TRẠNG THÁI</th>
+                <th class="text-center">HÀNH ĐỘNG</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <!-- Render tự động từ dashboard.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ==================== MODAL 1: THÊM MỚI HỒ SƠ TTS ==================== -->
+  <div class="modal" id="addModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Thêm mới thực tập sinh</h3>
+        <button type="button" class="btn-close" onclick="closeModal('addModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <form onsubmit="handleAddSubmit(event)">
+        <div class="modal-body">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="addName">Họ và tên *</label>
+              <input type="text" id="addName" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
+            </div>
+            <div class="form-group">
+              <label for="addEmail">Email liên hệ *</label>
+              <input type="email" id="addEmail" class="form-control" placeholder="Ví dụ: anhnv@company.vn" required>
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="addMajor">Ngành học *</label>
+              <input type="text" id="addMajor" class="form-control" placeholder="Ví dụ: CNTT" required>
+            </div>
+            <div class="form-group">
+              <label for="addSchool">Trường đại học *</label>
+              <input type="text" id="addSchool" class="form-control" placeholder="Ví dụ: ĐH Bách Khoa HN" required>
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="addDept">Phòng ban *</label>
+              <select id="addDept" class="form-control" title="Chọn phòng ban" required>
+                <option value="Kỹ thuật phần mềm">Kỹ thuật phần mềm</option>
+                <option value="Tài chính">Tài chính</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Nhân sự">Nhân sự</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="addMentor">Người hướng dẫn (Mentor) *</label>
+              <input type="text" id="addMentor" class="form-control" placeholder="Ví dụ: Anh Tuấn" required>
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="addStartDate">Ngày bắt đầu *</label>
+              <input type="date" id="addStartDate" class="form-control" title="Ngày bắt đầu" required>
+            </div>
+            <div class="form-group">
+              <label for="addEndDate">Ngày kết thúc *</label>
+              <input type="date" id="addEndDate" class="form-control" title="Ngày kết thúc" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="addStatus">Trạng thái</label>
+            <select id="addStatus" class="form-control" title="Chọn trạng thái">
+              <option value="Đang thực tập">Đang thực tập</option>
+              <option value="Đã hoàn thành">Đã hoàn thành</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('addModal')">Hủy</button>
+          <button type="submit" class="btn-primary">Lưu thực tập sinh</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 2: CHỈNH SỬA HỒ SƠ TTS ==================== -->
+  <div class="modal" id="editModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Chỉnh sửa thông tin thực tập sinh</h3>
+        <button type="button" class="btn-close" onclick="closeModal('editModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <form onsubmit="handleEditSubmit(event)">
+        <input type="hidden" id="editId">
+        <div class="modal-body">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="editName">Họ và tên *</label>
+              <input type="text" id="editName" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="editEmail">Email liên hệ *</label>
+              <input type="email" id="editEmail" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="editMajor">Ngành học *</label>
+              <input type="text" id="editMajor" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="editSchool">Trường đại học *</label>
+              <input type="text" id="editSchool" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="editDept">Phòng ban *</label>
+              <select id="editDept" class="form-control" title="Chọn phòng ban" required>
+                <option value="Kỹ thuật phần mềm">Kỹ thuật phần mềm</option>
+                <option value="Tài chính">Tài chính</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Nhân sự">Nhân sự</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="editMentor">Người hướng dẫn (Mentor) *</label>
+              <input type="text" id="editMentor" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="editTime">Thời gian thực tập (Chuỗi hiển thị)</label>
+            <input type="text" id="editTime" class="form-control" placeholder="01/07/2026 - 30/09/2026" required>
+          </div>
+          <div class="form-group">
+            <label for="editStatus">Trạng thái</label>
+            <select id="editStatus" class="form-control" title="Chọn trạng thái">
+              <option value="Đang thực tập">Đang thực tập</option>
+              <option value="Đã hoàn thành">Đã hoàn thành</option>
+              <option value="Kết thúc">Kết thúc</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('editModal')">Hủy</button>
+          <button type="submit" class="btn-primary">Lưu thay đổi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 3: XEM CHI TIẾT HỒ SƠ ỨNG VIÊN ==================== -->
+  <div class="modal" id="candidateDetailModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-flex">
+          <span class="modal-badge-icon">
+            <i class="fa-solid fa-address-card"></i>
+          </span>
+          <h3 class="modal-title">Chi tiết hồ sơ ứng viên</h3>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('candidateDetailModal')"
+          aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body" id="candidateDetailBody">
+        <!-- Render chi tiết từ dashboard.js -->
+      </div>
+      <div class="modal-footer" id="candidateDetailFooter">
+        <!-- Nút thao tác render tự động -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 4: XEM TÀI LIỆU (CV, ĐƠN XIN THỰC TẬP) ==================== -->
+  <div class="modal" id="documentViewerModal">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-header">
+        <div class="modal-title-flex">
+          <span class="modal-badge-icon doc-icon">
+            <i class="fa-solid fa-file-pdf"></i>
+          </span>
+          <div>
+            <h3 class="modal-title" id="docViewerTitle">Xem tài liệu hồ sơ đính kèm</h3>
+            <span class="doc-viewer-subtitle" id="docCandidateSub">Ứng viên: Nguyễn Hoàng Nam</span>
+          </div>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('documentViewerModal')"
+          aria-label="Đóng">&times;</button>
+      </div>
+
+      <!-- Thanh chọn tài liệu: CV hoặc Đơn xin thực tập -->
+      <div class="doc-tabs-bar">
+        <button type="button" class="doc-tab-btn active" id="btnTabCV" onclick="switchDocTab('cv')">
+          <i class="fa-solid fa-file-lines"></i>
+          <span id="docTabCVLabel">1. Bản lý lịch / CV (PDF)</span>
+        </button>
+        <button type="button" class="doc-tab-btn" id="btnTabLetter" onclick="switchDocTab('letter')">
+          <i class="fa-solid fa-file-signature"></i>
+          <span id="docTabLetterLabel">2. Đơn xin thực tập & Bảng điểm</span>
+        </button>
+      </div>
+
+      <div class="modal-body p-0">
+        <!-- Khung xem tài liệu PDF mô phỏng A4 chuyên nghiệp -->
+        <div class="pdf-viewer-container">
+          <div class="pdf-toolbar">
+            <div class="pdf-file-info">
+              <span class="pdf-icon">PDF</span>
+              <span class="pdf-name" id="docFileName">CV_NguyenHoangNam_Frontend.pdf</span>
+              <span class="pdf-size" id="docFileSize">1.6 MB • Đã xác thực bảo mật</span>
+            </div>
+            <div class="pdf-actions">
+              <button type="button" class="btn-pdf-tool" onclick="showToast('Đang tải tài liệu về máy...', 'info')">
+                <i class="fa-solid fa-download"></i>
+                <span>Tải về</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Nội dung giả lập trang giấy A4 -->
+          <div class="pdf-page-scroll">
+            <div class="a4-sheet" id="a4Content">
+              <!-- Nội dung sinh ra linh hoạt từ dashboard.js -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" id="docViewerFooter">
+        <button type="button" class="btn-secondary" onclick="closeModal('documentViewerModal')">Đóng</button>
+        <button type="button" class="btn-danger" id="docBtnReject" onclick="openRejectModalFromDoc()">
+          <i class="fa-solid fa-xmark"></i>
+          <span>Từ chối hồ sơ</span>
+        </button>
+        <button type="button" class="btn-success" id="docBtnApprove" onclick="approveFromDoc()">
+          <i class="fa-solid fa-check"></i>
+          <span>Duyệt hồ sơ (Approve)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 5: TỪ CHỐI HỒ SƠ (NHẬP LÝ DO) ==================== -->
+  <div class="modal" id="rejectModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-flex">
+          <span class="modal-badge-icon danger-icon">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </span>
+          <h3 class="modal-title">Từ chối xét duyệt hồ sơ</h3>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('rejectModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <form onsubmit="handleRejectSubmit(event)">
+        <input type="hidden" id="rejectCandidateId">
+        <div class="modal-body">
+          <div class="reject-target-box">
+            <span class="reject-label">Ứng viên:</span>
+            <strong id="rejectCandidateName" class="reject-name">Nguyễn Hoàng Nam</strong>
+            <span id="rejectCandidateMeta" class="reject-sub">ĐH Bách Khoa HN • CNTT</span>
+          </div>
+
+          <div class="form-group">
+            <label for="rejectReasonSelect">Lý do từ chối chính *</label>
+            <select id="rejectReasonSelect" class="form-control" title="Chọn lý do từ chối" required
+              onchange="handleRejectSelectChange(this)">
+              <option value="">-- Chọn lý do từ chối phù hợp --</option>
+              <option value="Chưa phù hợp với yêu cầu chuyên môn của dự án">Chưa phù hợp với yêu cầu chuyên môn của dự
+                án</option>
+              <option value="Thời gian cam kết thực tập không đủ tối thiểu">Thời gian cam kết thực tập không đủ tối
+                thiểu</option>
+              <option value="Chỉ tiêu tiếp nhận đợt này đã đạt giới hạn">Chỉ tiêu tiếp nhận đợt này đã đạt giới hạn
+              </option>
+              <option value="Hồ sơ tài liệu chưa đầy đủ hoặc không hợp lệ">Hồ sơ tài liệu chưa đầy đủ hoặc không hợp lệ
+              </option>
+              <option value="Khác">Lý do khác (Nhập chi tiết bên dưới)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="rejectNote">Ghi chú phản hồi gửi ứng viên *</label>
+            <textarea id="rejectNote" class="form-control text-area-custom" rows="4"
+              placeholder="Nhập nội dung phản hồi lịch sự, chi tiết để gửi đến ứng viên qua email thông báo..."
+              required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('rejectModal')">Hủy bỏ</button>
+          <button type="submit" class="btn-danger">
+            <i class="fa-solid fa-xmark"></i>
+            <span>Xác nhận từ chối hồ sơ</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 6: HỒ SƠ CÁ NHÂN (PROFILE) ==================== -->
+  <div class="modal" id="profileModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">Thông tin & Hồ sơ cá nhân</h3>
+        <button type="button" class="btn-close" onclick="closeModal('profileModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <form onsubmit="handleSaveProfile(event)">
+        <div class="modal-body">
+          <div class="profile-section">
+            <h4 class="section-title">1. Định danh & Nhận diện</h4>
+            <div class="profile-avatar-row">
+              <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
+                alt="Avatar" class="profile-avatar-lg" id="profileAvatarPreview">
+              <div class="avatar-upload-box">
+                <input type="file" id="avatarFileInput" accept="image/*" class="file-input-hidden"
+                  title="Chọn ảnh đại diện mới" aria-label="Chọn ảnh đại diện mới" onchange="handleAvatarChange(event)">
+                <button type="button" class="btn-secondary"
+                  onclick="document.getElementById('avatarFileInput').click()">Thay đổi ảnh</button>
+                <p class="form-hint">Hỗ trợ JPG, PNG (Tối đa 2MB)</p>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="profileName">Họ và tên đầy đủ *</label>
+                <input type="text" id="profileName" class="form-control" value="Nguyễn Thị Hoa" required>
+              </div>
+              <div class="form-group">
+                <label for="profileRole">Chức danh / Vị trí</label>
+                <input type="text" id="profileRole" class="form-control" value="HR Manager" readonly disabled>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-section">
+            <h4 class="section-title">2. Thông tin liên hệ</h4>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="profileEmail">Email liên hệ *</label>
+                <input type="email" id="profileEmail" class="form-control" value="hr@company.vn" required>
+              </div>
+              <div class="form-group">
+                <label for="profilePhone">Số điện thoại</label>
+                <input type="tel" id="profilePhone" class="form-control" value="0912 345 678">
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-section">
+            <h4 class="section-title">3. Cài đặt bảo mật</h4>
+            <div class="password-box">
+              <button type="button" class="btn-toggle-pw" onclick="togglePasswordSection()">
+                <span class="btn-pw-label">
+                  <img src="image/key.svg" alt="Chìa khóa" class="pw-icon-img">
+                  <span>Đổi mật khẩu tài khoản</span>
+                </span>
+                <span id="pwArrow">▼</span>
+              </button>
+
+              <div id="passwordFields" class="password-fields">
+                <div class="form-group">
+                  <label for="oldPassword">Mật khẩu hiện tại</label>
+                  <input type="password" id="oldPassword" class="form-control" placeholder="Nhập mật khẩu hiện tại">
+                </div>
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label for="newPassword">Mật khẩu mới</label>
+                    <input type="password" id="newPassword" class="form-control" placeholder="Nhập mật khẩu mới">
+                  </div>
+                  <div class="form-group">
+                    <label for="confirmPassword">Xác nhận mật khẩu mới</label>
+                    <input type="password" id="confirmPassword" class="form-control"
+                      placeholder="Xác nhận mật khẩu mới">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('profileModal')">Đóng</button>
+          <button type="submit" class="btn-primary">Lưu thay đổi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 7: XÁC NHẬN ĐĂNG XUẤT ==================== -->
+  <div class="modal" id="logoutModal">
+    <div class="modal-box">
+      <div class="modal-icon">
+        <i class="fa-solid fa-arrow-right-from-bracket fa-2x"></i>
+      </div>
+
+      <h3>Xác nhận đăng xuất</h3>
+      <p>Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?<br>Phiên làm việc hiện tại sẽ kết thúc.</p>
+
+      <div class="modal-buttons">
+        <button type="button" class="btn-cancel" onclick="closeModal('logoutModal')">Hủy</button>
+        <button type="button" class="btn-logout" onclick="confirmLogout()">Đăng xuất</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="dashboard.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,487 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background-color: #eaf1fb;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+}
+
+/* Khung lớn chứa 2 cột */
+.wrapper {
+  background: #ffffff;
+  width: 100%;
+  max-width: 1060px;
+  border-radius: 24px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+  display: flex;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+/* ==================== CỘT TRÁI (BANNER) ==================== */
+.banner {
+  flex: 1.15;
+  background: linear-gradient(180deg, #f0f7ff 0%, #e2eeff 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px 36px 0;
+  position: relative;
+}
+
+.logo {
+  margin-bottom: 20px;
+}
+
+.slogan {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1e3a8a;
+  line-height: 1.3;
+  margin-bottom: 12px;
+}
+
+.slogan span {
+  color: #2563eb;
+}
+
+.slogan-desc {
+  font-size: 13.5px;
+  color: #475569;
+  max-width: 380px;
+  line-height: 1.5;
+  margin-bottom: 28px;
+}
+
+/* 4 tính năng nhỏ */
+.features {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1e3a8a;
+  line-height: 1.3;
+}
+
+.f-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+  margin-bottom: 8px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-item:hover .f-icon {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.16);
+}
+
+.f-icon img {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+/* Ảnh thực tập sinh ở đáy banner */
+.banner-image {
+  margin-top: auto;
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.banner-image img {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+  display: block;
+}
+
+/* ==================== CỘT PHẢI (LOGIN FORM) ==================== */
+.login-box {
+  flex: 1;
+  max-width: 460px;
+  background: #ffffff;
+  padding: 40px 36px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Icon khóa phía trên */
+.lock-icon {
+  width: 54px;
+  height: 54px;
+  background: #e0edff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1e3a8a;
+  text-align: center;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #64748b;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* 4 Vai trò */
+.role-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.role-btn {
+  padding: 8px 4px;
+  border: 1px solid #dbeafe;
+  background: #f8fafc;
+  color: #475569;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+  text-align: center;
+}
+
+.role-btn:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.role-btn.active {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+
+/* Ô nhập liệu */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.input-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-box .icon {
+  position: absolute;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.input-box .icon img {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+.input-box input {
+  width: 100%;
+  height: 44px;
+  padding: 0 40px 0 38px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13.5px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.input-box input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.toggle-eye {
+  position: absolute;
+  right: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+
+.toggle-eye:hover {
+  opacity: 0.65;
+}
+
+.toggle-eye img {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* Ghi nhớ & Quên mật khẩu */
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  margin-bottom: 18px;
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.forgot-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}
+
+/* Nút Đăng nhập */
+.btn-login {
+  width: 100%;
+  height: 44px;
+  background: #1d4ed8;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-login:hover {
+  background: #1e40af;
+}
+
+/* Đường kẻ phân cách */
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 18px 0;
+}
+
+.divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.divider span {
+  position: relative;
+  background: #ffffff;
+  padding: 0 10px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* Nút Đăng ký tài khoản mới */
+.btn-register {
+  width: 100%;
+  height: 42px;
+  background: #ffffff;
+  border: 1.5px solid #2563eb;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #2563eb;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-register:hover {
+  background: #eff6ff;
+  border-color: #1d4ed8;
+  color: #1d4ed8;
+}
+
+/* Dòng bảo mật */
+.security-note {
+  margin-top: auto;
+  padding-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Nút test mở modal */
+.btn-test-modal {
+  margin-top: 10px;
+  background: none;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+  padding: 6px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.btn-test-modal:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* ==================== MODAL ĐĂNG XUẤT ==================== */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  z-index: 100;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-box {
+  background: #ffffff;
+  width: 100%;
+  max-width: 380px;
+  padding: 30px 24px 24px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.modal-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #fef2f2;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.modal-box h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.modal-box p {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-cancel, .btn-logout {
+  flex: 1;
+  height: 44px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-cancel {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  color: #334155;
+}
+
+.btn-cancel:hover {
+  background: #f8fafc;
+}
+
+.btn-logout {
+  background: #ef4444;
+  border: none;
+  color: #ffffff;
+}
+
+.btn-logout:hover {
+  background: #dc2626;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 860px) {
+  .wrapper {
+    flex-direction: column;
+  }
+  .banner-image img {
+    height: 180px;
+  }
+  .login-box {
+    max-width: 100%;
+  }
+}
