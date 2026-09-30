@@ -76,3 +76,46 @@ async function apiUpdateDocumentStatus(id, status, note = '') {
   });
   return await res.json();
 }
+
+// 7. Tải lên tài liệu thực tế (PDF, Ảnh...): POST /api/interns/:id/documents
+async function apiUploadDocument(internId, docType, file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('docType', docType || 'CV');
+
+  const token = localStorage.getItem('token');
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE_URL}/interns/${internId}/documents`, {
+    method: 'POST',
+    headers: headers,
+    body: formData
+  });
+  return await res.json();
+}
+
+// 8. Xóa thực tập sinh: DELETE /api/interns/:id
+async function apiDeleteIntern(id) {
+  const res = await fetch(`${API_BASE_URL}/interns/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  return await res.json();
+}
+
+// 9. Xóa tài liệu của thực tập sinh: DELETE /api/interns/:id/documents/:docType
+async function apiDeleteDocument(internId, docType) {
+  const token = localStorage.getItem('token');
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const res = await fetch(`${API_BASE_URL}/interns/${internId}/documents/${docType}`, {
+    method: 'DELETE',
+    headers: headers
+  });
+  return await res.json();
+}

@@ -25,205 +25,26 @@
   }
 })();
 
-// 1. MOCK DATA: DANH SÁCH HỒ SƠ ỨNG VIÊN MỚI NỘP (TIẾP NHẬN & XÉT DUYỆT)
-let applications = [
-  {
-    id: 101,
-    name: "Nguyễn Hoàng Nam",
-    email: "nam.nh@student.hust.edu.vn",
-    phone: "0987 112 233",
-    school: "ĐH Bách Khoa HN",
-    major: "CNTT",
-    gpa: "3.62 / 4.0",
-    dept: "Kỹ thuật phần mềm",
-    mentor: "Anh Tuấn",
-    position: "Thực tập sinh Frontend React/JS",
-    appliedDate: "24/09/2026",
-    status: "Chờ xét duyệt",
-    rejectReason: "",
-    rejectNote: "",
-    docCvName: "CV_NguyenHoangNam_Frontend.pdf",
-    docLetterName: "Don_Xin_Thuc_Tap_BK.pdf",
-    skills: "JavaScript (ES6+), ReactJS, HTML5/CSS3, Git, RESTful API, Tailwind",
-    bio: "Sinh viên năm cuối ngành CNTT ĐH Bách Khoa Hà Nội. Có niềm đam mê mãnh liệt với phát triển giao diện Web chuẩn Responsive và tối ưu trải nghiệm người dùng.",
-    projects: "Xây dựng E-Commerce Website React (Redux Toolkit, Node API), Quản lý thư viện số cá nhân."
-  },
-  {
-    id: 102,
-    name: "Trần Bảo Ngọc",
-    email: "ngoc.tb@ftu.edu.vn",
-    phone: "0976 554 321",
-    school: "ĐH Ngoại thương",
-    major: "Marketing",
-    gpa: "3.75 / 4.0",
-    dept: "Marketing",
-    mentor: "Chị Mai",
-    position: "Thực tập sinh Digital Marketing",
-    appliedDate: "25/09/2026",
-    status: "Chờ xét duyệt",
-    rejectReason: "",
-    rejectNote: "",
-    docCvName: "CV_TranBaoNgoc_FTU_Marketing.pdf",
-    docLetterName: "Don_Xin_Thuc_Tap_FTU.pdf",
-    skills: "Content SEO, Google Analytics 4, Meta Ads, Canva, TikTok Content",
-    bio: "Sinh viên năm 3 chuyên ngành Marketing ĐH Ngoại thương. Năng động, sáng tạo, sở hữu chứng chỉ Google Digital Garage và đạt giải nhì cuộc thi Marketing FTU 2025.",
-    projects: "Chiến dịch truyền thông Fanpage CLB 50k followers, Viết bài chuẩn SEO tăng 120% Organic traffic."
-  },
-  {
-    id: 103,
-    name: "Lê Quốc Thái",
-    email: "thai.lq@fpt.edu.vn",
-    phone: "0934 889 900",
-    school: "ĐH FPT",
-    major: "Kỹ thuật phần mềm",
-    gpa: "3.45 / 4.0",
-    dept: "Kỹ thuật phần mềm",
-    mentor: "Anh Nam",
-    position: "Thực tập sinh Backend Node.js",
-    appliedDate: "25/09/2026",
-    status: "Chờ xét duyệt",
-    rejectReason: "",
-    rejectNote: "",
-    docCvName: "CV_LeQuocThai_Backend_FPT.pdf",
-    docLetterName: "Giay_Gioi_Thieu_FPT.pdf",
-    skills: "Node.js, Express, PostgreSQL, MongoDB, Docker, Microservices basic",
-    bio: "Sinh viên K16 ĐH FPT. Định hướng trở thành Backend Developer chất lượng cao, có tư duy phân tích hệ thống tốt và kinh nghiệm làm việc nhóm Agile/Scrum.",
-    projects: "Hệ thống API đặt vé xem phim trực tuyến (JWT Authentication, Redis Caching, PostgreSQL)."
-  },
-  {
-    id: 104,
-    name: "Phan Thùy Dương",
-    email: "duong.pt@neu.edu.vn",
-    phone: "0905 443 211",
-    school: "ĐH Kinh tế Quốc dân",
-    major: "Kế toán",
-    gpa: "3.82 / 4.0",
-    dept: "Tài chính",
-    mentor: "Chị Hương",
-    position: "Thực tập sinh Kế toán nội bộ",
-    appliedDate: "26/09/2026",
-    status: "Chờ xét duyệt",
-    rejectReason: "",
-    rejectNote: "",
-    docCvName: "CV_PhanThuyDuong_NEU.pdf",
-    docLetterName: "Don_Xin_Thuc_Tap_NEU.pdf",
-    skills: "Excel nâng cao (VBA/Pivot), Phần mềm MISA, Báo cáo thuế, Kiểm toán cơ bản",
-    bio: "Sinh viên năm cuối viện Kế toán - Kiểm toán NEU. Tính cách cẩn thận, trung thực, tinh thần trách nhiệm cao và khả năng xử lý số liệu chính xác.",
-    projects: "Phân tích báo cáo tài chính nhóm ngành bán lẻ 2024-2025, Đạt chứng chỉ MOS Excel Expert."
-  },
-  {
-    id: 105,
-    name: "Đặng Tiến Dũng",
-    email: "dung.dt@vnu.edu.vn",
-    phone: "0918 776 543",
-    school: "ĐH Công nghệ",
-    major: "An toàn thông tin",
-    gpa: "3.58 / 4.0",
-    dept: "Kỹ thuật phần mềm",
-    mentor: "Anh Tuấn",
-    position: "Thực tập sinh An ninh mạng",
-    appliedDate: "26/09/2026",
-    status: "Chờ xét duyệt",
-    rejectReason: "",
-    rejectNote: "",
-    docCvName: "CV_DangTienDung_UET.pdf",
-    docLetterName: "Don_Thuc_Tap_UET.pdf",
-    skills: "Network Security, Linux Administration, Python Scripting, BurpSuite, OWASP",
-    bio: "Sinh viên Khoa CNTT - ĐH Công nghệ (ĐHQGHN). Đam mê nghiên cứu bảo mật hệ thống web, kiểm thử xâm nhập và tham gia các giải CTF sinh viên.",
-    projects: "Phát hiện và báo cáo 3 lỗ hổng bảo mật Web theo chuẩn OWASP Top 10 trong bài tập lớn."
-  }
-];
+// ==========================================================================
+// DỮ LIỆU ĐỒNG BỘ ĐỘNG TRỰC TIẾP TỪ DATABASE MYSQL (ĐÃ LOẠI BỎ HARDCODE)
+// ==========================================================================
+let applications = [];
+let internList = [];
 
-// 2. MOCK DATA: DANH SÁCH THỰC TẬP SINH CHÍNH THỨC (TAB THỰC TẬP SINH)
-let internList = [
-  {
-    id: 1,
-    name: "Trần Minh Khoa",
-    email: "khoa.tm@company.vn",
-    major: "CNTT",
-    school: "ĐH Bách Khoa HN",
-    dept: "Kỹ thuật phần mềm",
-    mentor: "Anh Tuấn",
-    time: "01/07/2026 - 30/09/2026",
-    status: "Đang thực tập"
-  },
-  {
-    id: 2,
-    name: "Lê Thị Thu Hà",
-    email: "ha.lt@company.vn",
-    major: "Kế toán",
-    school: "ĐH Kinh tế Quốc dân",
-    dept: "Tài chính",
-    mentor: "Chị Hương",
-    time: "01/07/2026 - 30/09/2026",
-    status: "Đang thực tập"
-  },
-  {
-    id: 3,
-    name: "Nguyễn Văn Đức",
-    email: "duc.nv@company.vn",
-    major: "Kỹ thuật phần mềm",
-    school: "ĐH FPT",
-    dept: "Kỹ thuật phần mềm",
-    mentor: "Anh Nam",
-    time: "01/08/2026 - 31/10/2026",
-    status: "Đang thực tập"
-  },
-  {
-    id: 4,
-    name: "Phạm Thị Lan",
-    email: "lan.pt@company.vn",
-    major: "Marketing",
-    school: "ĐH Ngoại thương",
-    dept: "Marketing",
-    mentor: "Chị Mai",
-    time: "01/06/2026 - 31/08/2026",
-    status: "Đã hoàn thành"
-  },
-  {
-    id: 5,
-    name: "Hoàng Đức Minh",
-    email: "minh.hd@company.vn",
-    major: "CNTT",
-    school: "ĐH Công nghệ",
-    dept: "Kỹ thuật phần mềm",
-    mentor: "Anh Tuấn",
-    time: "01/07/2026 - 30/09/2026",
-    status: "Đang thực tập"
-  },
-  {
-    id: 6,
-    name: "Vũ Thị Bích Ngọc",
-    email: "ngoc.vtb@company.vn",
-    major: "Quản trị kinh doanh",
-    school: "ĐH Kinh tế TP.HCM",
-    dept: "Marketing",
-    mentor: "Chị Mai",
-    time: "01/08/2026 - 31/10/2026",
-    status: "Đang thực tập"
-  },
-  {
-    id: 7,
-    name: "Đỗ Hoàng Long",
-    email: "long.dh@company.vn",
-    major: "An toàn thông tin",
-    school: "ĐH Bách Khoa HN",
-    dept: "Kỹ thuật phần mềm",
-    mentor: "Anh Nam",
-    time: "01/06/2026 - 31/08/2026",
-    status: "Đã hoàn thành"
-  }
-];
-
-// 3. MOCK DATA: HỒ SƠ CÁ NHÂN HR MANAGER
-let userProfile = {
-  name: "Nguyễn Thị Hoa",
-  role: "HR Manager",
-  email: "hr@company.vn",
-  phone: "0912 345 678",
-  username: "hr_hoa",
-  avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
-};
+// HỒ SƠ NGƯỜI DÙNG ĐĂNG NHẬP (LẤY TỪ PHIÊN ĐĂNG NHẬP THỰC TẾ)
+let userProfile = (() => {
+  try {
+    const saved = localStorage.getItem('user');
+    if (saved) return JSON.parse(saved);
+  } catch (e) {}
+  return {
+    name: "Nguyễn Thị Hoa",
+    role: "HR Manager",
+    email: "hr@company.vn",
+    phone: "0988 888 999",
+    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
+  };
+})();
 
 // Biến lưu trạng thái đang xem hồ sơ / tài liệu
 let currentDocCandidateId = null;
@@ -599,10 +420,22 @@ function openDocumentModalWithType(id, type) {
   openDocumentModal(id);
 }
 
-function openDocumentModal(id) {
+async function openDocumentModal(id) {
   currentDocCandidateId = id;
   const candidate = applications.find((item) => item.id === id);
   if (!candidate) return;
+
+  // Lấy danh sách tài liệu thực tế từ MySQL nếu có
+  if (typeof apiGetInternDocuments === 'function') {
+    try {
+      const res = await apiGetInternDocuments(id);
+      if (res && res.success && res.data && Array.isArray(res.data.documents)) {
+        candidate.realDocuments = res.data.documents;
+      }
+    } catch (e) {
+      console.warn('Lỗi tải tài liệu từ DB:', e);
+    }
+  }
 
   const candidateSub = document.getElementById("docCandidateSub");
   if (candidateSub) {
@@ -615,9 +448,21 @@ function openDocumentModal(id) {
   const btnReject = document.getElementById("docBtnReject");
   const btnApprove = document.getElementById("docBtnApprove");
 
+  const hasUploadedDocs = candidate.realDocuments && candidate.realDocuments.length > 0;
   if (candidate.status === "Chờ xét duyệt") {
     if (btnReject) btnReject.style.display = "inline-flex";
-    if (btnApprove) btnApprove.style.display = "inline-flex";
+    if (btnApprove) {
+      btnApprove.style.display = "inline-flex";
+      if (!hasUploadedDocs) {
+        btnApprove.disabled = true;
+        btnApprove.style.opacity = "0.5";
+        btnApprove.title = "Ứng viên chưa hoàn thiện tài liệu bắt buộc để duyệt";
+      } else {
+        btnApprove.disabled = false;
+        btnApprove.style.opacity = "1";
+        btnApprove.title = "Duyệt hồ sơ này";
+      }
+    }
   } else {
     if (btnReject) btnReject.style.display = "none";
     if (btnApprove) btnApprove.style.display = "none";
@@ -638,140 +483,64 @@ function switchDocTab(type) {
   const candidate = applications.find((item) => item.id === currentDocCandidateId);
   if (!candidate || !a4Content) return;
 
-  if (type === "cv") {
-    if (btnCV) btnCV.classList.add("active");
-    if (btnLetter) btnLetter.classList.remove("active");
-    if (fileNameEl) fileNameEl.textContent = candidate.docCvName;
-    if (fileSizeEl) fileSizeEl.textContent = "1.6 MB • PDF Document (Đã ký điện tử)";
-
-    // Render A4 Sheet: Định dạng CV hoàn chỉnh
-    a4Content.innerHTML = `
-      <div class="a4-header">
-        <div>
-          <h1 class="a4-name">${candidate.name}</h1>
-          <div class="a4-headline">${candidate.position.toUpperCase()}</div>
-        </div>
-        <div class="a4-contacts">
-          <div>📧 ${candidate.email}</div>
-          <div>📱 ${candidate.phone}</div>
-          <div>📍 Hà Nội, Việt Nam</div>
-          <div>🌐 github.com/${candidate.name.toLowerCase().replace(/\s+/g, "")}</div>
-        </div>
-      </div>
-
-      <div class="a4-section">
-        <h2 class="a4-section-title">1. MỤC TIÊU NGHỀ NGHIỆP</h2>
-        <p class="a4-item-desc">${candidate.bio}</p>
-      </div>
-
-      <div class="a4-section">
-        <h2 class="a4-section-title">2. HỌC VẤN & BẰNG CẤP</h2>
-        <div class="a4-item">
-          <div class="a4-item-head">
-            <span class="a4-item-title">${candidate.school}</span>
-            <span class="a4-item-meta">2022 – Hiện tại</span>
-          </div>
-          <div class="a4-item-desc">
-            Chuyên ngành: <strong>${candidate.major}</strong> • Điểm tích lũy trung bình: <strong>${candidate.gpa}</strong>
-          </div>
-        </div>
-      </div>
-
-      <div class="a4-section">
-        <h2 class="a4-section-title">3. KỸ NĂNG CHUYÊN MÔN</h2>
-        <div class="a4-item-desc" style="line-height: 1.8;">
-          • <strong>Công nghệ & Ngôn ngữ:</strong> ${candidate.skills}<br>
-          • <strong>Ngoại ngữ:</strong> Tiếng Anh giao tiếp tốt (TOEIC 750+ / B2 tương đương)<br>
-          • <strong>Kỹ năng mềm:</strong> Làm việc nhóm, tư duy logic, quản lý thời gian, Agile/Scrum
-        </div>
-      </div>
-
-      <div class="a4-section">
-        <h2 class="a4-section-title">4. DỰ ÁN TIÊU BIỂU & HOẠT ĐỘNG</h2>
-        <div class="a4-item">
-          <div class="a4-item-head">
-            <span class="a4-item-title">Dự án cá nhân / Nhóm môn học</span>
-            <span class="a4-item-meta">03/2026 - 06/2026</span>
-          </div>
-          <p class="a4-item-desc">${candidate.projects}</p>
-        </div>
-        <div class="a4-item">
-          <div class="a4-item-head">
-            <span class="a4-item-title">Hoạt động ngoại khóa & Giải thưởng</span>
-            <span class="a4-item-meta">2024 - 2025</span>
-          </div>
-          <p class="a4-item-desc">Thành viên tích cực CLB Lập trình & Sáng tạo Công nghệ; Tình nguyện viên Mùa hè xanh.</p>
-        </div>
-      </div>
-
-      <div class="a4-seal-box">
-        <div class="a4-seal-sign">
-          <div class="a4-seal-date">Hà Nội, ngày ${candidate.appliedDate}</div>
-          <div class="a4-seal-name">Người lập hồ sơ<br><strong>${candidate.name}</strong></div>
-        </div>
-      </div>
-    `;
-  } else {
-    if (btnLetter) btnLetter.classList.add("active");
-    if (btnCV) btnCV.classList.remove("active");
-    if (fileNameEl) fileNameEl.textContent = candidate.docLetterName;
-    if (fileSizeEl) fileSizeEl.textContent = "950 KB • Đơn xin thực tập & Bảng điểm trường";
-
-    // Render A4 Sheet: Định dạng Đơn xin thực tập chuẩn mực
-    a4Content.innerHTML = `
-      <div style="text-align: center; margin-bottom: 24px;">
-        <h4 style="font-size: 13px; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">
-          CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
-        </h4>
-        <p style="font-size: 12px; font-weight: 600; text-decoration: underline;">
-          Độc lập - Tự do - Hạnh phúc
-        </p>
-      </div>
-
-      <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; text-transform: uppercase;">
-          ĐƠN XIN TIẾP NHẬN THỰC TẬP TỐT NGHIỆP
-        </h2>
-        <p style="font-size: 12px; color: #64748b; font-style: italic;">
-          Kính gửi: Ban Giám đốc & Phòng Nhân sự Công ty CODEGYM
-        </p>
-      </div>
-
-      <div class="a4-section">
-        <p class="a4-item-desc" style="line-height: 1.8; margin-bottom: 12px;">
-          Tên tôi là: <strong>${candidate.name}</strong><br>
-          Sinh ngày: <strong>15/08/2004</strong> &nbsp;&nbsp;&nbsp;&nbsp; Giới tính: <strong>Nam</strong><br>
-          Sinh viên trường: <strong>${candidate.school}</strong><br>
-          Chuyên ngành đào tạo: <strong>${candidate.major}</strong> &nbsp;&nbsp;&nbsp;&nbsp; Điểm tích lũy: <strong>${candidate.gpa}</strong><br>
-          Số điện thoại liên hệ: <strong>${candidate.phone}</strong> &nbsp;&nbsp;&nbsp;&nbsp; Email: <strong>${candidate.email}</strong>
-        </p>
-
-        <p class="a4-item-desc" style="line-height: 1.8; margin-bottom: 12px;">
-          Căn cứ theo kế hoạch đào tạo thực tế của Nhà trường và nguyện vọng trau dồi kinh nghiệm chuyên môn trong môi trường doanh nghiệp chuyên nghiệp, tôi viết đơn này kính mong Quý công ty xem xét tiếp nhận tôi vào vị trí <strong>${candidate.position}</strong> (Phòng <strong>${candidate.dept}</strong>).
-        </p>
-
-        <p class="a4-item-desc" style="line-height: 1.8; margin-bottom: 12px;">
-          Tôi xin cam kết:
-          <br>1. Nghiêm túc chấp hành toàn bộ nội quy, quy định bảo mật thông tin và thời gian làm việc của công ty.
-          <br>2. Nỗ lực học hỏi, hoàn thành xuất sắc các nhiệm vụ được người hướng dẫn (Mentor) phân công.
-          <br>3. Giữ gìn văn hóa làm việc văn minh, trách nhiệm và kỷ luật cao.
-        </p>
-      </div>
-
-      <div style="display: flex; justify-content: space-between; margin-top: 36px; padding: 0 20px;">
-        <div style="text-align: center;">
-          <p style="font-size: 12px; font-weight: 700; text-transform: uppercase;">Xác nhận của Nhà trường</p>
-          <p style="font-size: 11px; color: #64748b; margin-top: 2px;">(Ký và đóng dấu)</p>
-          <div style="margin-top: 50px; font-weight: 700; color: #2563eb;">[ĐÃ XÁC THỰC BẢN GỐC]</div>
-        </div>
-        <div style="text-align: center;">
-          <p style="font-size: 12px; font-style: italic;">Hà Nội, ngày ${candidate.appliedDate}</p>
-          <p style="font-size: 12px; font-weight: 700; text-transform: uppercase; margin-top: 2px;">Người làm đơn</p>
-          <div style="margin-top: 50px; font-weight: 700; color: #0f172a;">${candidate.name}</div>
-        </div>
-      </div>
-    `;
+  // Kiểm tra xem ứng viên có file thật được tải lên server không
+  let realDoc = null;
+  if (candidate.realDocuments && candidate.realDocuments.length > 0) {
+    const targetType = type === "cv" ? "CV" : "APPLICATION_LETTER";
+    realDoc = candidate.realDocuments.find((d) => d.type === targetType);
   }
+
+  if (realDoc && realDoc.fileUrl) {
+    const fullUrl = realDoc.fileUrl.startsWith("http") ? realDoc.fileUrl : `http://localhost:5000${realDoc.fileUrl}`;
+    const ext = realDoc.fileUrl.split(".").pop().toLowerCase();
+    if (fileNameEl) fileNameEl.textContent = realDoc.name;
+    if (fileSizeEl) fileSizeEl.textContent = `${realDoc.size || "Tài liệu"} • Định dạng ${ext.toUpperCase()}`;
+
+    if (type === "cv") {
+      if (btnCV) btnCV.classList.add("active");
+      if (btnLetter) btnLetter.classList.remove("active");
+    } else {
+      if (btnCV) btnCV.classList.remove("active");
+      if (btnLetter) btnLetter.classList.add("active");
+    }
+
+    if (ext === "pdf") {
+      a4Content.innerHTML = `
+        <div style="width: 100%; height: 750px; background: #525659; border-radius: 8px; overflow: hidden;">
+          <iframe src="${fullUrl}" style="width: 100%; height: 100%; border: none;"></iframe>
+        </div>
+      `;
+      return;
+    } else if (["png", "jpg", "jpeg", "webp"].includes(ext)) {
+      a4Content.innerHTML = `
+        <div style="text-align: center; padding: 20px; background: #f8fafc; border-radius: 8px;">
+          <img src="${fullUrl}" alt="${realDoc.name}" style="max-width: 100%; max-height: 700px; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);" />
+        </div>
+      `;
+      return;
+    }
+  }
+
+    if (type === "cv") {
+      if (btnCV) btnCV.classList.add("active");
+      if (btnLetter) btnLetter.classList.remove("active");
+    } else {
+      if (btnCV) btnCV.classList.remove("active");
+      if (btnLetter) btnLetter.classList.add("active");
+    }
+
+    if (fileNameEl) fileNameEl.textContent = "Chưa có tài liệu";
+    if (fileSizeEl) fileSizeEl.textContent = "Ứng viên chưa tải lên hoặc đã gỡ bỏ";
+
+    a4Content.innerHTML = `
+      <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 60px 20px; text-align: center; margin: 40px auto; max-width: 600px;">
+        <i class="fa-solid fa-file-circle-xmark" style="font-size: 3.5rem; color: #94a3b8; margin-bottom: 16px;"></i>
+        <h3 style="font-weight: 700; color: #334155;">Chưa có ${type === 'cv' ? 'CV' : 'Đơn xin thực tập'}</h3>
+        <p style="color: #64748b; font-size: 0.95rem; margin-top: 8px; max-width: 480px; margin-left: auto; margin-right: auto;">
+          Ứng viên chưa tải lên tài liệu này hoặc đã gỡ bỏ khỏi hệ thống.
+        </p>
+      </div>
+    `;
 }
 
 function openRejectModalFromDoc() {
@@ -819,6 +588,11 @@ function approveCandidate(candidate) {
   filterReviewData();
   filterData();
 
+  // Gọi API cập nhật trạng thái duyệt vào MySQL
+  if (typeof apiUpdateDocumentStatus === 'function') {
+    apiUpdateDocumentStatus(candidate.id, 'approved', 'Đã duyệt hồ sơ').catch(e => console.warn(e));
+  }
+
   showToast(`Đã duyệt hồ sơ của ứng viên "${candidate.name}" và chuyển sang danh sách Thực tập sinh thành công!`, "success");
 }
 
@@ -862,6 +636,11 @@ function handleRejectSubmit(e) {
     closeModal("rejectModal");
     renderOverview();
     filterReviewData();
+
+    // Gọi API cập nhật trạng thái từ chối vào MySQL
+    if (typeof apiUpdateDocumentStatus === 'function') {
+      apiUpdateDocumentStatus(candidate.id, 'rejected', note || reason).catch(e => console.warn(e));
+    }
 
     showToast(`Đã ghi nhận từ chối hồ sơ của ứng viên "${candidate.name}".`, "warning");
   }
@@ -1058,6 +837,28 @@ function handleAddSubmit(e) {
   filterData();
   renderOverview();
 
+  // Lưu bản ghi vào MySQL Database
+  if (typeof apiCreateIntern === 'function') {
+    apiCreateIntern({
+      name,
+      email: newIntern.email,
+      phone,
+      school,
+      major,
+      dept,
+      mentor: newIntern.mentor,
+      position: newIntern.position,
+      startDate: startDate || '2026-10-01',
+      endDate: endDate || '2026-12-31',
+      status: 'Đang thực tập'
+    }).then(res => {
+      if (res && res.success && res.data && res.data.id) {
+        newIntern.id = res.data.id;
+        console.log('✅ Đã lưu thực tập sinh mới vào MySQL Database với ID:', res.data.id);
+      }
+    }).catch(err => console.warn('Lỗi khi lưu vào MySQL:', err));
+  }
+
   showToast(`Đã thêm mới thực tập sinh "${name}" thành công!`, "success");
 }
 
@@ -1196,16 +997,47 @@ function handleEditSubmit(e) {
     filterData();
     renderOverview();
 
+    // Cập nhật dữ liệu vào MySQL Database
+    if (typeof apiUpdateIntern === 'function') {
+      apiUpdateIntern(id, {
+        name: intern.name,
+        email: intern.email,
+        major: intern.major,
+        school: intern.school,
+        dept: intern.dept,
+        mentor: intern.mentor,
+        status: intern.status
+      }).then(res => {
+        if (res && res.success) {
+          console.log('✅ Đã cập nhật thực tập sinh vào MySQL thành công!');
+        }
+      }).catch(err => console.warn('Lỗi khi cập nhật vào MySQL:', err));
+    }
+
     showToast(`Cập nhật thông tin thực tập sinh "${intern.name}" thành công!`, "success");
   }
 }
 
 // Xử lý Xóa thực tập sinh
-function handleDeleteIntern(id) {
+async function handleDeleteIntern(id) {
   const intern = internList.find((item) => item.id === id);
   if (!intern) return;
 
-  if (confirm(`Bạn có chắc chắn muốn xóa thực tập sinh "${intern.name}" khỏi danh sách?`)) {
+  if (confirm(`Bạn có chắc chắn muốn xóa thực tập sinh "${intern.name}" khỏi cơ sở dữ liệu?`)) {
+    if (typeof apiDeleteIntern === 'function') {
+      try {
+        const res = await apiDeleteIntern(id);
+        if (res && res.success) {
+          internList = internList.filter((item) => item.id !== id);
+          filterData();
+          renderOverview();
+          showToast(`Đã xóa thực tập sinh "${intern.name}" khỏi cơ sở dữ liệu MySQL thành công.`, "warning");
+          return;
+        }
+      } catch (e) {
+        console.warn('Lỗi khi gọi API xóa:', e);
+      }
+    }
     internList = internList.filter((item) => item.id !== id);
     filterData();
     renderOverview();
@@ -1413,4 +1245,73 @@ document.addEventListener("DOMContentLoaded", () => {
   renderOverview();
   filterReviewData();
   filterData();
+
+  // Nạp dữ liệu mới nhất từ MySQL Database
+  loadInternsFromDB();
 });
+
+// ==========================================
+// ĐỒNG BỘ DỮ LIỆU VỚI BACKEND MYSQL
+// ==========================================
+async function loadInternsFromDB() {
+  try {
+    if (typeof apiGetInterns === 'function') {
+      const res = await apiGetInterns();
+      if (res && res.success && Array.isArray(res.data)) {
+        // Phân loại thực tập sinh và ứng viên chờ duyệt:
+        // QUY TẮC: Khi không có file upload nào (document_count === 0), ứng viên KHÔNG hiện ở mục xét duyệt bên HR
+        const apps = res.data.filter(i => {
+          const docCount = Number(i.document_count || 0);
+          return (i.status === 'Chờ xét duyệt' && docCount > 0) || i.status === 'Đã từ chối';
+        });
+        const active = res.data.filter(i => i.status === 'Đang thực tập' || i.status === 'Hoàn thành' || i.status === 'Kết thúc');
+
+        internList = active.map(i => ({
+          id: i.id,
+          name: i.name,
+          email: i.email,
+          major: i.major,
+          school: i.school,
+          dept: i.dept,
+          mentor: i.mentor,
+          time: i.time || 'Chưa xếp lịch',
+          status: i.status || 'Đang thực tập',
+          phone: i.phone,
+          position: i.position,
+          skills: i.skills,
+          bio: i.bio
+        }));
+
+        applications = apps.map(i => ({
+          id: i.id,
+          name: i.name,
+          email: i.email,
+          phone: i.phone,
+          school: i.school,
+          major: i.major,
+          gpa: i.gpa ? `${i.gpa} / 4.0` : '',
+          dept: i.dept,
+          mentor: i.mentor,
+          position: i.position || `Thực tập sinh ${i.major}`,
+          appliedDate: i.appliedDate || '',
+          status: i.status,
+          rejectReason: i.reject_reason || '',
+          rejectNote: i.reject_note || '',
+          docCvName: `CV_${i.name.replace(/\s+/g, '')}.pdf`,
+          docLetterName: `Don_Xin_Thuc_Tap.pdf`,
+          skills: i.skills || '',
+          bio: i.bio || '',
+          projects: i.projects || ''
+        }));
+
+        renderOverview();
+        filterReviewData();
+        filterData();
+        console.log(`✅ Đã nạp thành công ${res.data.length} bản ghi từ MySQL Database!`);
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️ Lỗi khi tải dữ liệu từ API:', err);
+  }
+}
+window.loadInternsFromDB = loadInternsFromDB;

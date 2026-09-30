@@ -156,12 +156,12 @@ function handleNativeFileSelected(input) {
  * @param {File} file 
  */
 function selectModalFile(file) {
-  const allowed = ['pdf', 'doc', 'docx'];
+  const allowed = ['pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg'];
   const ext = file.name.split('.').pop().toLowerCase();
 
-  // Kiểm tra định dạng (PDF, DOC, DOCX)
+  // Kiểm tra định dạng (PDF, DOC, DOCX, PNG, JPG, JPEG)
   if (!allowed.includes(ext)) {
-    alert(`Định dạng tệp .${ext} không được hỗ trợ! Vui lòng chỉ chọn tệp PDF, DOC hoặc DOCX.`);
+    alert(`Định dạng tệp .${ext} không được hỗ trợ! Vui lòng chỉ chọn tệp PDF, DOCX hoặc Ảnh (PNG, JPG).`);
     return;
   }
 
@@ -209,6 +209,15 @@ function confirmModalUpload() {
   const file = InternState.tempFile;
   const type = InternState.modalType;
   const ext = file.name.split('.').pop().toLowerCase();
+  const isImg = ['png', 'jpg', 'jpeg', 'webp'].includes(ext);
+  const isDoc = ext.includes('doc');
+  const isPdf = ext === 'pdf';
+
+  // Tạo URL xem trước tức thì từ file máy khách
+  let localBlobUrl = '';
+  try {
+    localBlobUrl = URL.createObjectURL(file);
+  } catch (e) {}
 
   // Lưu thông tin vào state
   InternState.docs[type] = {
@@ -216,7 +225,9 @@ function confirmModalUpload() {
     name: file.name,
     size: formatFileSize(file.size),
     time: formatTimeNow(),
-    type: ext.includes('doc') ? 'doc' : 'pdf'
+    type: isDoc ? 'doc' : (isImg ? 'img' : 'pdf'),
+    previewUrl: localBlobUrl,
+    fileUrl: ''
   };
 
   // Lưu state vào localStorage để giữ phiên khi F5
@@ -227,24 +238,70 @@ function confirmModalUpload() {
 
   // Cập nhật toàn bộ giao diện
   updateAllPortalUI();
+
+  // Gửi file thật lên Backend lưu vào thư mục uploads/ và ghi vào MySQL
+  if (typeof apiUploadDocument === 'function') {
+    const userStr = localStorage.getItem('user');
+    let internId = 1;
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        if (u && (u.internId || u.id)) internId = u.internId || u.id;
+      } catch (e) {}
+    }
+    const docTypeParam = type === 'cv' ? 'CV' : 'APPLICATION_LETTER';
+    apiUploadDocument(internId, docTypeParam, file).then(res => {
+      if (res && res.success && res.data) {
+        InternState.docs[type].fileUrl = res.data.fileUrl;
+        InternState.docs[type].previewUrl = res.data.fileUrl;
+        saveDocsState();
+        console.log('✅ File đã được lưu vào thư mục backend/uploads/ và MySQL:', res.data.fileUrl);
+      }
+    }).catch(err => console.warn('Lỗi khi tải lên server:', err));
+  }
 }
 
 /**
  * Xóa/Gỡ tài liệu đã tải lên
  * @param {'cv' | 'application'} type 
  */
-function removeUploadedDoc(type) {
+async function removeUploadedDoc(type) {
   const docName = type === 'cv' ? 'CV' : 'Đơn xin thực tập';
-  if (confirm(`Bạn có chắc chắn muốn gỡ ${docName}?`)) {
-    InternState.docs[type] = {
-      uploaded: false,
-      name: '',
-      size: '',
-      time: '',
-      type: 'pdf'
-    };
-    saveDocsState();
-    updateAllPortalUI();
+  if (!confirm(`Bạn có chắc chắn muốn gỡ ${docName}?`)) return;
+
+  // Lấy thông tin user hiện tại
+  const userStr = localStorage.getItem('user');
+  let internId = 1;
+  if (userStr) {
+    try {
+      const u = JSON.parse(userStr);
+      if (u && (u.internId || u.id)) internId = u.internId || u.id;
+    } catch (e) {}
+  }
+
+  const docTypeParam = type === 'cv' ? 'CV' : 'APPLICATION_LETTER';
+
+  // 1. Cập nhật state cục bộ trước
+  InternState.docs[type] = {
+    uploaded: false,
+    name: '',
+    size: '',
+    time: '',
+    type: 'pdf',
+    fileUrl: '',
+    previewUrl: ''
+  };
+  saveDocsState();
+  updateAllPortalUI();
+
+  // 2. Gọi API xóa tệp vật lý và bản ghi trong MySQL Database
+  if (typeof apiDeleteDocument === 'function') {
+    try {
+      const res = await apiDeleteDocument(internId, docTypeParam);
+      console.log('🗑️ Đã xóa tài liệu khỏi MySQL & Server:', res);
+    } catch (err) {
+      console.warn('Lỗi khi gọi API xóa tài liệu:', err);
+    }
   }
 }
 
@@ -417,34 +474,58 @@ function openFilePreviewModal(type) {
   }
 
   if (modalBody) {
-    if (type === 'cv') {
-      modalBody.innerHTML = `
-        <div style="background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 32px; text-align: left; max-width: 650px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
-          <div style="border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 18px;">
-            <h2 style="color: #1e3a8a; font-size: 1.4rem; font-weight: 800; margin: 0;">TRẦN MINH KHOA</h2>
-            <div style="color: #475569; font-size: 0.875rem; margin-top: 4px;">Vị trí: Thực tập sinh Phát triển Phần mềm (Frontend Intern)</div>
-            <div style="color: #64748b; font-size: 0.8rem;">Email: khoatran@student.vn • SĐT: 0912 345 678 • Đại học Bách Khoa</div>
+    const targetUrl = (doc && (doc.fileUrl || doc.previewUrl)) ? (doc.fileUrl || doc.previewUrl) : '';
+    
+    if (targetUrl) {
+      const fullUrl = (targetUrl.startsWith('http') || targetUrl.startsWith('blob:'))
+        ? targetUrl
+        : `http://localhost:5000${targetUrl}`;
+      
+      const fileName = doc.name || targetUrl.split('/').pop() || '';
+      const ext = fileName.split('.').pop().toLowerCase();
+      const isImg = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'].includes(ext) || doc.type === 'img';
+      const isPdf = ext === 'pdf' || doc.type === 'pdf';
+
+      if (isImg) {
+        modalBody.innerHTML = `
+          <div style="text-align: center; padding: 15px; background: #f8fafc; border-radius: 8px;">
+            <img src="${fullUrl}" alt="${fileName || 'Hình ảnh tải lên'}" 
+                 style="max-width: 100%; max-height: 550px; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.12); object-fit: contain;" />
+            <div style="margin-top: 12px; font-weight: 500; font-size: 0.9rem; color: #475569;">
+              <i class="bi bi-image me-1"></i> ${fileName} ${doc.size ? `(${doc.size})` : ''}
+            </div>
           </div>
-          <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-top: 14px;">1. KỸ NĂNG CHUYÊN MÔN</h4>
-          <p style="font-size: 0.85rem; color: #334155; line-height: 1.6;">• HTML5, CSS3, JavaScript ES6+, Bootstrap 5, ReactJS<br>• Quản lý mã nguồn với Git/GitHub, RESTful API</p>
-          <h4 style="font-size: 0.95rem; font-weight: 700; color: #0f172a; margin-top: 14px;">2. DỰ ÁN ĐÃ THỰC HIỆN</h4>
-          <p style="font-size: 0.85rem; color: #334155; line-height: 1.6;">• Hệ thống Quản lý Thực tập sinh CodeGym (Frontend Developer)<br>• Web Ứng dụng Quản lý Nhiệm vụ cá nhân (ReactJS + LocalStorage)</p>
-        </div>
-      `;
+        `;
+      } else if (isPdf) {
+        modalBody.innerHTML = `
+          <div style="width: 100%; height: 600px; background: #525659; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+            <iframe src="${fullUrl}" style="width: 100%; height: 100%; border: none;"></iframe>
+          </div>
+        `;
+      } else {
+        // Tệp tin dạng Word hoặc định dạng khác
+        modalBody.innerHTML = `
+          <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 40px; text-align: center;">
+            <div style="font-size: 3.5rem; color: #2563eb; margin-bottom: 16px;">
+              <i class="bi bi-file-earmark-word-fill"></i>
+            </div>
+            <h4 style="font-weight: 700; color: #1e293b;">${fileName || 'Tài liệu đã tải lên'}</h4>
+            <p style="color: #64748b; font-size: 0.9rem; margin-top: 8px;">
+              Tệp văn bản định dạng Word không hỗ trợ xem trực tiếp trên trình duyệt. Bạn có thể bấm nút bên dưới để tải về máy.
+            </p>
+            <a href="${fullUrl}" download="${fileName}" class="btn btn-primary mt-3" style="padding: 10px 24px; border-radius: 6px;">
+              <i class="bi bi-download me-2"></i> Tải xuống tệp tin
+            </a>
+          </div>
+        `;
+      }
     } else {
+      // Trường hợp chưa có file
       modalBody.innerHTML = `
-        <div style="background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 32px; text-align: left; max-width: 650px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="font-weight: 700; font-size: 0.9rem;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
-            <div style="font-weight: 600; font-size: 0.85rem; color: #475569;">Độc lập - Tự do - Hạnh phúc</div>
-            <h3 style="font-weight: 800; font-size: 1.25rem; color: #1e3a8a; margin-top: 16px;">ĐƠN XIN THỰC TẬP TẠI DOANH NGHIỆP</h3>
-          </div>
-          <p style="font-size: 0.85rem; line-height: 1.7; color: #334155;">
-            <strong>Kính gửi:</strong> Ban Giám đốc & Phòng Nhân sự Công ty Cổ phần CodeGym Việt Nam.<br>
-            <strong>Họ và tên sinh viên:</strong> Trần Minh Khoa<br>
-            <strong>Mã số sinh viên:</strong> 20210088 • Đại học Bách Khoa<br>
-            <strong>Nguyện vọng:</strong> Được tiếp nhận vào Đợt thực tập tốt nghiệp vị trí Frontend Developer.
-          </p>
+        <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 45px; text-align: center;">
+          <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: #94a3b8;"></i>
+          <h5 style="margin-top: 16px; font-weight: 600; color: #475569;">Chưa có tệp tin nào được tải lên</h5>
+          <p style="color: #64748b; font-size: 0.875rem;">Vui lòng bấm vào nút "Tải lên" để đính kèm file CV hoặc Đơn xin thực tập của bạn.</p>
         </div>
       `;
     }
@@ -513,20 +594,65 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1. Phục hồi state tài liệu
   loadDocsState();
 
-  // 2. Nạp tên sinh viên từ user đã đăng nhập nếu có
+  // 2. Nạp tên và vai trò sinh viên từ user đã đăng nhập
   try {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       const u = JSON.parse(userStr);
-      if (u.name) {
-        const topName = document.getElementById('topbar-user-name');
-        const sideName = document.getElementById('sidebarName') || document.getElementById('sidebar-user-name');
-        if (topName) topName.textContent = u.name;
-        if (sideName) sideName.textContent = u.name;
-      }
+      const topName = document.getElementById('topbar-user-name');
+      const sideName = document.getElementById('sidebarName') || document.getElementById('sidebar-user-name');
+      const sideRole = document.getElementById('sidebarRole');
+      const sideAvatar = document.getElementById('sidebarAvatar');
+
+      if (topName && u.name) topName.textContent = u.name;
+      if (sideName && u.name) sideName.textContent = u.name;
+      if (sideRole && u.role) sideRole.textContent = u.role;
+      if (sideAvatar && u.avatar) sideAvatar.src = u.avatar;
     }
   } catch (e) {}
 
   // 3. Cập nhật toàn bộ giao diện
   updateAllPortalUI();
+
+  // 4. Đồng bộ danh sách tài liệu từ MySQL Database
+  (async function syncDocsFromDB() {
+    if (typeof apiGetInternDocuments === 'function') {
+      try {
+        const userStr = localStorage.getItem('user');
+        let internId = 1;
+        if (userStr) {
+          const u = JSON.parse(userStr);
+          if (u && (u.internId || u.id)) internId = u.internId || u.id;
+        }
+        const res = await apiGetInternDocuments(internId);
+        if (res && res.success && res.data && Array.isArray(res.data.documents)) {
+          if (res.data.documents.length === 0) {
+            InternState.docs.cv = { uploaded: false, name: '', size: '', time: '', type: 'pdf' };
+            InternState.docs.application = { uploaded: false, name: '', size: '', time: '', type: 'doc' };
+            saveDocsState();
+            updateAllPortalUI();
+          } else {
+            res.data.documents.forEach(doc => {
+              const key = doc.type === 'CV' ? 'cv' : 'application';
+              const ext = doc.fileUrl.split('.').pop().toLowerCase();
+              InternState.docs[key] = {
+                uploaded: true,
+                name: doc.name,
+                size: doc.size,
+                time: doc.uploadedAt || 'Đã tải lên',
+                type: ext === 'pdf' ? 'pdf' : (ext.includes('doc') ? 'doc' : 'img'),
+                fileUrl: doc.fileUrl,
+                previewUrl: doc.fileUrl
+              };
+            });
+            saveDocsState();
+            updateAllPortalUI();
+            console.log('✅ Đã đồng bộ tài liệu thực tập sinh từ MySQL Database!');
+          }
+        }
+      } catch (err) {
+        console.warn('Lỗi đồng bộ tài liệu từ DB:', err);
+      }
+    }
+  })();
 });

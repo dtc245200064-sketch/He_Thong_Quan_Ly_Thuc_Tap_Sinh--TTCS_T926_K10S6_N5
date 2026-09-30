@@ -16,6 +16,8 @@
 | **POST** | `/interns` | Thêm mới một thực tập sinh | Intern |
 | **PUT** | `/interns/:id` | Cập nhật thông tin thực tập sinh | Intern |
 | **GET** | `/interns/:id/documents` | Xem chi tiết hồ sơ & tài liệu đính kèm | Intern |
+| **POST** | `/interns/:id/documents` | Tải lên file CV / Đơn xin thực tập (multipart) | Intern |
+| **DELETE**| `/interns/:id/documents/:docType` | Xóa tài liệu khỏi hệ thống và server | Intern |
 | **PATCH** | `/interns/:id/documents/status` | Duyệt / Từ chối hồ sơ tài liệu | Intern |
 
 ---

@@ -107,14 +107,14 @@ function hideLoginError() {
   }
 }
 
-// 5. XỬ LÝ SUBMIT ĐĂNG NHẬP: HỖ TRỢ CẢ HR VÀ THỰC TẬP SINH
-function handleLogin(event) {
+// 5. XỬ LÝ SUBMIT ĐĂNG NHẬP: GỌI API BACKEND KẾT NỐI DATABASE MYSQL
+async function handleLogin(event) {
   if (event) event.preventDefault();
   hideLoginError();
 
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
-  const username = usernameInput ? usernameInput.value.trim().toLowerCase() : '';
+  const username = usernameInput ? usernameInput.value.trim() : '';
   const password = passwordInput ? passwordInput.value.trim() : '';
 
   if (!username) {
@@ -129,10 +129,48 @@ function handleLogin(event) {
     return;
   }
 
-  // =========================================================================
-  // 1. ĐĂNG NHẬP VAI TRÒ HR: (hr@company.vn)
-  // =========================================================================
-  if (username === 'hr@company.vn' || username.includes('hr')) {
+  // 1. Thử gọi API Backend thực tế
+  try {
+    if (typeof apiLogin === 'function') {
+      const response = await apiLogin(username, password);
+      if (response && response.success) {
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        
+        const role = response.user.role;
+        if (role === 'HR' || role === 'HR Manager') {
+          localStorage.setItem('userRole', 'HR');
+          showHRDashboard();
+          if (typeof loadInternsFromDB === 'function') {
+            loadInternsFromDB();
+          }
+          if (typeof showToast === 'function') {
+            showToast('Đăng nhập thành công! Chào mừng HR Manager.', 'success');
+          }
+          return;
+        } else if (role === 'INTERN' || role === 'Thực tập sinh') {
+          localStorage.setItem('userRole', 'INTERN');
+          alert('Đăng nhập thành công! Đang chuyển đến Cổng thông tin Thực tập sinh...');
+          window.location.href = 'intern.html';
+          return;
+        } else {
+          notifyRoleDeveloping(role);
+          return;
+        }
+      } else {
+        const errMsg = (response && response.message) ? response.message : 'Email hoặc mật khẩu không chính xác!';
+        showLoginError(errMsg);
+        return;
+      }
+    }
+  } catch (apiError) {
+    console.warn('Backend API chưa sẵn sàng hoặc mất kết nối, chuyển sang chế độ dự phòng:', apiError);
+  }
+
+  // 2. Chế độ dự phòng offline (Local Mock Fallback)
+  const lowerUser = username.toLowerCase();
+  if (lowerUser === 'hr@company.vn' || lowerUser.includes('hr')) {
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userRole', 'HR');
     localStorage.setItem('user', JSON.stringify({
@@ -142,19 +180,14 @@ function handleLogin(event) {
       role: "HR Manager",
       avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
     }));
-
     showHRDashboard();
-
     if (typeof showToast === 'function') {
       showToast('Đăng nhập thành công! Chào mừng HR Manager.', 'success');
     }
     return;
   }
 
-  // =========================================================================
-  // 2. ĐĂNG NHẬP VAI TRÒ THỰC TẬP SINH: (intern@student.vn)
-  // =========================================================================
-  if (username === 'intern@student.vn' || username.includes('intern') || username.includes('student') || username.includes('thuctapsinh') || username.includes('khoa')) {
+  if (lowerUser === 'intern@student.vn' || lowerUser.includes('intern') || lowerUser.includes('student')) {
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userRole', 'INTERN');
     localStorage.setItem('user', JSON.stringify({
@@ -166,18 +199,13 @@ function handleLogin(event) {
       university: "Đại học Bách Khoa Hà Nội",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
     }));
-
     alert('Đăng nhập thành công! Đang chuyển đến Cổng thông tin Thực tập sinh...');
     window.location.href = 'intern.html';
     return;
   }
 
-  // =========================================================================
-  // 3. CÁC TÀI KHOẢN KHÁC (Admin, Master...)
-  // =========================================================================
-  const errorText = 'Hiện tại hệ thống chỉ hỗ trợ đăng nhập vai trò HR và Thực tập sinh. Các vai trò Admin, Master đang trong quá trình phát triển!';
+  const errorText = 'Email hoặc mật khẩu không chính xác!';
   showLoginError(errorText);
-  alert(errorText);
 }
 
 // 6. HÀM HIỂN THỊ GIAO DIỆN HR DASHBOARD (ẨN LOGIN VIEW, HIỆN HR VIEW)

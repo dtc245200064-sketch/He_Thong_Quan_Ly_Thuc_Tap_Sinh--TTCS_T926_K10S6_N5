@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 
 const authRoutes = require('./routes/auth.routes');
@@ -13,8 +14,12 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// 2. Middleware phân tích dữ liệu JSON
+// 2. Middleware phân tích dữ liệu JSON & URL-encoded
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// 3. Phục vụ tĩnh thư mục uploads chứa file tài liệu (PDF, Ảnh...)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 3. Đăng ký các API Routes theo hợp đồng
 app.use('/api/auth', authRoutes);
