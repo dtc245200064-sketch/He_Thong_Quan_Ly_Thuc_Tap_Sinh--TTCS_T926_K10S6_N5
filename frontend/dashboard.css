@@ -983,10 +983,12 @@ body {
   font-family: inherit;
 }
 
+.btn-action.btn-view,
 .btn-action.btn-detail {
   color: #2563eb;
   background-color: #eff6ff;
 }
+.btn-action.btn-view:hover,
 .btn-action.btn-detail:hover {
   background-color: #dbeafe;
 }
@@ -1068,8 +1070,9 @@ body {
   animation: modalFadeIn 0.22s ease-out;
   display: flex;
   flex-direction: column;
-  max-height: 92vh;
+  max-height: 90vh;
   overflow: hidden;
+  position: relative;
 }
 
 .modal-dialog.modal-lg {
@@ -1078,6 +1081,15 @@ body {
 
 .modal-dialog.modal-xl {
   max-width: 920px;
+}
+
+.modal-dialog form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 @keyframes modalFadeIn {
@@ -1095,9 +1107,10 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 24px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--border-color);
   background-color: #ffffff;
+  flex-shrink: 0;
 }
 
 .modal-title-flex {
@@ -1160,6 +1173,8 @@ body {
 .modal-body {
   padding: 22px 24px;
   overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .modal-body.p-0 {
@@ -1169,10 +1184,15 @@ body {
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  padding: 16px 24px;
-  background-color: #f8fafc;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  background-color: #ffffff;
   border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.05);
 }
 
 /* Forms */
@@ -1218,6 +1238,95 @@ body {
   padding: 10px 12px !important;
   line-height: 1.5;
   resize: vertical;
+}
+
+.form-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 18px;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1.5px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-section-title:first-child {
+  margin-top: 0;
+}
+
+.form-section-title i {
+  font-size: 14px;
+}
+
+.file-upload-box {
+  position: relative;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  background-color: #f8fafc;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.file-upload-box:hover {
+  border-color: var(--primary);
+  background-color: #eff6ff;
+}
+
+.file-input-custom {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.file-upload-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #475569;
+}
+
+.file-upload-display i {
+  font-size: 15px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.file-name-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-btn-browse {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.text-danger {
+  color: #ef4444;
 }
 
 /* Modal Xác nhận đăng xuất */

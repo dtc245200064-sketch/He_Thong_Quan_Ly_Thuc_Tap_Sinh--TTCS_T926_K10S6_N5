@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng thông tin Thực tập sinh - Quản lý thực tập sinh</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5 CSS via CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Bootstrap Icons via CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <!-- Stylesheet riêng của Thực tập sinh -->
+  <link rel="stylesheet" href="intern-style.css">
+
+  <script>
+    // Kiểm tra phiên đăng nhập: bắt buộc phải có vai trò Thực tập sinh
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const userRole = localStorage.getItem('userRole');
+    if (!isLoggedIn || userRole !== 'INTERN') {
+      window.location.href = 'index.html';
+    }
+  </script>
+</head>
+
+<body>
+
+  <div class="portal-layout">
+
+    <!-- =============================================================== -->
+    <!-- 1. SIDEBAR (CỘT ĐIỀU HƯỚNG TỐI MÀU BÊN TRÁI)                      -->
+    <!-- =============================================================== -->
+    <aside class="portal-sidebar">
+      <div>
+        <!-- Logo TTS -->
+        <a href="javascript:void(0)" class="sidebar-brand">
+          <div class="brand-icon-tts">TTS</div>
+          <span class="brand-name">Quản lý thực tập sinh</span>
+        </a>
+
+        <!-- Hộp hiển thị vai trò -->
+        <div class="sidebar-role-card">
+          <div class="role-caption">Vai trò</div>
+          <div class="role-badge-val">
+            <span class="role-dot"></span>
+            <span>Thực tập sinh</span>
+          </div>
+        </div>
+
+        <!-- Menu điều hướng: 2 Tab chuẩn mẫu ảnh -->
+        <nav class="sidebar-nav">
+          <button type="button" class="sidebar-menu-btn active" id="menu-overview"
+            onclick="switchPortalTab('overview')">
+            <i class="bi bi-grid-fill"></i>
+            <span>Tổng quan</span>
+          </button>
+          <button type="button" class="sidebar-menu-btn" id="menu-documents" onclick="switchPortalTab('documents')">
+            <i class="bi bi-file-earmark-text-fill"></i>
+            <span>Hồ sơ & Tài liệu thực tập</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Thông tin cá nhân & Nút đăng xuất cuối sidebar (Chuẩn mẫu ảnh) -->
+      <div class="sidebar-footer-wrapper">
+        <div class="user-profile" title="Hồ sơ Thực tập sinh">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
+            alt="Avatar" class="user-avatar" id="sidebarAvatar">
+          <div class="user-info">
+            <span class="user-name" id="sidebarName">Trần Minh Khoa</span>
+            <span class="user-role" id="sidebarRole">Thực tập sinh</span>
+          </div>
+          <i class="bi bi-chevron-right profile-arrow"></i>
+        </div>
+
+        <!-- Nút Đăng xuất chuẩn hình ảnh -->
+        <button type="button" class="sidebar-logout" onclick="handleInternLogout()" title="Đăng xuất khỏi hệ thống">
+          <i class="bi bi-box-arrow-right"></i>
+          <span>Đăng xuất</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- =============================================================== -->
+    <!-- 2. MAIN CONTENT & TOPBAR                                        -->
+    <!-- =============================================================== -->
+    <main class="portal-main">
+      <!-- Nội dung chính -->
+      <div class="portal-body">
+
+        <!-- ============================================================= -->
+        <!-- TAB 1: TỔNG QUAN (GIỐNG HÌNH ẢNH 1 & HÌNH ẢNH 5)              -->
+        <!-- ============================================================= -->
+        <section class="portal-tab-content active" id="tab-overview">
+
+          <div class="page-header">
+            <h1 class="page-title">Xin chào, Minh Khoa</h1>
+            <p class="page-desc">Theo dõi và hoàn thiện hồ sơ thực tập của bạn.</p>
+          </div>
+
+          <!-- Hàng 1: Thẻ trạng thái màu xanh + Thẻ tài liệu bắt buộc -->
+          <div class="row g-4 mb-4">
+
+            <!-- Cột trái: Thẻ xanh Trạng thái hồ sơ hiện tại -->
+            <div class="col-lg-8">
+              <div class="status-hero-card">
+                <div>
+                  <div class="hero-label">Trạng thái hồ sơ hiện tại</div>
+                  <div class="hero-title">
+                    <span id="hero-status-title">Chưa hoàn thiện</span>
+                    <span class="hero-title-dot" id="hero-status-dot"></span>
+                  </div>
+                  <p class="hero-desc" id="hero-status-desc">
+                    Hãy tải lên đầy đủ CV và đơn xin thực tập để gửi hồ sơ đến HR xét duyệt.
+                  </p>
+                </div>
+                <button type="button" class="btn-complete-profile" onclick="switchPortalTab('documents')">
+                  Hoàn thiện hồ sơ
+                </button>
+              </div>
+            </div>
+
+            <!-- Cột phải: Thẻ trắng Tài liệu bắt buộc -->
+            <div class="col-lg-4">
+              <div class="required-docs-card">
+                <div class="required-card-title">Tài liệu bắt buộc</div>
+
+                <div class="required-docs-list">
+                  <!-- Mục CV -->
+                  <div class="required-doc-item" id="req-item-cv">
+                    <div class="required-dot-status"></div>
+                    <div>
+                      <div class="required-doc-name">CV</div>
+                      <div class="required-doc-status" id="req-status-text-cv">Chưa upload</div>
+                    </div>
+                  </div>
+
+                  <!-- Mục Đơn xin thực tập -->
+                  <div class="required-doc-item" id="req-item-app">
+                    <div class="required-dot-status"></div>
+                    <div>
+                      <div class="required-doc-name">Đơn xin thực tập</div>
+                      <div class="required-doc-status" id="req-status-text-app">Chưa upload</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Hàng 2: Tiến độ hoàn thiện hồ sơ (Chuẩn hình ảnh 5) -->
+          <div class="progress-section-card">
+            <div class="progress-header">
+              <div>
+                <div class="progress-title">Tiến độ hoàn thiện hồ sơ</div>
+                <p class="progress-subtitle">Hoàn thành 2 tài liệu bắt buộc để gửi xét duyệt.</p>
+              </div>
+              <span class="progress-pill-badge" id="progress-summary-badge">Chưa hoàn thiện</span>
+            </div>
+
+            <!-- 3 Card bước: 01, 02, 03 -->
+            <div class="step-cards-row">
+
+              <!-- Bước 01: CV -->
+              <div class="step-item-card" id="step-card-01">
+                <div class="step-card-top">
+                  <div class="step-dot-indicator"></div>
+                  <span class="step-number">01</span>
+                </div>
+                <div class="step-name">CV</div>
+                <div class="step-sub" id="step-sub-01">Chưa upload</div>
+              </div>
+
+              <!-- Bước 02: Đơn xin thực tập -->
+              <div class="step-item-card" id="step-card-02">
+                <div class="step-card-top">
+                  <div class="step-dot-indicator"></div>
+                  <span class="step-number">02</span>
+                </div>
+                <div class="step-name">Đơn xin thực tập</div>
+                <div class="step-sub" id="step-sub-02">Chưa upload</div>
+              </div>
+
+              <!-- Bước 03: Hoàn thiện hồ sơ -->
+              <div class="step-item-card" id="step-card-03">
+                <div class="step-card-top">
+                  <div class="step-dot-indicator"></div>
+                  <span class="step-number">03</span>
+                </div>
+                <div class="step-name">Hoàn thiện hồ sơ</div>
+                <div class="step-sub" id="step-sub-03">Chưa hoàn thiện</div>
+              </div>
+
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 2: HỒ SƠ & TÀI LIỆU THỰC TẬP (GIỐNG HÌNH ẢNH 2)            -->
+        <!-- ============================================================= -->
+        <section class="portal-tab-content" id="tab-documents">
+
+          <div class="page-header">
+            <h1 class="page-title">Hồ sơ & Tài liệu thực tập</h1>
+            <p class="page-desc">Tải lên và theo dõi trạng thái các tài liệu bắt buộc.</p>
+          </div>
+
+          <!-- Thanh thông báo Info Strip -->
+          <div class="info-alert-strip">
+            <div class="info-alert-icon">
+              <i class="bi bi-info-circle-fill"></i>
+            </div>
+            <div>
+              <div class="info-alert-title">Hoàn thiện 2 tài liệu bắt buộc</div>
+              <p class="info-alert-desc">Định dạng hỗ trợ: PDF, DOC, DOCX. Dung lượng tối đa 10 MB mỗi file.</p>
+            </div>
+          </div>
+
+          <!-- 2 Card Upload tài liệu: CV & Đơn xin thực tập -->
+          <div class="doc-upload-grid">
+
+            <!-- Card 1: CV -->
+            <div class="doc-upload-card" id="doc-card-cv">
+              <div>
+                <div class="doc-card-top">
+                  <div class="doc-info-meta">
+                    <div class="doc-icon-box">
+                      <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <div>
+                      <div class="doc-main-title">CV</div>
+                      <div class="doc-main-sub">Tải lên CV của bạn</div>
+                    </div>
+                  </div>
+                  <span class="doc-badge-pill">Bắt buộc</span>
+                </div>
+
+                <!-- Khung khi chưa có tệp -->
+                <div class="doc-file-placeholder" id="placeholder-cv">
+                  Chưa có tài liệu
+                </div>
+
+                <!-- Khung khi đã tải tệp lên -->
+                <div class="doc-file-uploaded-view d-none" id="uploaded-view-cv">
+                  <div class="file-row-meta">
+                    <div class="file-row-icon pdf" id="file-icon-cv">
+                      <i class="bi bi-file-earmark-pdf-fill"></i>
+                    </div>
+                    <div class="file-row-details">
+                      <div class="file-row-name" id="file-name-cv">CV_TranMinhKhoa.pdf</div>
+                      <div class="file-row-sub">
+                        <span id="file-size-cv">2.4 MB</span> • <span id="file-time-cv">Vừa xong</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="file-row-actions">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="openFilePreviewModal('cv')">
+                      <i class="bi bi-eye"></i> Xem file
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openUploadModal('cv')">
+                      <i class="bi bi-arrow-repeat"></i> Tải lại
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-auto"
+                      onclick="removeUploadedDoc('cv')" title="Gỡ bỏ tệp CV" aria-label="Gỡ bỏ tệp CV">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Nút Upload CV -->
+              <button type="button" class="btn-upload-primary" onclick="openUploadModal('cv')">
+                Upload CV
+              </button>
+            </div>
+
+            <!-- Card 2: Đơn xin thực tập -->
+            <div class="doc-upload-card" id="doc-card-app">
+              <div>
+                <div class="doc-card-top">
+                  <div class="doc-info-meta">
+                    <div class="doc-icon-box">
+                      <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <div>
+                      <div class="doc-main-title">Đơn xin thực tập</div>
+                      <div class="doc-main-sub">Tải lên đơn xin thực tập</div>
+                    </div>
+                  </div>
+                  <span class="doc-badge-pill">Bắt buộc</span>
+                </div>
+
+                <!-- Khung khi chưa có tệp -->
+                <div class="doc-file-placeholder" id="placeholder-app">
+                  Chưa có tài liệu
+                </div>
+
+                <!-- Khung khi đã tải tệp lên -->
+                <div class="doc-file-uploaded-view d-none" id="uploaded-view-app">
+                  <div class="file-row-meta">
+                    <div class="file-row-icon doc" id="file-icon-app">
+                      <i class="bi bi-file-earmark-word-fill"></i>
+                    </div>
+                    <div class="file-row-details">
+                      <div class="file-row-name" id="file-name-app">DonXinThucTap_TranMinhKhoa.docx</div>
+                      <div class="file-row-sub">
+                        <span id="file-size-app">850 KB</span> • <span id="file-time-app">Vừa xong</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="file-row-actions">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="openFilePreviewModal('app')">
+                      <i class="bi bi-eye"></i> Xem file
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                      onclick="openUploadModal('application')">
+                      <i class="bi bi-arrow-repeat"></i> Tải lại
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-auto"
+                      onclick="removeUploadedDoc('application')" title="Gỡ bỏ tệp Đơn xin thực tập"
+                      aria-label="Gỡ bỏ tệp Đơn xin thực tập">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Nút Upload đơn -->
+              <button type="button" class="btn-upload-primary" onclick="openUploadModal('application')">
+                Upload đơn
+              </button>
+            </div>
+
+          </div>
+
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- 3. MODAL UPLOAD TÀI LIỆU (CHUẨN HÌNH ẢNH 3 & 4)                    -->
+  <!-- ================================================================= -->
+  <div class="modal-overlay" id="uploadModalOverlay">
+    <div class="custom-modal-card">
+
+      <!-- Header modal -->
+      <div class="modal-header-row">
+        <div>
+          <h3 class="modal-title-main">Upload tài liệu</h3>
+          <p class="modal-subtitle-main" id="modalSubtitleText">Tải lên CV của bạn</p>
+        </div>
+        <button type="button" class="btn-modal-close" onclick="closeUploadModal()" title="Đóng modal">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <!-- Dropzone kéo thả file -->
+      <div class="modal-dropzone" id="modalDropzone" onclick="triggerNativeFileInput()"
+        ondragover="handleModalDragOver(event)" ondragleave="handleModalDragLeave(event)"
+        ondrop="handleModalDrop(event)">
+
+        <div class="modal-upload-circle-icon">
+          <i class="bi bi-upload"></i>
+        </div>
+
+        <div class="modal-drop-title">Kéo thả file vào đây</div>
+        <div class="modal-drop-sub">PDF, DOC hoặc DOCX • Tối đa 10 MB</div>
+
+        <button type="button" class="btn-browse-file" onclick="triggerNativeFileInput(event)">
+          Chọn file
+        </button>
+
+        <!-- Hidden Input File -->
+        <input type="file" id="modalHiddenFileInput" class="d-none" accept=".pdf,.doc,.docx" title="Chọn tệp tải lên"
+          aria-label="Chọn tệp tải lên" onchange="handleNativeFileSelected(this)">
+      </div>
+
+      <!-- Khung thông báo tệp đã chọn trong modal -->
+      <div class="modal-selected-file-strip d-none" id="selectedFileStrip">
+        <div class="d-flex align-items-center gap-2 overflow-hidden">
+          <i class="bi bi-file-earmark-check-fill text-primary fs-5"></i>
+          <span class="selected-file-text" id="selectedFileName">ten-tep.pdf</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="clearSelectedModalFile(event)"
+          title="Xóa tệp chọn">
+          <i class="bi bi-x-circle-fill"></i>
+        </button>
+      </div>
+
+      <!-- Footer modal -->
+      <div class="modal-footer-row mt-4">
+        <button type="button" class="btn-modal-cancel" onclick="closeUploadModal()">
+          Hủy
+        </button>
+        <button type="button" class="btn-modal-submit" id="btnModalSubmitUpload" onclick="confirmModalUpload()"
+          disabled>
+          Upload
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- 4. MODAL XEM TRƯỚC TÀI LIỆU (PREVIEW MODAL)                       -->
+  <!-- ================================================================= -->
+  <div class="modal fade" id="previewFileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg preview-modal-content">
+        <div class="modal-header bg-dark text-white py-3 px-4">
+          <h5 class="modal-title fs-6 fw-bold" id="previewModalTitle">Xem trước tài liệu</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+        </div>
+        <div class="modal-body p-4 bg-light text-center" id="previewModalBody">
+          <!-- Nội dung giả lập hiển thị trang giấy -->
+        </div>
+        <div class="modal-footer bg-white py-2 px-4">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Script logic riêng của Thực tập sinh -->
+  <script src="intern.js"></script>
+</body>
+
+</html>

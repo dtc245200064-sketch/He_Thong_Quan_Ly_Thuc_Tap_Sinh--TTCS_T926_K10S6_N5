@@ -3,6 +3,28 @@
 // CHỈ LÀM PHẦN FRONTEND: Mock data hoạt động độc lập, không cần backend
 // ==========================================================================
 
+// Auth Guard: Nếu truy cập file dashboard.html độc lập mà không phải HR Manager -> Chuyển về index.html
+(function checkAuthGuard() {
+  if (typeof window !== "undefined") {
+    // Chỉ kiểm tra khi trang không có login-view (tức là trang dashboard.html độc lập)
+    const isDashboardPage = !document.getElementById("login-view");
+    if (isDashboardPage) {
+      const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+      const userStr = localStorage.getItem("user") || localStorage.getItem("currentUser");
+      let isHR = false;
+      if (isLoggedIn && userStr) {
+        try {
+          const u = JSON.parse(userStr);
+          if (u && u.role === "HR Manager") isHR = true;
+        } catch (e) {}
+      }
+      if (!isHR) {
+        window.location.href = "index.html";
+      }
+    }
+  }
+})();
+
 // 1. MOCK DATA: DANH SÁCH HỒ SƠ ỨNG VIÊN MỚI NỘP (TIẾP NHẬN & XÉT DUYỆT)
 let applications = [
   {
@@ -913,13 +935,13 @@ function filterData() {
       </td>
       <td class="text-center">
         <div class="action-buttons">
+          <button type="button" class="btn-action btn-view" onclick="openViewInternModal(${item.id})" title="Xem chi tiết thực tập sinh">
+            <i class="fa-solid fa-eye"></i>
+            <span>Xem</span>
+          </button>
           <button type="button" class="btn-action btn-edit" onclick="openEditModal(${item.id})" title="Chỉnh sửa thông tin">
             <i class="fa-solid fa-pen-to-square"></i>
             <span>Sửa</span>
-          </button>
-          <button type="button" class="btn-action btn-delete" onclick="handleDeleteIntern(${item.id})" title="Xóa khỏi danh sách">
-            <i class="fa-solid fa-trash-can"></i>
-            <span>Xóa</span>
           </button>
         </div>
       </td>
@@ -928,17 +950,58 @@ function filterData() {
   });
 }
 
+// Cập nhật tên file khi người dùng chọn tài liệu
+function updateUploadFileName(input, targetSpanId) {
+  const span = document.getElementById(targetSpanId);
+  if (span) {
+    if (input.files && input.files[0]) {
+      span.textContent = input.files[0].name;
+      if (span.style) {
+        span.style.fontWeight = "600";
+        span.style.color = "#1e293b";
+      }
+    } else {
+      span.textContent = targetSpanId === "cvFileName" ? "Tải lên CV (PDF, DOCX)" : "Tải lên Đơn xin thực tập";
+      if (span.style) {
+        span.style.fontWeight = "normal";
+        span.style.color = "#475569";
+      }
+    }
+  }
+}
+window.updateUploadFileName = updateUploadFileName;
+
 // Bấm nút Mở Modal Thêm mới thực tập sinh
 function openAddModal() {
   document.getElementById("addName").value = "";
-  document.getElementById("addEmail").value = "";
-  document.getElementById("addMajor").value = "";
+  if (document.getElementById("addBirthDate")) document.getElementById("addBirthDate").value = "";
+  if (document.getElementById("addPhone")) document.getElementById("addPhone").value = "";
+  if (document.getElementById("addEmail")) document.getElementById("addEmail").value = "";
   document.getElementById("addSchool").value = "";
-  document.getElementById("addDept").value = "Kỹ thuật phần mềm";
-  document.getElementById("addMentor").value = "";
-  document.getElementById("addStartDate").value = "2026-10-01";
-  document.getElementById("addEndDate").value = "2026-12-31";
-  document.getElementById("addStatus").value = "Đang thực tập";
+  document.getElementById("addMajor").value = "";
+  if (document.getElementById("addPosition")) document.getElementById("addPosition").value = "";
+  if (document.getElementById("addDept")) document.getElementById("addDept").value = "Kỹ thuật phần mềm";
+  if (document.getElementById("addMentor")) document.getElementById("addMentor").value = "";
+  if (document.getElementById("addStartDate")) document.getElementById("addStartDate").value = "2026-10-01";
+  if (document.getElementById("addEndDate")) document.getElementById("addEndDate").value = "2026-12-31";
+  const cvEl = document.getElementById("cvFileName");
+  if (cvEl) {
+    cvEl.textContent = "Tải lên CV (PDF, DOCX)";
+    if (cvEl.style) {
+      cvEl.style.fontWeight = "normal";
+      cvEl.style.color = "#475569";
+    }
+  }
+  const letterEl = document.getElementById("letterFileName");
+  if (letterEl) {
+    letterEl.textContent = "Tải lên Đơn xin thực tập";
+    if (letterEl.style) {
+      letterEl.style.fontWeight = "normal";
+      letterEl.style.color = "#475569";
+    }
+  }
+  if (document.getElementById("addCv")) document.getElementById("addCv").value = "";
+  if (document.getElementById("addLetter")) document.getElementById("addLetter").value = "";
   openModal("addModal");
 }
 
@@ -947,14 +1010,21 @@ function handleAddSubmit(e) {
   e.preventDefault();
 
   const name = document.getElementById("addName").value.trim();
-  const email = document.getElementById("addEmail").value.trim();
-  const major = document.getElementById("addMajor").value.trim();
+  const birthDate = document.getElementById("addBirthDate") ? document.getElementById("addBirthDate").value : "";
+  const phone = document.getElementById("addPhone") ? document.getElementById("addPhone").value.trim() : "";
+  const email = document.getElementById("addEmail") ? document.getElementById("addEmail").value.trim() : "";
   const school = document.getElementById("addSchool").value.trim();
-  const dept = document.getElementById("addDept").value;
-  const mentor = document.getElementById("addMentor").value.trim();
-  const startDate = document.getElementById("addStartDate").value;
-  const endDate = document.getElementById("addEndDate").value;
-  const status = document.getElementById("addStatus").value;
+  const major = document.getElementById("addMajor").value.trim();
+  const position = document.getElementById("addPosition") ? document.getElementById("addPosition").value.trim() : "";
+  const dept = document.getElementById("addDept") ? document.getElementById("addDept").value : "Kỹ thuật phần mềm";
+  const mentor = document.getElementById("addMentor") ? document.getElementById("addMentor").value.trim() : "";
+  const startDate = document.getElementById("addStartDate") ? document.getElementById("addStartDate").value : "";
+  const endDate = document.getElementById("addEndDate") ? document.getElementById("addEndDate").value : "";
+
+  const cvInput = document.getElementById("addCv");
+  const letterInput = document.getElementById("addLetter");
+  const cvFile = cvInput && cvInput.files && cvInput.files[0] ? cvInput.files[0].name : "CV_" + name.replace(/\s+/g, "") + ".pdf";
+  const letterFile = letterInput && letterInput.files && letterInput.files[0] ? letterInput.files[0].name : "Don_Xin_Thuc_Tap.pdf";
 
   const formatDate = (d) => {
     if (!d) return "";
@@ -962,16 +1032,25 @@ function handleAddSubmit(e) {
     return `${day}/${m}/${y}`;
   };
 
+  const timeStr = (startDate && endDate)
+    ? `${formatDate(startDate)} - ${formatDate(endDate)}`
+    : (startDate ? `Từ ${formatDate(startDate)}` : "01/10/2026 - 31/12/2026");
+
   const newIntern = {
     id: Date.now(),
     name,
-    email,
-    major,
+    birthDate,
+    phone,
+    email: email || `${name.toLowerCase().replace(/\s+/g, ".")}@company.vn`,
     school,
+    major,
+    position: position || `Thực tập sinh ${major}`,
     dept,
-    mentor,
-    time: `${formatDate(startDate)} - ${formatDate(endDate)}`,
-    status
+    mentor: mentor || "Chưa phân công",
+    time: timeStr,
+    status: "Đang thực tập",
+    docCvName: cvFile,
+    docLetterName: letterFile
   };
 
   internList.unshift(newIntern);
@@ -981,6 +1060,103 @@ function handleAddSubmit(e) {
 
   showToast(`Đã thêm mới thực tập sinh "${name}" thành công!`, "success");
 }
+
+// Mở Modal Xem Chi tiết Thực tập sinh
+function openViewInternModal(id) {
+  const intern = internList.find((item) => item.id === id);
+  if (!intern) return;
+
+  const bodyEl = document.getElementById("internDetailBody");
+  const footerEl = document.getElementById("internDetailFooter");
+  const initials = getInitials(intern.name);
+
+  let statusClass = "status-finished";
+  if (intern.status === "Đang thực tập") statusClass = "status-active";
+  else if (intern.status === "Chờ xét duyệt") statusClass = "status-pending";
+
+  if (bodyEl) {
+    bodyEl.innerHTML = `
+      <div class="detail-card-hero">
+        <div class="detail-avatar-circle">${initials}</div>
+        <div class="detail-hero-content">
+          <h4 class="detail-candidate-name">${intern.name}</h4>
+          <div class="detail-candidate-position">${intern.position || (intern.major + " • " + intern.school)}</div>
+          <div class="detail-badges-row">
+            <span class="badge-tag-sm"><i class="fa-solid fa-building" style="margin-right: 4px;"></i>${intern.dept}</span>
+            <span class="status-badge ${statusClass}">${intern.status}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-item-label">Mã thực tập sinh</span>
+          <span class="info-item-value">#TTS-${String(intern.id).padStart(4, "0")}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-item-label">Email liên hệ</span>
+          <span class="info-item-value">${intern.email || "Chưa cập nhật"}</span>
+        </div>
+        ${intern.phone ? `
+        <div class="info-item">
+          <span class="info-item-label">Số điện thoại</span>
+          <span class="info-item-value">${intern.phone}</span>
+        </div>` : ""}
+        ${intern.birthDate ? `
+        <div class="info-item">
+          <span class="info-item-label">Ngày sinh</span>
+          <span class="info-item-value">${intern.birthDate}</span>
+        </div>` : ""}
+        <div class="info-item">
+          <span class="info-item-label">Trường đại học</span>
+          <span class="info-item-value">${intern.school}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-item-label">Chuyên ngành đào tạo</span>
+          <span class="info-item-value">${intern.major}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-item-label">Phòng ban tiếp nhận</span>
+          <span class="info-item-value">${intern.dept}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-item-label">Người hướng dẫn (Mentor)</span>
+          <span class="info-item-value">${intern.mentor}</span>
+        </div>
+        <div class="info-item" style="grid-column: 1 / -1;">
+          <span class="info-item-label">Thời gian thực tập</span>
+          <span class="info-item-value"><i class="fa-regular fa-calendar-days" style="margin-right: 6px; color: var(--primary);"></i>${intern.time}</span>
+        </div>
+        ${intern.docCvName || intern.docLetterName ? `
+        <div class="info-item" style="grid-column: 1 / -1;">
+          <span class="info-item-label">Tài liệu đính kèm</span>
+          <span class="info-item-value" style="display: flex; gap: 10px; margin-top: 4px;">
+            ${intern.docCvName ? `<span class="badge-tag-sm" style="color: #0d9488; background-color: #f0fdfa;"><i class="fa-solid fa-file-pdf"></i> ${intern.docCvName}</span>` : ""}
+            ${intern.docLetterName ? `<span class="badge-tag-sm" style="color: #2563eb; background-color: #eff6ff;"><i class="fa-solid fa-file-lines"></i> ${intern.docLetterName}</span>` : ""}
+          </span>
+        </div>` : ""}
+      </div>
+    `;
+  }
+
+  if (footerEl) {
+    footerEl.innerHTML = `
+      <button type="button" class="btn-secondary" onclick="closeModal('internDetailModal')">Đóng</button>
+      <button type="button" class="btn-primary" onclick="closeModal('internDetailModal'); openEditModal(${intern.id})">
+        <i class="fa-solid fa-pen-to-square"></i>
+        <span>Chỉnh sửa thông tin</span>
+      </button>
+    `;
+  }
+
+  openModal("internDetailModal");
+}
+
+window.openViewInternModal = openViewInternModal;
+window.openViewModal = openViewInternModal;
+window.openInternDetailModal = openViewInternModal;
+window.handleViewIntern = openViewInternModal;
+window.viewIntern = openViewInternModal;
 
 // Mở Modal Chỉnh sửa TTS
 function openEditModal(id) {
@@ -1166,10 +1342,23 @@ function handleSaveProfile(event) {
 // Đăng xuất
 function confirmLogout() {
   closeModal("logoutModal");
+  localStorage.removeItem("isLoggedIn");
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  localStorage.removeItem("currentUser");
   showToast("Đang đăng xuất khỏi hệ thống...", "info");
+
   setTimeout(() => {
-    window.location.href = "index.html";
-  }, 600);
+    // Nếu trên trang SPA (có login-view)
+    if (document.getElementById("login-view")) {
+      if (typeof switchToLoginView === "function") {
+        switchToLoginView();
+      }
+    } else {
+      // Nếu trên trang dashboard.html độc lập
+      window.location.href = "index.html";
+    }
+  }, 400);
 }
 
 // Đóng modal khi bấm ra ngoài vùng dialog hoặc bấm phím Escape
@@ -1187,6 +1376,29 @@ window.addEventListener("keydown", (e) => {
 
 // Khởi chạy khi DOM sẵn sàng
 document.addEventListener("DOMContentLoaded", () => {
+  // Đồng bộ thông tin người dùng từ localStorage nếu có
+  const savedUser = localStorage.getItem("user") || localStorage.getItem("currentUser");
+  if (savedUser) {
+    try {
+      const u = JSON.parse(savedUser);
+      if (u.name) userProfile.name = u.name;
+      if (u.role) userProfile.role = u.role;
+      if (u.email) userProfile.email = u.email;
+      if (u.phone) userProfile.phone = u.phone;
+      if (u.avatar) userProfile.avatar = u.avatar;
+
+      const sidebarName = document.getElementById("sidebarName");
+      const sidebarRole = document.getElementById("sidebarRole");
+      const sidebarAvatar = document.getElementById("sidebarAvatar");
+      const roleDisplayBadge = document.getElementById("roleDisplayBadge");
+
+      if (sidebarName && u.name) sidebarName.textContent = u.name;
+      if (sidebarRole && u.role) sidebarRole.textContent = u.role;
+      if (sidebarAvatar && u.avatar) sidebarAvatar.src = u.avatar;
+      if (roleDisplayBadge && u.role) roleDisplayBadge.textContent = u.role;
+    } catch (e) {}
+  }
+
   // Cập nhật ngày hôm nay
   const todayDisplay = document.getElementById("todayDisplay");
   if (todayDisplay) {

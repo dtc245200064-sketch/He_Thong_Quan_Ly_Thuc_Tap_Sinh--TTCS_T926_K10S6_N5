@@ -11,6 +11,20 @@
   <!-- Thư viện Font Awesome 6 Icons qua CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="dashboard.css">
+  <script>
+    // Kiểm tra phiên đăng nhập: nếu không phải vai trò HR Manager thì chuyển về màn hình đăng nhập index.html
+    const userStr = localStorage.getItem("user") || localStorage.getItem("currentUser");
+    let isHR = false;
+    if (localStorage.getItem("isLoggedIn") === "true" && userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        if (u && u.role === "HR Manager") isHR = true;
+      } catch (e) {}
+    }
+    if (!isHR) {
+      window.location.href = "index.html";
+    }
+  </script>
 </head>
 
 <body>
@@ -323,69 +337,137 @@
 
   <!-- ==================== MODAL 1: THÊM MỚI HỒ SƠ TTS ==================== -->
   <div class="modal" id="addModal">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
       <div class="modal-header">
-        <h3 class="modal-title">Thêm mới thực tập sinh</h3>
+        <div class="modal-title-flex">
+          <span class="modal-badge-icon">
+            <i class="fa-solid fa-user-plus"></i>
+          </span>
+          <h3 class="modal-title">THÊM MỚI THỰC TẬP SINH</h3>
+        </div>
         <button type="button" class="btn-close" onclick="closeModal('addModal')" aria-label="Đóng">&times;</button>
       </div>
       <form onsubmit="handleAddSubmit(event)">
         <div class="modal-body">
+
+          <!-- 1. Thông tin cá nhân -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-user"></i>
+            <span>Thông tin cá nhân</span>
+          </div>
           <div class="form-row-2">
             <div class="form-group">
-              <label for="addName">Họ và tên *</label>
+              <label for="addName">Họ và tên <span class="text-danger">*</span></label>
               <input type="text" id="addName" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
             </div>
             <div class="form-group">
-              <label for="addEmail">Email liên hệ *</label>
-              <input type="email" id="addEmail" class="form-control" placeholder="Ví dụ: anhnv@company.vn" required>
+              <label for="addBirthDate">Ngày sinh</label>
+              <input type="date" id="addBirthDate" class="form-control" title="Chọn ngày sinh">
             </div>
           </div>
           <div class="form-row-2">
             <div class="form-group">
-              <label for="addMajor">Ngành học *</label>
-              <input type="text" id="addMajor" class="form-control" placeholder="Ví dụ: CNTT" required>
+              <label for="addPhone">Số điện thoại</label>
+              <input type="tel" id="addPhone" class="form-control" placeholder="Ví dụ: 0987 654 321">
             </div>
             <div class="form-group">
-              <label for="addSchool">Trường đại học *</label>
+              <label for="addEmail">Email</label>
+              <input type="email" id="addEmail" class="form-control" placeholder="Ví dụ: anhnv@company.vn">
+            </div>
+          </div>
+
+          <!-- 2. Thông tin học tập -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span>Thông tin học tập</span>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="addSchool">Trường <span class="text-danger">*</span></label>
               <input type="text" id="addSchool" class="form-control" placeholder="Ví dụ: ĐH Bách Khoa HN" required>
             </div>
+            <div class="form-group">
+              <label for="addMajor">Ngành <span class="text-danger">*</span></label>
+              <input type="text" id="addMajor" class="form-control" placeholder="Ví dụ: CNTT" required>
+            </div>
+          </div>
+
+          <!-- 3. Thông tin thực tập -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-briefcase"></i>
+            <span>Thông tin thực tập</span>
           </div>
           <div class="form-row-2">
             <div class="form-group">
-              <label for="addDept">Phòng ban *</label>
-              <select id="addDept" class="form-control" title="Chọn phòng ban" required>
+              <label for="addPosition">Vị trí thực tập</label>
+              <input type="text" id="addPosition" class="form-control" placeholder="Ví dụ: Thực tập sinh Frontend React/JS">
+            </div>
+            <div class="form-group">
+              <label for="addDept">Phòng ban</label>
+              <select id="addDept" class="form-control" title="Chọn phòng ban">
                 <option value="Kỹ thuật phần mềm">Kỹ thuật phần mềm</option>
                 <option value="Tài chính">Tài chính</option>
                 <option value="Marketing">Marketing</option>
                 <option value="Nhân sự">Nhân sự</option>
+                <option value="An ninh mạng">An ninh mạng</option>
               </select>
-            </div>
-            <div class="form-group">
-              <label for="addMentor">Người hướng dẫn (Mentor) *</label>
-              <input type="text" id="addMentor" class="form-control" placeholder="Ví dụ: Anh Tuấn" required>
-            </div>
-          </div>
-          <div class="form-row-2">
-            <div class="form-group">
-              <label for="addStartDate">Ngày bắt đầu *</label>
-              <input type="date" id="addStartDate" class="form-control" title="Ngày bắt đầu" required>
-            </div>
-            <div class="form-group">
-              <label for="addEndDate">Ngày kết thúc *</label>
-              <input type="date" id="addEndDate" class="form-control" title="Ngày kết thúc" required>
             </div>
           </div>
           <div class="form-group">
-            <label for="addStatus">Trạng thái</label>
-            <select id="addStatus" class="form-control" title="Chọn trạng thái">
-              <option value="Đang thực tập">Đang thực tập</option>
-              <option value="Đã hoàn thành">Đã hoàn thành</option>
-            </select>
+            <label for="addMentor">Mentor</label>
+            <input type="text" id="addMentor" class="form-control" placeholder="Ví dụ: Anh Tuấn">
           </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="addStartDate">Thời gian bắt đầu</label>
+              <input type="date" id="addStartDate" class="form-control" title="Thời gian bắt đầu">
+            </div>
+            <div class="form-group">
+              <label for="addEndDate">Thời gian kết thúc</label>
+              <input type="date" id="addEndDate" class="form-control" title="Thời gian kết thúc">
+            </div>
+          </div>
+
+          <!-- 4. Tài liệu -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-file-lines"></i>
+            <span>Tài liệu</span>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="addCv">CV</label>
+              <div class="file-upload-box">
+                <input type="file" id="addCv" class="file-input-custom" accept=".pdf,.doc,.docx" onchange="updateUploadFileName(this, 'cvFileName')">
+                <div class="file-upload-display">
+                  <i class="fa-solid fa-file-pdf"></i>
+                  <span id="cvFileName" class="file-name-text">Tải lên CV (PDF, DOCX)</span>
+                  <span class="file-btn-browse">Chọn file</span>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="addLetter">Đơn xin thực tập</label>
+              <div class="file-upload-box">
+                <input type="file" id="addLetter" class="file-input-custom" accept=".pdf,.doc,.docx" onchange="updateUploadFileName(this, 'letterFileName')">
+                <div class="file-upload-display">
+                  <i class="fa-solid fa-file-lines"></i>
+                  <span id="letterFileName" class="file-name-text">Tải lên Đơn xin thực tập</span>
+                  <span class="file-btn-browse">Chọn file</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn-secondary" onclick="closeModal('addModal')">Hủy</button>
-          <button type="submit" class="btn-primary">Lưu thực tập sinh</button>
+          <button type="button" class="btn-secondary" onclick="closeModal('addModal')">
+            <i class="fa-solid fa-xmark"></i>
+            <span>Hủy</span>
+          </button>
+          <button type="submit" class="btn-primary">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Lưu hồ sơ</span>
+          </button>
         </div>
       </form>
     </div>
@@ -454,6 +536,27 @@
           <button type="submit" class="btn-primary">Lưu thay đổi</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL XEM CHI TIẾT THỰC TẬP SINH ==================== -->
+  <div class="modal" id="internDetailModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-flex">
+          <span class="modal-badge-icon">
+            <i class="fa-solid fa-id-badge"></i>
+          </span>
+          <h3 class="modal-title">Chi tiết thông tin thực tập sinh</h3>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('internDetailModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body" id="internDetailBody">
+        <!-- Render chi tiết từ dashboard.js -->
+      </div>
+      <div class="modal-footer" id="internDetailFooter">
+        <!-- Nút thao tác -->
+      </div>
     </div>
   </div>
 
