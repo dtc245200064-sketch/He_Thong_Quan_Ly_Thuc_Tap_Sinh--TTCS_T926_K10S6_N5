@@ -61,7 +61,9 @@ function selectAdminRole(button) {
 // THÔNG BÁO TÍNH NĂNG ĐANG TRONG QUÁ TRÌNH PHÁT TRIỂN
 function notifyRoleDeveloping(roleName) {
   const message = `Tính năng dành cho ${roleName} đang trong quá trình phát triển!`;
-  alert(message);
+  if (typeof showWebNotice === 'function') {
+    showWebNotice('Tính năng đang phát triển', message);
+  }
   showLoginError(message);
 }
 
@@ -125,6 +127,99 @@ function hideLoginError() {
   }
 }
 
+// ==========================================================================
+// 4.1. QUẢN LÝ MODAL THÔNG BÁO VÀ CHUYỂN HƯỚNG ĐĂNG NHẬP (KHÔNG DÙNG ALERT)
+// ==========================================================================
+let pendingRedirectUrl = '';
+let redirectTimer = null;
+
+function showLoginSuccessModal({ name, role, targetUrl }) {
+  pendingRedirectUrl = targetUrl;
+
+  const nameEl = document.getElementById('loginSuccessName');
+  const roleEl = document.getElementById('loginSuccessRole');
+  const modalEl = document.getElementById('loginSuccessModal');
+  const progressFill = document.getElementById('redirectProgressFill');
+
+  if (nameEl) nameEl.textContent = name || 'Người dùng';
+  if (roleEl) roleEl.textContent = role || 'Thành viên';
+
+  if (progressFill) {
+    progressFill.style.transition = 'none';
+    progressFill.style.width = '0%';
+    void progressFill.offsetWidth; // Force reflow để kích hoạt lại CSS animation
+    progressFill.style.transition = 'width 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+    setTimeout(() => {
+      progressFill.style.width = '100%';
+    }, 50);
+  }
+
+  if (modalEl) {
+    modalEl.classList.add('active');
+  }
+
+  // Tự động chuyển hướng sau 1.25 giây
+  if (redirectTimer) clearTimeout(redirectTimer);
+  redirectTimer = setTimeout(() => {
+    proceedToTargetPage();
+  }, 1250);
+}
+
+function proceedToTargetPage() {
+  if (redirectTimer) {
+    clearTimeout(redirectTimer);
+    redirectTimer = null;
+  }
+  if (pendingRedirectUrl) {
+    window.location.href = pendingRedirectUrl;
+  }
+}
+
+function showWebNotice(title, message, iconType = 'info') {
+  const modalEl = document.getElementById('webNoticeModal');
+  const titleEl = document.getElementById('noticeModalTitle');
+  const msgEl = document.getElementById('noticeModalMsg');
+  const iconBox = document.getElementById('noticeModalIcon');
+
+  if (titleEl) titleEl.textContent = title || 'Thông báo';
+  if (msgEl) msgEl.textContent = message || '';
+
+  if (iconBox) {
+    if (iconType === 'success') {
+      iconBox.className = 'modal-icon success-icon';
+      iconBox.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+    } else {
+      iconBox.className = 'modal-icon info-icon';
+      iconBox.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+    }
+  }
+
+  if (modalEl) {
+    modalEl.classList.add('active');
+  }
+}
+
+function closeNoticeModal() {
+  const modalEl = document.getElementById('webNoticeModal');
+  if (modalEl) {
+    modalEl.classList.remove('active');
+  }
+}
+
+// Bắt sự kiện phím Escape và click nền mờ để đóng modal thông báo
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeNoticeModal();
+  }
+});
+
+window.addEventListener('click', (e) => {
+  const noticeModal = document.getElementById('webNoticeModal');
+  if (e.target === noticeModal) {
+    closeNoticeModal();
+  }
+});
+
 // 5. XỬ LÝ SUBMIT ĐĂNG NHẬP: GỌI API BACKEND KẾT NỐI DATABASE MYSQL
 async function handleLogin(event) {
   if (event) event.preventDefault();
@@ -136,13 +231,13 @@ async function handleLogin(event) {
   const password = passwordInput ? passwordInput.value.trim() : '';
 
   if (!username) {
-    alert('Vui lòng nhập tên đăng nhập hoặc email!');
+    showLoginError('Vui lòng nhập tên đăng nhập hoặc email!');
     if (usernameInput) usernameInput.focus();
     return;
   }
 
   if (!password) {
-    alert('Vui lòng nhập mật khẩu!');
+    showLoginError('Vui lòng nhập mật khẩu!');
     if (passwordInput) passwordInput.focus();
     return;
   }
@@ -157,19 +252,31 @@ async function handleLogin(event) {
         localStorage.setItem('user', JSON.stringify(response.user));
         
         const role = response.user.role;
+        const displayName = response.user.name || response.user.fullname || username;
+
         if (role === 'HR' || role === 'HR Manager') {
           localStorage.setItem('userRole', 'HR');
-          window.location.href = 'dashboard.html';
+          showLoginSuccessModal({
+            name: displayName,
+            role: 'HR Manager',
+            targetUrl: 'dashboard.html'
+          });
           return;
         } else if (role === 'INTERN' || role === 'Thực tập sinh') {
           localStorage.setItem('userRole', 'INTERN');
-          alert('Đăng nhập thành công! Đang chuyển đến Cổng thông tin Thực tập sinh...');
-          window.location.href = 'intern.html';
+          showLoginSuccessModal({
+            name: displayName,
+            role: 'Thực tập sinh',
+            targetUrl: 'intern.html'
+          });
           return;
         } else if (role === 'ADMIN' || role === 'Admin') {
           localStorage.setItem('userRole', 'ADMIN');
-          alert('Đăng nhập thành công! Đang chuyển đến Trang Quản trị hệ thống...');
-          window.location.href = 'admin.html';
+          showLoginSuccessModal({
+            name: displayName,
+            role: 'Quản trị viên',
+            targetUrl: 'admin.html'
+          });
           return;
         } else {
           notifyRoleDeveloping(role);
@@ -197,7 +304,11 @@ async function handleLogin(event) {
       role: "HR Manager",
       avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
     }));
-    window.location.href = 'dashboard.html';
+    showLoginSuccessModal({
+      name: "Nguyễn Thị Hoa",
+      role: "HR Manager",
+      targetUrl: 'dashboard.html'
+    });
     return;
   }
 
@@ -213,8 +324,11 @@ async function handleLogin(event) {
       university: "Đại học Bách Khoa Hà Nội",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
     }));
-    alert('Đăng nhập thành công! Đang chuyển đến Cổng thông tin Thực tập sinh...');
-    window.location.href = 'intern.html';
+    showLoginSuccessModal({
+      name: "Trần Minh Khoa",
+      role: "Thực tập sinh",
+      targetUrl: 'intern.html'
+    });
     return;
   }
 
@@ -228,8 +342,11 @@ async function handleLogin(event) {
       role: "Admin",
       avatar: "image/GiangVien.png"
     }));
-    alert('Đăng nhập thành công! Đang chuyển đến Trang Quản trị hệ thống...');
-    window.location.href = 'admin.html';
+    showLoginSuccessModal({
+      name: "Lê Văn Admin",
+      role: "Quản trị viên",
+      targetUrl: 'admin.html'
+    });
     return;
   }
 
@@ -315,7 +432,6 @@ function confirmLogout() {
   // Chuyển về màn hình đăng nhập (thuần DOM)
   if (document.getElementById('login-view')) {
     showLoginView();
-    alert('Đã đăng xuất thành công khỏi hệ thống!');
   } else {
     // Nếu đang ở trang dashboard.html riêng biệt
     window.location.href = 'index.html';

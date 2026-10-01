@@ -140,7 +140,7 @@
               <input type="checkbox" id="rememberMe" checked> Ghi nhớ đăng nhập
             </label>
             <a href="javascript:void(0)" class="forgot-link"
-              onclick="alert('Vui lòng liên hệ Quản trị viên để đặt lại mật khẩu.')">Quên mật khẩu?</a>
+              onclick="showWebNotice('Quên mật khẩu', 'Vui lòng liên hệ Quản trị viên hệ thống để được hỗ trợ cấp lại mật khẩu.')">Quên mật khẩu?</a>
           </div>
 
           <!-- Nút Đăng nhập chính -->
@@ -156,6 +156,48 @@
 
     </div>
   </section>
+
+  <!-- ================================================================= -->
+  <!-- MODAL THÔNG BÁO ĐĂNG NHẬP THÀNH CÔNG (THIẾT KẾ WEB, KHÔNG DÙNG ALERT) -->
+  <!-- ================================================================= -->
+  <div class="modal" id="loginSuccessModal" aria-hidden="true">
+    <div class="modal-box login-success-box">
+      <div class="modal-icon success-icon">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <h3 id="loginSuccessTitle">Đăng nhập thành công!</h3>
+      <p id="loginSuccessMsg">
+        Chào mừng <strong id="loginSuccessName">...</strong><br>
+        <span class="user-role-tag" id="loginSuccessRole">...</span><br>
+        <span style="font-size: 13px; color: #94a3b8; display: block; margin-top: 10px;">
+          Đang chuyển hướng đến không gian làm việc...
+        </span>
+      </p>
+      <div class="redirect-progress-bar">
+        <div class="redirect-progress-fill" id="redirectProgressFill"></div>
+      </div>
+      <button type="button" class="btn-continue-now" id="btnContinueNow" onclick="proceedToTargetPage()">
+        <span>Vào hệ thống ngay</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL THÔNG BÁO THÔNG TIN CHUNG (THAY THẾ ALERT)                  -->
+  <!-- ================================================================= -->
+  <div class="modal" id="webNoticeModal" aria-hidden="true">
+    <div class="modal-box login-success-box">
+      <div class="modal-icon info-icon" id="noticeModalIcon">
+        <i class="fa-solid fa-circle-info"></i>
+      </div>
+      <h3 id="noticeModalTitle">Thông báo</h3>
+      <p id="noticeModalMsg">Nội dung thông báo...</p>
+      <button type="button" class="btn-continue-now" onclick="closeNoticeModal()">
+        <span>Đã hiểu</span>
+      </button>
+    </div>
+  </div>
 
   <!-- SCRIPTS -->
   <script src="api.js"></script>
