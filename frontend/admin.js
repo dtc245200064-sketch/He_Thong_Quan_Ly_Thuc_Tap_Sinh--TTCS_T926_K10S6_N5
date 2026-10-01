@@ -580,9 +580,12 @@ async function applyRolePermissions(role) {
     const key = row.getAttribute('data-perm-key');
     const roleValues = permMap[key];
     if (roleValues) {
-      const checkboxes = row.querySelectorAll('input[type="checkbox"]');
-      checkboxes.forEach((cb, idx) => {
-        cb.checked = !!roleValues[idx];
+      const actionCells = row.querySelectorAll('td.td-action');
+      actionCells.forEach((cell, colIdx) => {
+        const cb = cell.querySelector('input[type="checkbox"]');
+        if (cb) {
+          cb.checked = !!roleValues[colIdx];
+        }
       });
     }
   });
@@ -598,9 +601,12 @@ async function resetPermissions() {
       const key = row.getAttribute('data-perm-key');
       const roleValues = defaultMap[key];
       if (roleValues) {
-        const checkboxes = row.querySelectorAll('input[type="checkbox"]');
-        checkboxes.forEach((cb, idx) => {
-          cb.checked = !!roleValues[idx];
+        const actionCells = row.querySelectorAll('td.td-action');
+        actionCells.forEach((cell, colIdx) => {
+          const cb = cell.querySelector('input[type="checkbox"]');
+          if (cb) {
+            cb.checked = !!roleValues[colIdx];
+          }
         });
       }
     });
@@ -614,8 +620,11 @@ async function savePermissions() {
   const rows = document.querySelectorAll('#permissionTableBody tr');
   rows.forEach(row => {
     const key = row.getAttribute('data-perm-key');
-    const checkboxes = row.querySelectorAll('input[type="checkbox"]');
-    permMap[key] = Array.from(checkboxes).map(cb => cb.checked);
+    const actionCells = row.querySelectorAll('td.td-action');
+    permMap[key] = Array.from(actionCells).map(cell => {
+      const cb = cell.querySelector('input[type="checkbox"]');
+      return cb ? cb.checked : false;
+    });
   });
 
   try {
@@ -761,6 +770,8 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       openLogoutModal();
     });
+  }
+
   // 6. Nạp thông tin Admin đã đăng nhập
   try {
     const userStr = localStorage.getItem('user');

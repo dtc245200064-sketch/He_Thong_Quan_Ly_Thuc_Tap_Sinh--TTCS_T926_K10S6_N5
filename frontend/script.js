@@ -288,6 +288,12 @@ function checkAuthState() {
     return;
   }
 
+  // NẾU ĐÃ ĐĂNG NHẬP VÀ VAI TRÒ LÀ "ADMIN"
+  if (isLoggedIn && userRole === 'ADMIN') {
+    window.location.href = 'admin.html';
+    return;
+  }
+
   // Nếu không phải phiên hợp lệ -> Xóa sạch session và bắt buộc ở lại màn hình Login
   localStorage.removeItem('isLoggedIn');
   localStorage.removeItem('userRole');
