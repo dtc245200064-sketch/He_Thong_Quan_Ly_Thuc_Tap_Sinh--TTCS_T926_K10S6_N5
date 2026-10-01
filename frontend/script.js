@@ -333,10 +333,7 @@ function closeModal(modalId = 'logoutModal') {
   if (modal) modal.classList.remove('active');
 }
 
-// 11. ĐĂNG KÝ TÀI KHOẢN MỚI
-function handleRegister() {
-  alert('Chức năng đăng ký tài khoản Doanh nghiệp / HR đang được cập nhật!');
-}
+
 
 // ==========================================================================
 // TỰ ĐỘNG CHẠY KHI MỞ TRANG
