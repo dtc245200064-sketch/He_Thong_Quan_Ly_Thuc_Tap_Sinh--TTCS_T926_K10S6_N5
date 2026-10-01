@@ -1,23 +1,33 @@
 -- ==============================================================================
--- CƠ SỞ DỮ LIỆU DỰ ÁN CODEGYM - HỆ THỐNG QUẢN LÝ THỰC TẬP SINH (HR PORTAL)
+-- CƠ SỞ DỮ LIỆU DỰ ÁN CODEGYM - HỆ THỐNG QUẢN LÝ THỰC TẬP SINH (HR & ADMIN PORTAL)
 -- ==============================================================================
 
 CREATE DATABASE IF NOT EXISTS codegym CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE codegym;
 
--- 1. BẢNG USERS (TÀI KHOẢN ĐĂNG NHẬP)
+-- 1. BẢNG USERS (TÀI KHOẢN ĐĂNG NHẬP CHO ADMIN, HR, MENTOR, THỰC TẬP SINH)
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(100) NOT NULL UNIQUE,
+    username VARCHAR(50) DEFAULT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     name VARCHAR(100) NOT NULL,
-    role ENUM('HR', 'INTERN', 'ADMIN', 'MENTOR') NOT NULL DEFAULT 'INTERN',
+    role VARCHAR(50) NOT NULL DEFAULT 'Thực tập sinh',
+    status ENUM('active', 'locked') NOT NULL DEFAULT 'active',
     avatar VARCHAR(255) DEFAULT NULL,
     phone VARCHAR(20) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 2. BẢNG INTERNS (HỒ SƠ THỰC TẬP SINH & ỨNG VIÊN)
+-- 2. BẢNG ROLE_PERMISSIONS (MA TRẬN PHÂN QUYỀN CHI TIẾT THEO VAI TRÒ)
+CREATE TABLE IF NOT EXISTS role_permissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    role VARCHAR(50) NOT NULL UNIQUE,
+    permissions JSON NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3. BẢNG INTERNS (HỒ SƠ THỰC TẬP SINH & ỨNG VIÊN)
 CREATE TABLE IF NOT EXISTS interns (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NULL,
@@ -43,7 +53,7 @@ CREATE TABLE IF NOT EXISTS interns (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3. BẢNG DOCUMENTS (TÀI LIỆU CV, ĐƠN XIN THỰC TẬP)
+-- 4. BẢNG DOCUMENTS (TÀI LIỆU CV, ĐƠN XIN THỰC TẬP)
 CREATE TABLE IF NOT EXISTS documents (
     id INT AUTO_INCREMENT PRIMARY KEY,
     intern_id INT NOT NULL,
@@ -63,11 +73,23 @@ CREATE TABLE IF NOT EXISTS documents (
 -- ==============================================================================
 
 -- Mật khẩu mặc định: 123456 (được băm bằng bcrypt: $2a$10$wK1b8B.k72p4T14oZ.k7teq8vIe1r58v9u1oR/Qd7yC0hZ0f6G9wO)
-INSERT INTO users (id, email, password, name, role, avatar, phone) VALUES
-(1, 'admin@company.vn', '$2a$10$wK1b8B.k72p4T14oZ.k7teq8vIe1r58v9u1oR/Qd7yC0hZ0f6G9wO', 'Quản Trị Viên', 'ADMIN', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120', '0901 000 001'),
-(2, 'hr@company.vn', '$2a$10$wK1b8B.k72p4T14oZ.k7teq8vIe1r58v9u1oR/Qd7yC0hZ0f6G9wO', 'Nguyễn Thị Hoa', 'HR', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120', '0988 888 999'),
-(3, 'intern@student.vn', '$2a$10$wK1b8B.k72p4T14oZ.k7teq8vIe1r58v9u1oR/Qd7yC0hZ0f6G9wO', 'Trần Minh Khoa', 'INTERN', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', '0912 345 678')
-ON DUPLICATE KEY UPDATE id=id;
+INSERT INTO users (id, email, username, password, name, role, status, avatar, phone) VALUES
+(1, 'admin@company.vn', 'admin', '$2a$10$wK1b8B.k72p4T14oZ.k7teq8vIe1r58v9u1oR/Qd7yC0hZ0f6G9wO', 'Lê Văn Admin', 'Admin', 'active', 'image/GiangVien.png', '0901 000 001'),
+(2, 'hr@company.vn', 'hr.hoa', '$2a$10$wK1b8B.k72p4T14oZ.k7teq8vIe1r58v9u1oR/Qd7yC0hZ0f6G9wO', 'Nguyễn Thị Hoa', 'HR Manager', 'active', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120', '0988 888 999'),
+(3, 'intern@student.vn', 'khoa.tm', '$2a$10$wK1b8B.k72p4T14oZ.k7teq8vIe1r58v9u1oR/Qd7yC0hZ0f6G9wO', 'Trần Minh Khoa', 'Thực tập sinh', 'active', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', '0912 345 678'),
+(4, 'mentor@company.vn', 'mentor.tuan', '$2a$10$wK1b8B.k72p4T14oZ.k7teq8vIe1r58v9u1oR/Qd7yC0hZ0f6G9wO', 'Nguyễn Anh Tuấn', 'Mentor', 'active', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120', '0945 667 889')
+ON DUPLICATE KEY UPDATE 
+    username=VALUES(username), 
+    role=VALUES(role), 
+    status=VALUES(status);
+
+-- Ma trận phân quyền chi tiết cho 4 vai trò
+INSERT INTO role_permissions (role, permissions) VALUES
+('Admin', '{"acc_manage": [true, true, true, true, false], "perm_system": [true, false, true, false, false], "profile_manage": [false, false, false, false, false], "search_intern": [false, false, false, false, false], "view_docs": [false, false, false, false, false], "review_docs": [false, false, false, false, false], "view_own_profile": [false, false, false, false, false], "upload_cv": [false, false, false, false, false], "upload_letter": [false, false, false, false, false], "view_status": [false, false, false, false, false]}'),
+('HR Manager', '{"acc_manage": [true, false, false, false, false], "perm_system": [false, false, false, false, false], "profile_manage": [true, true, true, false, false], "search_intern": [true, false, false, false, false], "view_docs": [true, false, false, false, false], "review_docs": [true, false, false, false, true], "view_own_profile": [true, false, true, false, false], "upload_cv": [false, false, false, false, false], "upload_letter": [false, false, false, false, false], "view_status": [true, false, false, false, false]}'),
+('Mentor', '{"acc_manage": [false, false, false, false, false], "perm_system": [false, false, false, false, false], "profile_manage": [true, false, true, false, false], "search_intern": [true, false, false, false, false], "view_docs": [true, false, false, false, false], "review_docs": [false, false, false, false, false], "view_own_profile": [true, false, true, false, false], "upload_cv": [false, false, false, false, false], "upload_letter": [false, false, false, false, false], "view_status": [false, false, false, false, false]}'),
+('Thực tập sinh', '{"acc_manage": [false, false, false, false, false], "perm_system": [false, false, false, false, false], "profile_manage": [false, false, false, false, false], "search_intern": [false, false, false, false, false], "view_docs": [false, false, false, false, false], "review_docs": [false, false, false, false, false], "view_own_profile": [true, false, true, false, false], "upload_cv": [true, true, true, false, false], "upload_letter": [true, true, true, false, false], "view_status": [true, false, false, false, false]}')
+ON DUPLICATE KEY UPDATE permissions=VALUES(permissions);
 
 -- Danh sách thực tập sinh & ứng viên
 INSERT INTO interns (id, user_id, name, email, phone, school, major, dept, mentor, position, start_date, end_date, gpa, status, skills, bio) VALUES

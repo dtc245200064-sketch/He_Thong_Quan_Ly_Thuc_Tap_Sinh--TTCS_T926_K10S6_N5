@@ -119,3 +119,72 @@ async function apiDeleteDocument(internId, docType) {
   });
   return await res.json();
 }
+
+// ==========================================
+// API DÀNH CHO PHÂN HỆ QUẢN TRỊ VIÊN (ADMIN)
+// ==========================================
+
+// 10. Lấy danh sách tài khoản & thống kê: GET /api/admin/users
+async function apiGetAdminUsers(params = {}) {
+  const query = new URLSearchParams();
+  if (params.search) query.append('search', params.search);
+  if (params.role) query.append('role', params.role);
+  if (params.status) query.append('status', params.status);
+
+  const url = `${API_BASE_URL}/admin/users${query.toString() ? '?' + query.toString() : ''}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  });
+  return await res.json();
+}
+
+// 11. Tạo tài khoản người dùng mới: POST /api/admin/users (User Story 39)
+async function apiCreateAdminUser(userData) {
+  const res = await fetch(`${API_BASE_URL}/admin/users`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(userData)
+  });
+  return await res.json();
+}
+
+// 12. Cập nhật tài khoản: PUT /api/admin/users/:id
+async function apiUpdateAdminUser(id, userData) {
+  const res = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(userData)
+  });
+  return await res.json();
+}
+
+// 13. Khóa / Mở khóa tài khoản: PATCH /api/admin/users/:id/status
+async function apiToggleAdminUserStatus(id) {
+  const res = await fetch(`${API_BASE_URL}/admin/users/${id}/status`, {
+    method: 'PATCH',
+    headers: getAuthHeaders()
+  });
+  return await res.json();
+}
+
+// 14. Lấy ma trận phân quyền: GET /api/admin/permissions (User Story 40)
+async function apiGetAdminPermissions(role = '') {
+  const url = `${API_BASE_URL}/admin/permissions${role ? '?role=' + encodeURIComponent(role) : ''}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  });
+  return await res.json();
+}
+
+// 15. Cập nhật ma trận phân quyền: PUT /api/admin/permissions (User Story 40)
+async function apiUpdateAdminPermissions(role, permissions) {
+  const res = await fetch(`${API_BASE_URL}/admin/permissions`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ role, permissions })
+  });
+  return await res.json();
+}
+

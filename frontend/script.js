@@ -41,7 +41,23 @@ function selectInternRole(button) {
   hideLoginError();
 }
 
-// 2. KHI BẤM VÀO 2 NÚT "Admin", "Master":
+// 1.3. KHI BẤM NÚT "Admin": KÍCH HOẠT VAI TRÒ ADMIN VÀ ĐIỀN THÔNG TIN MẪU
+function selectAdminRole(button) {
+  const buttons = document.querySelectorAll('.role-tabs .role-btn');
+  buttons.forEach(btn => btn.classList.remove('active'));
+  if (button) {
+    button.classList.add('active');
+  }
+
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+  if (usernameInput) usernameInput.value = 'admin@company.vn';
+  if (passwordInput) passwordInput.value = '123456';
+
+  hideLoginError();
+}
+
+// 2. KHI BẤM VÀO NÚT "Master":
 // THÔNG BÁO TÍNH NĂNG ĐANG TRONG QUÁ TRÌNH PHÁT TRIỂN
 function notifyRoleDeveloping(roleName) {
   const message = `Tính năng dành cho ${roleName} đang trong quá trình phát triển!`;
@@ -58,6 +74,8 @@ function setRole(button, email, roleName = '') {
     selectHRRole(button);
   } else if (roleName === 'Thực tập sinh') {
     selectInternRole(button);
+  } else if (roleName === 'Admin') {
+    selectAdminRole(button);
   } else {
     notifyRoleDeveloping(roleName);
   }
@@ -154,6 +172,11 @@ async function handleLogin(event) {
           alert('Đăng nhập thành công! Đang chuyển đến Cổng thông tin Thực tập sinh...');
           window.location.href = 'intern.html';
           return;
+        } else if (role === 'ADMIN' || role === 'Admin') {
+          localStorage.setItem('userRole', 'ADMIN');
+          alert('Đăng nhập thành công! Đang chuyển đến Trang Quản trị hệ thống...');
+          window.location.href = 'admin.html';
+          return;
         } else {
           notifyRoleDeveloping(role);
           return;
@@ -201,6 +224,21 @@ async function handleLogin(event) {
     }));
     alert('Đăng nhập thành công! Đang chuyển đến Cổng thông tin Thực tập sinh...');
     window.location.href = 'intern.html';
+    return;
+  }
+
+  if (lowerUser === 'admin@company.vn' || lowerUser.includes('admin')) {
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userRole', 'ADMIN');
+    localStorage.setItem('user', JSON.stringify({
+      id: 1,
+      name: "Lê Văn Admin",
+      email: "admin@company.vn",
+      role: "Admin",
+      avatar: "image/GiangVien.png"
+    }));
+    alert('Đăng nhập thành công! Đang chuyển đến Trang Quản trị hệ thống...');
+    window.location.href = 'admin.html';
     return;
   }
 

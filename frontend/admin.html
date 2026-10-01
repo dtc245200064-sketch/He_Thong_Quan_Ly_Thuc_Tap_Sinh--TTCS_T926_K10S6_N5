@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản trị hệ thống - TTS Quản lý thực tập sinh</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Admin Stylesheet -->
+  <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+  <div class="admin-wrapper">
+    <!-- ============================================================== -->
+    <!-- 1. SIDEBAR BÊN TRÁI                                           -->
+    <!-- ============================================================== -->
+    <aside class="admin-sidebar" id="sidebar">
+      <!-- Thương hiệu & Logo -->
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <span class="logo-badge">TTS</span>
+          <span class="logo-title">Quản lý thực tập sinh</span>
+        </div>
+      </div>
+
+      <!-- Khung hiển thị vai trò quản trị -->
+      <div class="admin-badge-box">
+        <span class="admin-badge-subtitle">Quản trị hệ thống</span>
+        <div class="admin-badge-role">
+          <span class="status-dot-white"></span>
+          <span class="role-text">Admin</span>
+        </div>
+      </div>
+
+      <!-- Menu Điều Hướng -->
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <a href="javascript:void(0)" class="nav-item active" data-section="overview" id="nav-overview">
+              <i class="fa-solid fa-table-cells-large"></i>
+              <span>Tổng quan</span>
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" class="nav-item" data-section="accounts" id="nav-accounts">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>Quản lý tài khoản</span>
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" class="nav-item" data-section="permissions" id="nav-permissions">
+              <i class="fa-solid fa-key"></i>
+              <span>Phân quyền</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Thông tin Admin & Nút đăng xuất cuối sidebar (Chuẩn mẫu Thực tập sinh) -->
+      <div class="sidebar-footer">
+        <div class="user-profile admin-profile" id="adminProfileBtn" title="Hồ sơ Quản trị viên">
+          <img src="image/GiangVien.png" alt="Avatar" class="admin-avatar" onerror="this.src='https://ui-avatars.com/api/?name=Le+Van+Admin&background=1e293b&color=fff'">
+          <div class="profile-info">
+            <span class="profile-name">Lê Văn Admin</span>
+            <span class="profile-role">Admin</span>
+          </div>
+          <i class="fa-solid fa-chevron-right profile-arrow"></i>
+        </div>
+
+        <!-- Nút Đăng xuất chuẩn hình ảnh giống Thực tập sinh -->
+        <button type="button" class="sidebar-logout" id="btnLogoutAdmin" onclick="openLogoutModal()" title="Đăng xuất khỏi hệ thống">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Đăng xuất</span>
+        </button>
+
+        <div class="sidebar-toggle-bar">
+          <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Thu gọn / Mở rộng menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============================================================== -->
+    <!-- 2. NỘI DUNG CHÍNH (MAIN CONTENT)                              -->
+    <!-- ============================================================== -->
+    <main class="admin-main">
+
+      <!-- ------------------------------------------------------------ -->
+      <!-- TAB 1: TỔNG QUAN QUẢN TRỊ                                    -->
+      <!-- ------------------------------------------------------------ -->
+      <section class="admin-section active" id="section-overview">
+        <!-- Tiêu đề trang -->
+        <div class="page-header">
+          <h1 class="page-title">Tổng quan quản trị</h1>
+          <p class="page-subtitle">Theo dõi tài khoản và cấu hình quyền truy cập hệ thống.</p>
+        </div>
+
+        <!-- 6 Thẻ Thống Kê (Stat Cards) -->
+        <div class="stats-grid">
+          <!-- Card 1: Tổng số tài khoản -->
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-title">Tổng số tài khoản</span>
+              <div class="stat-icon-wrapper icon-blue">
+                <i class="fa-solid fa-user-plus"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-total-accounts">0</div>
+            <div class="stat-subtitle" id="stat-sub-total">Toàn hệ thống</div>
+          </div>
+
+          <!-- Card 2: Tài khoản HR -->
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-title">Tài khoản HR</span>
+              <div class="stat-icon-wrapper icon-purple">
+                <i class="fa-solid fa-user"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-hr-accounts">0</div>
+            <div class="stat-subtitle" id="stat-sub-hr">0% tổng số</div>
+          </div>
+
+          <!-- Card 3: Tài khoản Mentor -->
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-title">Tài khoản Mentor</span>
+              <div class="stat-icon-wrapper icon-cyan">
+                <i class="fa-solid fa-briefcase"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-mentor-accounts">0</div>
+            <div class="stat-subtitle" id="stat-sub-mentor">0% tổng số</div>
+          </div>
+
+          <!-- Card 4: Thực tập sinh -->
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-title">Thực tập sinh</span>
+              <div class="stat-icon-wrapper icon-amber">
+                <i class="fa-solid fa-graduation-cap"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-intern-accounts">0</div>
+            <div class="stat-subtitle" id="stat-sub-intern">0% tổng số</div>
+          </div>
+
+          <!-- Card 5: Đang hoạt động -->
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-title">Đang hoạt động</span>
+              <div class="stat-icon-wrapper icon-green">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-active-accounts">0</div>
+            <div class="stat-subtitle" id="stat-sub-active">0% tài khoản</div>
+          </div>
+
+          <!-- Card 6: Bị khóa -->
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-title">Bị khóa</span>
+              <div class="stat-icon-wrapper icon-red">
+                <i class="fa-solid fa-lock"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-locked-accounts">0</div>
+            <div class="stat-subtitle" id="stat-sub-locked">0% tài khoản</div>
+          </div>
+        </div>
+
+        <!-- Khối Quản lý nhanh -->
+        <div class="quick-management-card">
+          <div class="quick-header">
+            <h2 class="quick-title">Quản lý nhanh</h2>
+            <p class="quick-subtitle">Truy cập nhanh các chức năng quản trị thường dùng.</p>
+          </div>
+
+          <div class="quick-actions-grid">
+            <div class="quick-action-item" onclick="openCreateAccountModal()">
+              <div class="quick-icon icon-blue">
+                <i class="fa-solid fa-plus"></i>
+              </div>
+              <div class="quick-info">
+                <h3>Tạo tài khoản mới</h3>
+                <p>Thêm người dùng mới vào hệ thống</p>
+              </div>
+              <i class="fa-solid fa-chevron-right quick-arrow"></i>
+            </div>
+
+            <div class="quick-action-item" onclick="switchSection('permissions')">
+              <div class="quick-icon icon-purple">
+                <i class="fa-solid fa-shield-halved"></i>
+              </div>
+              <div class="quick-info">
+                <h3>Phân quyền vai trò</h3>
+                <p>Cấu hình quyền hạn theo chức vụ</p>
+              </div>
+              <i class="fa-solid fa-chevron-right quick-arrow"></i>
+            </div>
+
+            <div class="quick-action-item" onclick="switchSection('accounts')">
+              <div class="quick-icon icon-cyan">
+                <i class="fa-solid fa-users-gear"></i>
+              </div>
+              <div class="quick-info">
+                <h3>Danh sách tài khoản</h3>
+                <p>Quản lý trạng thái và quyền hạn</p>
+              </div>
+              <i class="fa-solid fa-chevron-right quick-arrow"></i>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------------ -->
+      <!-- TAB 2: QUẢN LÝ TÀI KHOẢN                                     -->
+      <!-- ------------------------------------------------------------ -->
+      <section class="admin-section" id="section-accounts">
+        <!-- Tiêu đề và nút Tạo tài khoản -->
+        <div class="section-topbar">
+          <div class="page-header">
+            <h1 class="page-title">Quản lý tài khoản</h1>
+            <p class="page-subtitle"><span id="headerAccountCount">0</span> tài khoản trong hệ thống</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="openCreateAccountModal()">
+            <i class="fa-solid fa-plus"></i>
+            <span>Tạo tài khoản</span>
+          </button>
+        </div>
+
+        <!-- Thanh Tìm kiếm và Bộ lọc -->
+        <div class="filter-card">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="accountSearchInput" placeholder="Tìm theo họ tên, email hoặc tên đăng nhập...">
+          </div>
+
+          <div class="filter-group">
+            <div class="custom-select-wrap">
+              <select id="roleFilter" title="Lọc theo vai trò" aria-label="Lọc theo vai trò">
+                <option value="ALL">Tất cả vai trò</option>
+                <option value="Admin">Admin</option>
+                <option value="HR Manager">HR Manager</option>
+                <option value="Mentor">Mentor</option>
+                <option value="Thực tập sinh">Thực tập sinh</option>
+              </select>
+              <i class="fa-solid fa-chevron-down select-arrow"></i>
+            </div>
+
+            <div class="custom-select-wrap">
+              <select id="statusFilter" title="Lọc theo trạng thái" aria-label="Lọc theo trạng thái">
+                <option value="ALL">Tất cả trạng thái</option>
+                <option value="active">Đang hoạt động</option>
+                <option value="locked">Bị khóa</option>
+              </select>
+              <i class="fa-solid fa-chevron-down select-arrow"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng Danh Sách Tài Khoản (Không code cứng dữ liệu mẫu) -->
+        <div class="table-card">
+          <div class="table-responsive">
+            <table class="data-table" id="accountsTable">
+              <thead>
+                <tr>
+                  <th>HỌ VÀ TÊN</th>
+                  <th>TÊN ĐĂNG NHẬP / EMAIL</th>
+                  <th>VAI TRÒ</th>
+                  <th>TRẠNG THÁI</th>
+                  <th>NGÀY TẠO</th>
+                  <th class="text-right">THAO TÁC</th>
+                </tr>
+              </thead>
+              <tbody id="accountTableBody">
+                <!-- KHÔNG CODE CỨNG DỮ LIỆU TÀI KHOẢN TRƯỚC - HIỂN THỊ KHUNG RỖNG THEO YÊU CẦU -->
+                <tr id="emptyAccountRow" class="empty-table-row">
+                  <td colspan="6">
+                    <div class="empty-state-box">
+                      <div class="empty-state-icon">
+                        <i class="fa-regular fa-folder-open"></i>
+                      </div>
+                      <h4 class="empty-state-title">Chưa có tài khoản nào trong hệ thống</h4>
+                      <p class="empty-state-desc">Danh sách tài khoản hiện đang trống. Nhấn nút <strong>"+ Tạo tài khoản"</strong> để thêm người dùng đầu tiên.</p>
+                      <button type="button" class="btn btn-primary btn-sm" onclick="openCreateAccountModal()">
+                        <i class="fa-solid fa-plus"></i> Tạo tài khoản mới
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------------ -->
+      <!-- TAB 3: PHÂN QUYỀN HỆ THỐNG                                    -->
+      <!-- ------------------------------------------------------------ -->
+      <section class="admin-section" id="section-permissions">
+        <div class="page-header">
+          <h1 class="page-title">Phân quyền hệ thống</h1>
+          <p class="page-subtitle">Kiểm soát chức năng mà từng vai trò có thể sử dụng.</p>
+        </div>
+
+        <!-- Thẻ Chọn vai trò & Mô tả -->
+        <div class="role-selector-card">
+          <div class="role-select-col">
+            <label class="field-label" for="permissionRoleSelect">Vai trò</label>
+            <div class="custom-select-wrap">
+              <select id="permissionRoleSelect" onchange="handleRolePermissionChange(this.value)">
+                <option value="Admin" selected>Admin</option>
+                <option value="HR Manager">HR Manager</option>
+                <option value="Mentor">Mentor</option>
+                <option value="Thực tập sinh">Thực tập sinh</option>
+              </select>
+              <i class="fa-solid fa-chevron-down select-arrow"></i>
+            </div>
+          </div>
+
+          <div class="role-desc-col">
+            <div class="role-desc-box">
+              <h4 class="role-desc-title" id="roleDescTitle">Admin</h4>
+              <p class="role-desc-text" id="roleDescText">Quản trị tài khoản và cấu hình phân quyền hệ thống.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng Phân Quyền Chi Tiết -->
+        <div class="permission-matrix-card">
+          <div class="matrix-card-header">
+            <h3 class="matrix-title">Bảng phân quyền</h3>
+            <p class="matrix-subtitle" id="matrixSubtitle">Bật hoặc tắt quyền cho vai trò Admin.</p>
+          </div>
+
+          <div class="table-responsive">
+            <table class="permission-table">
+              <thead>
+                <tr>
+                  <th class="th-feature">CHỨC NĂNG</th>
+                  <th class="th-action">XEM</th>
+                  <th class="th-action">THÊM</th>
+                  <th class="th-action">SỬA</th>
+                  <th class="th-action">XÓA</th>
+                  <th class="th-action">DUYỆT</th>
+                </tr>
+              </thead>
+              <tbody id="permissionTableBody">
+                <!-- 1. Quản lý tài khoản -->
+                <tr data-perm-key="acc_manage">
+                  <td class="td-feature">
+                    <span class="feature-name">Quản lý tài khoản</span>
+                    <span class="feature-desc">Tạo và quản lý tài khoản người dùng</span>
+                  </td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Xem - Quản lý tài khoản" aria-label="Quyền Xem - Quản lý tài khoản" checked><span class="checkmark"></span></label></td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Thêm - Quản lý tài khoản" aria-label="Quyền Thêm - Quản lý tài khoản" checked><span class="checkmark"></span></label></td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Sửa - Quản lý tài khoản" aria-label="Quyền Sửa - Quản lý tài khoản" checked><span class="checkmark"></span></label></td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Xóa - Quản lý tài khoản" aria-label="Quyền Xóa - Quản lý tài khoản" checked><span class="checkmark"></span></label></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                </tr>
+
+                <!-- 2. Phân quyền hệ thống -->
+                <tr data-perm-key="perm_system">
+                  <td class="td-feature">
+                    <span class="feature-name">Phân quyền hệ thống</span>
+                    <span class="feature-desc">Cấu hình quyền cho từng vai trò</span>
+                  </td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Xem - Phân quyền hệ thống" aria-label="Quyền Xem - Phân quyền hệ thống" checked><span class="checkmark"></span></label></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Sửa - Phân quyền hệ thống" aria-label="Quyền Sửa - Phân quyền hệ thống" checked><span class="checkmark"></span></label></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                </tr>
+
+                <!-- 3. Quản lý hồ sơ TTS -->
+                <tr data-perm-key="profile_manage">
+                  <td class="td-feature">
+                    <span class="feature-name">Quản lý hồ sơ TTS</span>
+                    <span class="feature-desc">Xem và cập nhật hồ sơ thực tập sinh</span>
+                  </td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Xem - Quản lý hồ sơ TTS" aria-label="Quyền Xem - Quản lý hồ sơ TTS"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Thêm - Quản lý hồ sơ TTS" aria-label="Quyền Thêm - Quản lý hồ sơ TTS"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Sửa - Quản lý hồ sơ TTS" aria-label="Quyền Sửa - Quản lý hồ sơ TTS"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                </tr>
+
+                <!-- 4. Tìm kiếm / lọc TTS -->
+                <tr data-perm-key="search_intern">
+                  <td class="td-feature">
+                    <span class="feature-name">Tìm kiếm / lọc TTS</span>
+                    <span class="feature-desc">Tìm kiếm danh sách thực tập sinh</span>
+                  </td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Xem - Tìm kiếm / lọc TTS" aria-label="Quyền Xem - Tìm kiếm / lọc TTS"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                </tr>
+
+                <!-- 5. Xem tài liệu -->
+                <tr data-perm-key="view_docs">
+                  <td class="td-feature">
+                    <span class="feature-name">Xem tài liệu</span>
+                    <span class="feature-desc">Xem CV và đơn xin thực tập</span>
+                  </td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Xem - Xem tài liệu" aria-label="Quyền Xem - Xem tài liệu"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                </tr>
+
+                <!-- 6. Duyệt tài liệu -->
+                <tr data-perm-key="review_docs">
+                  <td class="td-feature">
+                    <span class="feature-name">Duyệt tài liệu</span>
+                    <span class="feature-desc">Duyệt hoặc yêu cầu sửa tài liệu</span>
+                  </td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Xem - Duyệt tài liệu" aria-label="Quyền Xem - Duyệt tài liệu"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Duyệt - Duyệt tài liệu" aria-label="Quyền Duyệt - Duyệt tài liệu"><span class="checkmark"></span></label></td>
+                </tr>
+
+                <!-- 7. Xem hồ sơ cá nhân -->
+                <tr data-perm-key="view_own_profile">
+                  <td class="td-feature">
+                    <span class="feature-name">Xem hồ sơ cá nhân</span>
+                    <span class="feature-desc">Xem hồ sơ của chính người dùng</span>
+                  </td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Xem - Xem hồ sơ cá nhân" aria-label="Quyền Xem - Xem hồ sơ cá nhân"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Sửa - Xem hồ sơ cá nhân" aria-label="Quyền Sửa - Xem hồ sơ cá nhân"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                </tr>
+
+                <!-- 8. Upload CV -->
+                <tr data-perm-key="upload_cv">
+                  <td class="td-feature">
+                    <span class="feature-name">Upload CV</span>
+                    <span class="feature-desc">Tải lên và thay thế CV</span>
+                  </td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Xem - Upload CV" aria-label="Quyền Xem - Upload CV"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Thêm - Upload CV" aria-label="Quyền Thêm - Upload CV"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Sửa - Upload CV" aria-label="Quyền Sửa - Upload CV"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                </tr>
+
+                <!-- 9. Upload đơn xin thực tập -->
+                <tr data-perm-key="upload_letter">
+                  <td class="td-feature">
+                    <span class="feature-name">Upload đơn xin thực tập</span>
+                    <span class="feature-desc">Tải lên và thay thế đơn xin thực tập</span>
+                  </td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Xem - Upload đơn xin thực tập" aria-label="Quyền Xem - Upload đơn xin thực tập"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Thêm - Upload đơn xin thực tập" aria-label="Quyền Thêm - Upload đơn xin thực tập"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Sửa - Upload đơn xin thực tập" aria-label="Quyền Sửa - Upload đơn xin thực tập"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                </tr>
+
+                <!-- 10. Xem trạng thái hồ sơ -->
+                <tr data-perm-key="view_status">
+                  <td class="td-feature">
+                    <span class="feature-name">Xem trạng thái hồ sơ</span>
+                    <span class="feature-desc">Theo dõi trạng thái xét duyệt hồ sơ</span>
+                  </td>
+                  <td class="td-action"><label class="custom-checkbox"><input type="checkbox" title="Quyền Xem - Xem trạng thái hồ sơ" aria-label="Quyền Xem - Xem trạng thái hồ sơ"><span class="checkmark"></span></label></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                  <td class="td-action"><span class="perm-dash">—</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Nút Lưu & Hủy Phân Quyền -->
+          <div class="matrix-card-footer">
+            <button type="button" class="btn btn-secondary" onclick="resetPermissions()">Hủy thay đổi</button>
+            <button type="button" class="btn btn-primary" onclick="savePermissions()">Lưu phân quyền</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 3. MODAL: TẠO TÀI KHOẢN (IMAGE 5)                              -->
+  <!-- ============================================================== -->
+  <div class="modal-backdrop" id="createAccountModal">
+    <div class="modal-dialog">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Tạo tài khoản</h3>
+          <p class="modal-subtitle">Các trường có dấu <span class="required-star">*</span> là bắt buộc.</p>
+        </div>
+        <button type="button" class="modal-close-btn" title="Đóng modal" aria-label="Đóng" onclick="closeCreateAccountModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body Form -->
+      <form id="createAccountForm" onsubmit="handleCreateAccount(event)">
+        <div class="modal-body">
+          <!-- Hàng 1: Họ và tên -->
+          <div class="form-group">
+            <label class="form-label" for="newFullName">Họ và tên <span class="required-star">*</span></label>
+            <input type="text" id="newFullName" class="form-control" placeholder="Nguyễn Văn A" required>
+          </div>
+
+          <!-- Hàng 2: Email & Tên đăng nhập -->
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label class="form-label" for="newEmail">Email <span class="required-star">*</span></label>
+              <input type="email" id="newEmail" class="form-control" placeholder="name@company.vn" required>
+            </div>
+            <div class="form-group col-half">
+              <label class="form-label" for="newUsername">Tên đăng nhập <span class="required-star">*</span></label>
+              <input type="text" id="newUsername" class="form-control" placeholder="nguyen.vana" required>
+            </div>
+          </div>
+
+          <!-- Hàng 3: Mật khẩu & Xác nhận mật khẩu -->
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label class="form-label" for="newPassword">Mật khẩu <span class="required-star">*</span></label>
+              <input type="password" id="newPassword" class="form-control" placeholder="Tối thiểu 6 ký tự" minlength="6" required>
+            </div>
+            <div class="form-group col-half">
+              <label class="form-label" for="newConfirmPassword">Xác nhận mật khẩu <span class="required-star">*</span></label>
+              <input type="password" id="newConfirmPassword" class="form-control" placeholder="Nhập lại mật khẩu" minlength="6" required>
+            </div>
+          </div>
+
+          <!-- Hàng 4: Vai trò & Trạng thái -->
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label class="form-label" for="newRole">Vai trò <span class="required-star">*</span></label>
+              <div class="custom-select-wrap">
+                <select id="newRole" class="form-control" required>
+                  <option value="" disabled selected>Chọn vai trò</option>
+                  <option value="Admin">Admin</option>
+                  <option value="HR Manager">HR Manager</option>
+                  <option value="Mentor">Mentor</option>
+                  <option value="Thực tập sinh">Thực tập sinh</option>
+                </select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+            <div class="form-group col-half">
+              <label class="form-label" for="newStatus">Trạng thái</label>
+              <div class="custom-select-wrap">
+                <select id="newStatus" class="form-control">
+                  <option value="active">● Hoạt động</option>
+                  <option value="locked">● Bị khóa</option>
+                </select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeCreateAccountModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">Tạo tài khoản</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 4. MODAL: XEM CHI TIẾT TÀI KHOẢN                              -->
+  <!-- ============================================================== -->
+  <div class="modal-backdrop" id="viewAccountModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Chi tiết tài khoản</h3>
+          <p class="modal-subtitle">Thông tin tài khoản người dùng trong hệ thống.</p>
+        </div>
+        <button type="button" class="modal-close-btn" title="Đóng modal" aria-label="Đóng" onclick="closeViewAccountModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="viewAccountContent">
+        <!-- Render động qua JavaScript -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeViewAccountModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 5. MODAL: CHỈNH SỬA TÀI KHOẢN                                  -->
+  <!-- ============================================================== -->
+  <div class="modal-backdrop" id="editAccountModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Chỉnh sửa tài khoản</h3>
+          <p class="modal-subtitle">Cập nhật thông tin vai trò và trạng thái tài khoản.</p>
+        </div>
+        <button type="button" class="modal-close-btn" title="Đóng modal" aria-label="Đóng" onclick="closeEditAccountModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="editAccountForm" onsubmit="handleUpdateAccount(event)">
+        <input type="hidden" id="editAccountId">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="editFullName">Họ và tên <span class="required-star">*</span></label>
+            <input type="text" id="editFullName" class="form-control" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label class="form-label" for="editEmail">Email <span class="required-star">*</span></label>
+              <input type="email" id="editEmail" class="form-control" required>
+            </div>
+            <div class="form-group col-half">
+              <label class="form-label" for="editUsername">Tên đăng nhập <span class="required-star">*</span></label>
+              <input type="text" id="editUsername" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label class="form-label" for="editRole">Vai trò <span class="required-star">*</span></label>
+              <div class="custom-select-wrap">
+                <select id="editRole" class="form-control" required>
+                  <option value="Admin">Admin</option>
+                  <option value="HR Manager">HR Manager</option>
+                  <option value="Mentor">Mentor</option>
+                  <option value="Thực tập sinh">Thực tập sinh</option>
+                </select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+            <div class="form-group col-half">
+              <label class="form-label" for="editStatus">Trạng thái</label>
+              <div class="custom-select-wrap">
+                <select id="editStatus" class="form-control">
+                  <option value="active">● Hoạt động</option>
+                  <option value="locked">● Bị khóa</option>
+                </select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeEditAccountModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 6. MODAL: XÁC NHẬN ĐĂNG XUẤT                                   -->
+  <!-- ============================================================== -->
+  <div class="modal-backdrop" id="logoutConfirmModal">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Xác nhận đăng xuất</h3>
+          <p class="modal-subtitle">Bạn có chắc chắn muốn rời khỏi hệ thống?</p>
+        </div>
+        <button type="button" class="modal-close-btn" title="Đóng modal" aria-label="Đóng" onclick="closeLogoutModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="logout-confirm-text">
+          Bạn sẽ đăng xuất khỏi phiên làm việc Quản trị viên và quay trở lại trang đăng nhập.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeLogoutModal()">Hủy</button>
+        <button type="button" class="btn btn-danger-logout" onclick="confirmAdminLogout()">Đăng xuất</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Box -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- API Helper & Admin JavaScript -->
+  <script src="api.js"></script>
+  <script src="admin.js"></script>
+</body>
+
+</html>

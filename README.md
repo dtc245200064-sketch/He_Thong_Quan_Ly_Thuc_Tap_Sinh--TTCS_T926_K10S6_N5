@@ -121,7 +121,12 @@ Base URL: `http://localhost:5000/api`
 | **GET** | `/interns/:id/documents` | Lấy danh sách tài liệu của TTS | `:id` |
 | **POST** | `/interns/:id/documents` | Tải lên file CV / Đơn (multipart/form-data) | Form: `file`, `docType` |
 | **DELETE**| `/interns/:id/documents/:docType` | Xóa tài liệu khỏi hệ thống & ổ đĩa server | `:id`, `:docType` |
-| **PATCH**| `/interns/:id/documents/status` | Duyệt / Từ chối hồ sơ tài liệu | `{ status, note, rejectReason }` |
+| **GET** | `/admin/users` | Lấy danh sách tài khoản & thống kê (Admin) | `?search=&role=&status=` |
+| **POST** | `/admin/users` | Tạo tài khoản mới (Admin tạo HR/Mentor/TTS) | `{ name, email, username, password, role, status }` |
+| **PUT** | `/admin/users/:id` | Cập nhật thông tin tài khoản | `{ name, email, username, role, status }` |
+| **PATCH**| `/admin/users/:id/status` | Khóa / Mở khóa tài khoản | `:id` |
+| **GET** | `/admin/permissions` | Lấy ma trận phân quyền theo vai trò | `?role=` |
+| **PUT** | `/admin/permissions` | Lưu ma trận phân quyền chi tiết | `{ role, permissions }` |
 | **GET** | `/health` | Kiểm tra tình trạng hoạt động Backend | N/A |
 
 ---
