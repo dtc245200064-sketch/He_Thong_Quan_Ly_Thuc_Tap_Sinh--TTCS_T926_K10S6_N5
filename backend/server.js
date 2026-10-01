@@ -20,8 +20,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 3. Phục vụ tĩnh thư mục uploads chứa file tài liệu (PDF, Ảnh...)
+// 3. Phục vụ tĩnh thư mục uploads chứa file tài liệu (PDF, Ảnh...) và giao diện Frontend
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // 4. Đăng ký các API Routes theo hợp đồng
 app.use('/api/auth', authRoutes);
