@@ -432,6 +432,7 @@ function confirmLogout() {
   // Chuyển về màn hình đăng nhập (thuần DOM)
   if (document.getElementById('login-view')) {
     showLoginView();
+    showWebNotice('Đăng xuất thành công', 'Bạn đã đăng xuất an toàn khỏi hệ thống.', 'success');
   } else {
     // Nếu đang ở trang dashboard.html riêng biệt
     window.location.href = 'index.html';

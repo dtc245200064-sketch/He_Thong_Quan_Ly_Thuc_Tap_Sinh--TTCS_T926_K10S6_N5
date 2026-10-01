@@ -617,17 +617,74 @@ function formatTimeNow() {
 }
 
 /**
- * Đăng xuất khỏi Cổng thông tin Thực tập sinh
+ * Đăng xuất khỏi Cổng thông tin Thực tập sinh (Sử dụng Modal Web, không dùng confirm/alert)
  */
+let internLogoutTimer = null;
+
 function handleInternLogout() {
-  if (confirm('Bạn có chắc chắn muốn đăng xuất khỏi Cổng thông tin Thực tập sinh?')) {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('user');
-    localStorage.removeItem('currentUser');
-    window.location.href = 'index.html';
+  const modal = document.getElementById('logoutConfirmModal');
+  if (modal) {
+    modal.classList.add('show');
+  } else {
+    confirmInternLogout();
   }
 }
+
+function closeInternLogoutModal() {
+  const modal = document.getElementById('logoutConfirmModal');
+  if (modal) modal.classList.remove('show');
+}
+
+function confirmInternLogout() {
+  closeInternLogoutModal();
+  localStorage.removeItem('isLoggedIn');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('user');
+  localStorage.removeItem('currentUser');
+  localStorage.removeItem('token');
+
+  showInternLogoutSuccessModal();
+}
+
+function showInternLogoutSuccessModal() {
+  const modalEl = document.getElementById('logoutSuccessModal');
+  const progressFill = document.getElementById('logoutProgressFill');
+
+  if (progressFill) {
+    progressFill.style.transition = 'none';
+    progressFill.style.width = '0%';
+    void progressFill.offsetWidth; // Force reflow
+    progressFill.style.transition = 'width 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+    setTimeout(() => {
+      progressFill.style.width = '100%';
+    }, 50);
+  }
+
+  if (modalEl) {
+    modalEl.classList.add('show');
+  }
+
+  if (internLogoutTimer) clearTimeout(internLogoutTimer);
+  internLogoutTimer = setTimeout(() => {
+    proceedToLoginPage();
+  }, 1250);
+}
+
+function proceedToLoginPage() {
+  if (internLogoutTimer) {
+    clearTimeout(internLogoutTimer);
+    internLogoutTimer = null;
+  }
+  window.location.href = 'index.html';
+}
+
+// Bắt sự kiện click ra ngoài để đóng modal xác nhận
+window.addEventListener('click', (e) => {
+  const modal = document.getElementById('logoutConfirmModal');
+  if (e.target === modal) {
+    closeInternLogoutModal();
+  }
+});
 
 // ==============================================================================
 // 7. KHỞI CHẠY KHI TẢI TRANG

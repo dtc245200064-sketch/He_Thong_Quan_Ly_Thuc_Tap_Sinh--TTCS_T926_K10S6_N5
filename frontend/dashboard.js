@@ -1171,7 +1171,9 @@ function handleSaveProfile(event) {
   showToast("Cập nhật thông tin cá nhân HR Manager thành công!", "success");
 }
 
-// Đăng xuất
+// Đăng xuất HR Manager (Hiển thị Modal Web, không dùng alert/confirm)
+let logoutRedirectTimer = null;
+
 function confirmLogout() {
   closeModal("logoutModal");
   localStorage.removeItem("isLoggedIn");
@@ -1179,11 +1181,40 @@ function confirmLogout() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
   localStorage.removeItem("currentUser");
-  showToast("Đang đăng xuất khỏi hệ thống...", "info");
 
-  setTimeout(() => {
-    window.location.href = "index.html";
-  }, 300);
+  showLogoutSuccessModal();
+}
+
+function showLogoutSuccessModal() {
+  const modalEl = document.getElementById("logoutSuccessModal");
+  const progressFill = document.getElementById("logoutProgressFill");
+
+  if (progressFill) {
+    progressFill.style.transition = "none";
+    progressFill.style.width = "0%";
+    void progressFill.offsetWidth; // Force reflow
+    progressFill.style.transition = "width 1.2s cubic-bezier(0.4, 0, 0.2, 1)";
+    setTimeout(() => {
+      progressFill.style.width = "100%";
+    }, 50);
+  }
+
+  if (modalEl) {
+    modalEl.classList.add("active");
+  }
+
+  if (logoutRedirectTimer) clearTimeout(logoutRedirectTimer);
+  logoutRedirectTimer = setTimeout(() => {
+    proceedToLoginPage();
+  }, 1250);
+}
+
+function proceedToLoginPage() {
+  if (logoutRedirectTimer) {
+    clearTimeout(logoutRedirectTimer);
+    logoutRedirectTimer = null;
+  }
+  window.location.href = "index.html";
 }
 
 // Đóng modal khi bấm ra ngoài vùng dialog hoặc bấm phím Escape

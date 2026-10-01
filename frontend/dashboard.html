@@ -818,6 +818,29 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL 8: THÔNG BÁO ĐĂNG XUẤT THÀNH CÔNG ==================== -->
+  <div class="modal" id="logoutSuccessModal" aria-hidden="true">
+    <div class="modal-box login-success-box">
+      <div class="modal-icon success-icon">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <h3>Đăng xuất thành công!</h3>
+      <p>
+        Bạn đã đăng xuất an toàn khỏi hệ thống.<br>
+        <span style="font-size: 13px; color: #94a3b8; display: block; margin-top: 10px;">
+          Đang chuyển hướng về màn hình đăng nhập...
+        </span>
+      </p>
+      <div class="redirect-progress-bar">
+        <div class="redirect-progress-fill" id="logoutProgressFill"></div>
+      </div>
+      <button type="button" class="btn-continue-now" onclick="proceedToLoginPage()">
+        <span>Về trang đăng nhập ngay</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toastContainer" class="toast-container"></div>
 

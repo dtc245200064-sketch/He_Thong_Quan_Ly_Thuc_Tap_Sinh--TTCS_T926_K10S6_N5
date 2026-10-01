@@ -678,6 +678,8 @@
   <!-- ============================================================== -->
   <!-- 6. MODAL: XÁC NHẬN ĐĂNG XUẤT                                   -->
   <!-- ============================================================== -->
+  <!-- MODAL XÁC NHẬN ĐĂNG XUẤT (ADMIN)                                -->
+  <!-- ============================================================== -->
   <div class="modal-backdrop" id="logoutConfirmModal">
     <div class="modal-dialog modal-dialog-sm">
       <div class="modal-header">
@@ -698,6 +700,31 @@
         <button type="button" class="btn btn-secondary" onclick="closeLogoutModal()">Hủy</button>
         <button type="button" class="btn btn-danger-logout" onclick="confirmAdminLogout()">Đăng xuất</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL THÔNG BÁO ĐĂNG XUẤT THÀNH CÔNG (ADMIN)                   -->
+  <!-- ============================================================== -->
+  <div class="modal-backdrop" id="logoutSuccessModal">
+    <div class="login-success-box">
+      <div class="modal-icon success-icon">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <h3>Đăng xuất thành công!</h3>
+      <p>
+        Bạn đã đăng xuất an toàn khỏi hệ thống Quản trị.<br>
+        <span style="font-size: 13px; color: #94a3b8; display: block; margin-top: 10px;">
+          Đang chuyển hướng về màn hình đăng nhập...
+        </span>
+      </p>
+      <div class="redirect-progress-bar">
+        <div class="redirect-progress-fill" id="logoutProgressFill"></div>
+      </div>
+      <button type="button" class="btn-continue-now" onclick="proceedToLoginPage()">
+        <span>Về trang đăng nhập ngay</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
     </div>
   </div>
 

@@ -704,15 +704,15 @@ window.onclick = function (event) {
   if (event.target === logoutModal) closeLogoutModal();
 };
 
-// Quản lý Đăng xuất Admin (Đồng bộ hành vi với Thực tập sinh & Hệ thống)
+// Quản lý Đăng xuất Admin (Đồng bộ hành vi với Thực tập sinh & Hệ thống - Thuần Modal Web)
+let adminLogoutTimer = null;
+
 function openLogoutModal() {
   const modal = document.getElementById('logoutConfirmModal');
   if (modal) {
     modal.classList.add('show');
   } else {
-    if (confirm('Bạn có chắc chắn muốn đăng xuất khỏi Cổng thông tin Quản trị?')) {
-      confirmAdminLogout();
-    }
+    confirmAdminLogout();
   }
 }
 
@@ -722,10 +722,45 @@ function closeLogoutModal() {
 }
 
 function confirmAdminLogout() {
+  closeLogoutModal();
   localStorage.removeItem('isLoggedIn');
   localStorage.removeItem('userRole');
   localStorage.removeItem('user');
   localStorage.removeItem('currentUser');
+  localStorage.removeItem('token');
+
+  showAdminLogoutSuccessModal();
+}
+
+function showAdminLogoutSuccessModal() {
+  const modalEl = document.getElementById('logoutSuccessModal');
+  const progressFill = document.getElementById('logoutProgressFill');
+
+  if (progressFill) {
+    progressFill.style.transition = 'none';
+    progressFill.style.width = '0%';
+    void progressFill.offsetWidth; // Force reflow
+    progressFill.style.transition = 'width 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+    setTimeout(() => {
+      progressFill.style.width = '100%';
+    }, 50);
+  }
+
+  if (modalEl) {
+    modalEl.classList.add('show');
+  }
+
+  if (adminLogoutTimer) clearTimeout(adminLogoutTimer);
+  adminLogoutTimer = setTimeout(() => {
+    proceedToLoginPage();
+  }, 1250);
+}
+
+function proceedToLoginPage() {
+  if (adminLogoutTimer) {
+    clearTimeout(adminLogoutTimer);
+    adminLogoutTimer = null;
+  }
   window.location.href = 'index.html';
 }
 
