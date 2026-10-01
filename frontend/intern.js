@@ -242,12 +242,16 @@ function confirmModalUpload() {
   // Gửi file thật lên Backend lưu vào thư mục uploads/ và ghi vào MySQL
   if (typeof apiUploadDocument === 'function') {
     const userStr = localStorage.getItem('user');
-    let internId = 1;
+    let internId = null;
     if (userStr) {
       try {
         const u = JSON.parse(userStr);
         if (u && (u.internId || u.id)) internId = u.internId || u.id;
       } catch (e) {}
+    }
+    if (!internId) {
+      console.warn('Không xác định được ID thực tập sinh để tải lên!');
+      return;
     }
     const docTypeParam = type === 'cv' ? 'CV' : 'APPLICATION_LETTER';
     apiUploadDocument(internId, docTypeParam, file).then(res => {
@@ -271,12 +275,17 @@ async function removeUploadedDoc(type) {
 
   // Lấy thông tin user hiện tại
   const userStr = localStorage.getItem('user');
-  let internId = 1;
+  let internId = null;
   if (userStr) {
     try {
       const u = JSON.parse(userStr);
       if (u && (u.internId || u.id)) internId = u.internId || u.id;
     } catch (e) {}
+  }
+
+  if (!internId) {
+    console.warn('Không xác định được ID thực tập sinh để xóa tài liệu!');
+    return;
   }
 
   const docTypeParam = type === 'cv' ? 'CV' : 'APPLICATION_LETTER';
@@ -334,11 +343,14 @@ function updateAllPortalUI() {
       fileIconCv.className = `file-row-icon ${InternState.docs.cv.type}`;
       fileIconCv.innerHTML = InternState.docs.cv.type === 'pdf' 
         ? '<i class="bi bi-file-earmark-pdf-fill"></i>' 
-        : '<i class="bi bi-file-earmark-word-fill"></i>';
+        : (InternState.docs.cv.type === 'img' ? '<i class="bi bi-file-earmark-image-fill"></i>' : '<i class="bi bi-file-earmark-word-fill"></i>');
     }
   } else {
     if (placeholderCv) placeholderCv.classList.remove('d-none');
     if (uploadedViewCv) uploadedViewCv.classList.add('d-none');
+    if (fileNameCv) fileNameCv.textContent = '';
+    if (fileSizeCv) fileSizeCv.textContent = '';
+    if (fileTimeCv) fileTimeCv.textContent = '';
   }
 
   // 2. Cập nhật Card Đơn xin thực tập
@@ -359,11 +371,14 @@ function updateAllPortalUI() {
       fileIconApp.className = `file-row-icon ${InternState.docs.application.type}`;
       fileIconApp.innerHTML = InternState.docs.application.type === 'pdf' 
         ? '<i class="bi bi-file-earmark-pdf-fill"></i>' 
-        : '<i class="bi bi-file-earmark-word-fill"></i>';
+        : (InternState.docs.application.type === 'img' ? '<i class="bi bi-file-earmark-image-fill"></i>' : '<i class="bi bi-file-earmark-word-fill"></i>');
     }
   } else {
     if (placeholderApp) placeholderApp.classList.remove('d-none');
     if (uploadedViewApp) uploadedViewApp.classList.add('d-none');
+    if (fileNameApp) fileNameApp.textContent = '';
+    if (fileSizeApp) fileSizeApp.textContent = '';
+    if (fileTimeApp) fileTimeApp.textContent = '';
   }
 
   // -------------------------------------------------------------
@@ -632,13 +647,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const sideRole = document.getElementById('sidebarRole');
       const sideAvatar = document.getElementById('sidebarAvatar');
 
-      if (u.name) {
+      const displayName = u.name || u.username || 'Thực tập sinh';
+      if (displayName) {
         if (welcomeUserName) {
-          welcomeUserName.textContent = u.name;
+          welcomeUserName.textContent = displayName;
         } else if (pageWelcomeTitle) {
-          pageWelcomeTitle.textContent = `Xin chào, ${u.name}`;
+          pageWelcomeTitle.textContent = `Xin chào, ${displayName}`;
         }
-        if (sideName) sideName.textContent = u.name;
+        if (sideName) sideName.textContent = displayName;
       }
       if (sideRole && u.role) sideRole.textContent = u.role;
       if (sideAvatar && u.avatar) sideAvatar.src = u.avatar;
@@ -655,10 +671,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof apiGetInternDocuments === 'function') {
       try {
         const userStr = localStorage.getItem('user');
-        let internId = 1;
+        let internId = null;
         if (userStr) {
           const u = JSON.parse(userStr);
           if (u && (u.internId || u.id)) internId = u.internId || u.id;
+        }
+        if (!internId) {
+          console.log('Chưa xác định tài khoản thực tập sinh cụ thể để tải tài liệu.');
+          return;
         }
         const res = await apiGetInternDocuments(internId);
         if (res && res.success && res.data && Array.isArray(res.data.documents)) {
