@@ -159,13 +159,7 @@ async function handleLogin(event) {
         const role = response.user.role;
         if (role === 'HR' || role === 'HR Manager') {
           localStorage.setItem('userRole', 'HR');
-          showHRDashboard();
-          if (typeof loadInternsFromDB === 'function') {
-            loadInternsFromDB();
-          }
-          if (typeof showToast === 'function') {
-            showToast('Đăng nhập thành công! Chào mừng HR Manager.', 'success');
-          }
+          window.location.href = 'dashboard.html';
           return;
         } else if (role === 'INTERN' || role === 'Thực tập sinh') {
           localStorage.setItem('userRole', 'INTERN');
@@ -203,10 +197,7 @@ async function handleLogin(event) {
       role: "HR Manager",
       avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
     }));
-    showHRDashboard();
-    if (typeof showToast === 'function') {
-      showToast('Đăng nhập thành công! Chào mừng HR Manager.', 'success');
-    }
+    window.location.href = 'dashboard.html';
     return;
   }
 
@@ -277,8 +268,8 @@ function checkAuthState() {
   const userRole = localStorage.getItem('userRole');
 
   // NẾU ĐÃ ĐĂNG NHẬP VÀ VAI TRÒ LÀ "HR"
-  if (isLoggedIn && userRole === 'HR') {
-    showHRDashboard();
+  if (isLoggedIn && (userRole === 'HR' || userRole === 'HR Manager')) {
+    window.location.href = 'dashboard.html';
     return;
   }
 

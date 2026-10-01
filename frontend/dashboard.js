@@ -1175,22 +1175,15 @@ function handleSaveProfile(event) {
 function confirmLogout() {
   closeModal("logoutModal");
   localStorage.removeItem("isLoggedIn");
+  localStorage.removeItem("userRole");
   localStorage.removeItem("token");
   localStorage.removeItem("user");
   localStorage.removeItem("currentUser");
   showToast("Đang đăng xuất khỏi hệ thống...", "info");
 
   setTimeout(() => {
-    // Nếu trên trang SPA (có login-view)
-    if (document.getElementById("login-view")) {
-      if (typeof switchToLoginView === "function") {
-        switchToLoginView();
-      }
-    } else {
-      // Nếu trên trang dashboard.html độc lập
-      window.location.href = "index.html";
-    }
-  }, 400);
+    window.location.href = "index.html";
+  }, 300);
 }
 
 // Đóng modal khi bấm ra ngoài vùng dialog hoặc bấm phím Escape

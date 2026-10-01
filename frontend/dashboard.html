@@ -13,13 +13,19 @@
   <link rel="stylesheet" href="dashboard.css">
   <script>
     // Kiểm tra phiên đăng nhập: nếu không phải vai trò HR Manager thì chuyển về màn hình đăng nhập index.html
+    const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const userRole = localStorage.getItem("userRole");
     const userStr = localStorage.getItem("user") || localStorage.getItem("currentUser");
     let isHR = false;
-    if (localStorage.getItem("isLoggedIn") === "true" && userStr) {
-      try {
-        const u = JSON.parse(userStr);
-        if (u && u.role === "HR Manager") isHR = true;
-      } catch (e) {}
+    if (isLoggedIn) {
+      if (userRole === "HR" || userRole === "HR Manager") {
+        isHR = true;
+      } else if (userStr) {
+        try {
+          const u = JSON.parse(userStr);
+          if (u && (u.role === "HR Manager" || u.role === "HR")) isHR = true;
+        } catch (e) {}
+      }
     }
     if (!isHR) {
       window.location.href = "index.html";
