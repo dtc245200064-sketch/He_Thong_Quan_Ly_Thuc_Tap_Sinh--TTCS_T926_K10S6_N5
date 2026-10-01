@@ -70,16 +70,27 @@ exports.login = async (req, res) => {
     // Chuẩn hóa tên vai trò cho frontend
     const roleDisplay = user.role === 'HR' ? 'HR Manager' : (user.role === 'INTERN' ? 'Thực tập sinh' : user.role);
 
+    // Nếu là thực tập sinh, lấy chính xác intern_id từ bảng interns
+    let internId = null;
+    if (user.role === 'INTERN' || user.role === 'Thực tập sinh') {
+      const [interns] = await db.query('SELECT id FROM interns WHERE user_id = ? OR email = ? LIMIT 1', [user.id, user.email]);
+      if (interns.length > 0) {
+        internId = interns[0].id;
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Đăng nhập thành công!',
       token,
       user: {
         id: user.id,
+        internId: internId || user.id,
         name: user.name,
         email: user.email,
+        username: user.username || '',
         role: roleDisplay,
-        avatar: user.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80',
+        avatar: user.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
         phone: user.phone || ''
       }
     });

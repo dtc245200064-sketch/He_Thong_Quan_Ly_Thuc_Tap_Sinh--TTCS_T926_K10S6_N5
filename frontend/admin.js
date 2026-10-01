@@ -761,9 +761,21 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       openLogoutModal();
     });
-  }
+  // 6. Nạp thông tin Admin đã đăng nhập
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const u = JSON.parse(userStr);
+      const profileName = document.querySelector('.profile-name');
+      const profileRole = document.querySelector('.profile-role');
+      const profileAvatar = document.querySelector('.admin-avatar');
+      if (profileName && u.name) profileName.textContent = u.name;
+      if (profileRole && u.role) profileRole.textContent = u.role;
+      if (profileAvatar && u.avatar) profileAvatar.src = u.avatar;
+    }
+  } catch (e) {}
 
-  // 6. Render dữ liệu ban đầu
+  // 7. Render dữ liệu ban đầu
   renderAccountsTable();
   updateDashboardStats();
   applyRolePermissions('Admin');

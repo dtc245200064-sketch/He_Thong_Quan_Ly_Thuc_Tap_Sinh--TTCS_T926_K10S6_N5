@@ -542,15 +542,42 @@ function openFilePreviewModal(type) {
 // 6. TIỆN ÍCH & LƯU TRỮ LOCALSTORAGE
 // ==============================================================================
 
+function getDocsStorageKey() {
+  try {
+    const u = JSON.parse(localStorage.getItem('user') || '{}');
+    const uid = u.internId || u.id || 'guest';
+    return `intern_docs_state_${uid}`;
+  } catch (e) {
+    return 'intern_docs_state_guest';
+  }
+}
+
 function saveDocsState() {
   try {
-    localStorage.setItem('intern_docs_state', JSON.stringify(InternState.docs));
+    localStorage.setItem(getDocsStorageKey(), JSON.stringify(InternState.docs));
   } catch (e) {}
 }
 
 function loadDocsState() {
+  // Reset trạng thái mặc định rỗng trước khi nạp
+  InternState.docs = {
+    cv: {
+      uploaded: false,
+      name: '',
+      size: '',
+      time: '',
+      type: 'pdf'
+    },
+    application: {
+      uploaded: false,
+      name: '',
+      size: '',
+      time: '',
+      type: 'doc'
+    }
+  };
   try {
-    const saved = localStorage.getItem('intern_docs_state');
+    const saved = localStorage.getItem(getDocsStorageKey());
     if (saved) {
       InternState.docs = JSON.parse(saved);
     }
@@ -591,25 +618,34 @@ function handleInternLogout() {
 // 7. KHỞI CHẠY KHI TẢI TRANG
 // ==============================================================================
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. Phục hồi state tài liệu
+  // 1. Phục hồi state tài liệu của tài khoản hiện tại
   loadDocsState();
 
-  // 2. Nạp tên và vai trò sinh viên từ user đã đăng nhập
+  // 2. Nạp tên và vai trò từ tài khoản vừa đăng nhập thật
   try {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       const u = JSON.parse(userStr);
-      const topName = document.getElementById('topbar-user-name');
+      const welcomeUserName = document.getElementById('welcomeUserName');
+      const pageWelcomeTitle = document.getElementById('pageWelcomeTitle');
       const sideName = document.getElementById('sidebarName') || document.getElementById('sidebar-user-name');
       const sideRole = document.getElementById('sidebarRole');
       const sideAvatar = document.getElementById('sidebarAvatar');
 
-      if (topName && u.name) topName.textContent = u.name;
-      if (sideName && u.name) sideName.textContent = u.name;
+      if (u.name) {
+        if (welcomeUserName) {
+          welcomeUserName.textContent = u.name;
+        } else if (pageWelcomeTitle) {
+          pageWelcomeTitle.textContent = `Xin chào, ${u.name}`;
+        }
+        if (sideName) sideName.textContent = u.name;
+      }
       if (sideRole && u.role) sideRole.textContent = u.role;
       if (sideAvatar && u.avatar) sideAvatar.src = u.avatar;
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn('Lỗi nạp thông tin user:', e);
+  }
 
   // 3. Cập nhật toàn bộ giao diện
   updateAllPortalUI();
@@ -626,15 +662,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const res = await apiGetInternDocuments(internId);
         if (res && res.success && res.data && Array.isArray(res.data.documents)) {
-          if (res.data.documents.length === 0) {
-            InternState.docs.cv = { uploaded: false, name: '', size: '', time: '', type: 'pdf' };
-            InternState.docs.application = { uploaded: false, name: '', size: '', time: '', type: 'doc' };
-            saveDocsState();
-            updateAllPortalUI();
-          } else {
+          // Xóa trắng trước khi nạp tài liệu từ DB để tránh dính file của tài khoản khác
+          InternState.docs.cv = { uploaded: false, name: '', size: '', time: '', type: 'pdf' };
+          InternState.docs.application = { uploaded: false, name: '', size: '', time: '', type: 'doc' };
+
+          if (res.data.documents.length > 0) {
             res.data.documents.forEach(doc => {
               const key = doc.type === 'CV' ? 'cv' : 'application';
-              const ext = doc.fileUrl.split('.').pop().toLowerCase();
+              const ext = (doc.fileUrl || '').split('.').pop().toLowerCase();
               InternState.docs[key] = {
                 uploaded: true,
                 name: doc.name,
@@ -645,10 +680,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 previewUrl: doc.fileUrl
               };
             });
-            saveDocsState();
-            updateAllPortalUI();
-            console.log('✅ Đã đồng bộ tài liệu thực tập sinh từ MySQL Database!');
           }
+          saveDocsState();
+          updateAllPortalUI();
+          console.log(`✅ Đã đồng bộ tài liệu của Thực tập sinh (ID ${internId}) từ MySQL!`);
         }
       } catch (err) {
         console.warn('Lỗi đồng bộ tài liệu từ DB:', err);
