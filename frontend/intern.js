@@ -742,7 +742,264 @@ function proceedToLoginPage() {
   window.location.href = 'index.html';
 }
 
-// Bắt sự kiện click ra ngoài để đóng modal xác nhận
+// ==============================================================================
+// 6.5. QUẢN LÝ HỒ SƠ CÁ NHÂN THỰC TẬP SINH (PROFILE MODAL)
+// ==============================================================================
+let internProfileData = {
+  id: null,
+  internId: null,
+  name: 'Thực tập sinh',
+  role: 'Thực tập sinh',
+  email: '',
+  phone: '',
+  school: '',
+  major: '',
+  dept: '',
+  mentor: '',
+  avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80'
+};
+
+/**
+ * Nạp thông tin hồ sơ của thực tập sinh từ localStorage
+ */
+function loadInternProfileFromStorage() {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const u = JSON.parse(userStr);
+      internProfileData = {
+        ...internProfileData,
+        ...u,
+        id: u.id || internProfileData.id,
+        internId: u.internId || u.id || internProfileData.internId,
+        name: u.name || internProfileData.name,
+        email: u.email || internProfileData.email,
+        phone: u.phone || internProfileData.phone,
+        role: u.role || 'Thực tập sinh',
+        avatar: u.avatar || internProfileData.avatar,
+        school: u.school || internProfileData.school || '',
+        major: u.major || internProfileData.major || '',
+        dept: u.dept || internProfileData.dept || '',
+        mentor: u.mentor || internProfileData.mentor || ''
+      };
+    }
+  } catch (e) {
+    console.warn('Lỗi đọc user từ localStorage:', e);
+  }
+}
+
+/**
+ * Mở modal xem và chỉnh sửa thông tin cá nhân của Thực tập sinh
+ */
+async function openInternProfileModal() {
+  loadInternProfileFromStorage();
+
+  // Nếu có thông tin email, thử lấy thông tin chi tiết (trường, ngành, phòng ban, mentor) từ DB
+  if (typeof apiGetInterns === 'function' && internProfileData.email) {
+    try {
+      const res = await apiGetInterns({ search: internProfileData.email });
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const found = res.data[0];
+        if (found.school) internProfileData.school = found.school;
+        if (found.major) internProfileData.major = found.major;
+        if (found.dept) internProfileData.dept = found.dept;
+        if (found.mentor) internProfileData.mentor = found.mentor;
+        if (found.phone) internProfileData.phone = found.phone;
+        if (found.name) internProfileData.name = found.name;
+
+        try {
+          const userStr = localStorage.getItem('user');
+          const u = userStr ? JSON.parse(userStr) : {};
+          localStorage.setItem('user', JSON.stringify({ ...u, ...internProfileData }));
+        } catch (e) {}
+      }
+    } catch (err) {
+      console.warn('Không thể nạp chi tiết TTS từ API:', err);
+    }
+  }
+
+  // Điền dữ liệu vào form
+  const inputName = document.getElementById('internProfileName');
+  const inputRole = document.getElementById('internProfileRole');
+  const inputEmail = document.getElementById('internProfileEmail');
+  const inputPhone = document.getElementById('internProfilePhone');
+  const inputSchool = document.getElementById('internProfileSchool');
+  const inputMajor = document.getElementById('internProfileMajor');
+  const inputDept = document.getElementById('internProfileDept');
+  const inputMentor = document.getElementById('internProfileMentor');
+  const avatarPreview = document.getElementById('internProfileAvatarPreview');
+
+  if (inputName) inputName.value = internProfileData.name || '';
+  if (inputRole) inputRole.value = internProfileData.role || 'Thực tập sinh';
+  if (inputEmail) inputEmail.value = internProfileData.email || '';
+  if (inputPhone) inputPhone.value = internProfileData.phone || '';
+  if (inputSchool) inputSchool.value = internProfileData.school || '';
+  if (inputMajor) inputMajor.value = internProfileData.major || '';
+  if (inputDept) inputDept.value = internProfileData.dept || '';
+  if (inputMentor) inputMentor.value = internProfileData.mentor || 'Chưa phân công';
+  if (avatarPreview) avatarPreview.src = internProfileData.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80';
+
+  // Reset phần đổi mật khẩu
+  const pwFields = document.getElementById('internPasswordFields');
+  const pwArrow = document.getElementById('internPwArrow');
+  if (pwFields) pwFields.classList.remove('show');
+  if (pwArrow) pwArrow.textContent = '▼';
+  const oldPw = document.getElementById('internOldPassword');
+  const newPw = document.getElementById('internNewPassword');
+  const confirmPw = document.getElementById('internConfirmPassword');
+  if (oldPw) oldPw.value = '';
+  if (newPw) newPw.value = '';
+  if (confirmPw) confirmPw.value = '';
+
+  const modal = document.getElementById('internProfileModal');
+  if (modal) modal.classList.add('show');
+}
+
+/**
+ * Đóng modal hồ sơ cá nhân
+ */
+function closeInternProfileModal() {
+  const modal = document.getElementById('internProfileModal');
+  if (modal) modal.classList.remove('show');
+}
+
+/**
+ * Thu gọn / mở rộng phần đổi mật khẩu
+ */
+function toggleInternPasswordSection() {
+  const pwFields = document.getElementById('internPasswordFields');
+  const pwArrow = document.getElementById('internPwArrow');
+  if (pwFields) {
+    pwFields.classList.toggle('show');
+    if (pwArrow) {
+      pwArrow.textContent = pwFields.classList.contains('show') ? '▲' : '▼';
+    }
+  }
+}
+
+/**
+ * Xử lý khi chọn ảnh đại diện mới từ máy tính
+ */
+function handleInternAvatarChange(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    showInternToast('Vui lòng chọn tệp hình ảnh hợp lệ (JPG, PNG, WebP)!', 'warning');
+    return;
+  }
+
+  if (file.size > 2 * 1024 * 1024) {
+    showInternToast('Kích thước ảnh đại diện không được vượt quá 2MB!', 'warning');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const avatarPreview = document.getElementById('internProfileAvatarPreview');
+    if (avatarPreview) avatarPreview.src = e.target.result;
+    internProfileData.avatar = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/**
+ * Lưu thông tin hồ sơ cá nhân của Thực tập sinh
+ */
+async function handleSaveInternProfile(event) {
+  event.preventDefault();
+
+  const newName = document.getElementById('internProfileName')?.value.trim();
+  const newEmail = document.getElementById('internProfileEmail')?.value.trim();
+  const newPhone = document.getElementById('internProfilePhone')?.value.trim();
+  const newSchool = document.getElementById('internProfileSchool')?.value.trim();
+  const newMajor = document.getElementById('internProfileMajor')?.value.trim();
+  const newDept = document.getElementById('internProfileDept')?.value.trim();
+
+  if (!newName) {
+    showInternToast('Vui lòng nhập họ và tên đầy đủ!', 'danger');
+    return;
+  }
+
+  if (!newEmail) {
+    showInternToast('Vui lòng nhập email liên hệ!', 'danger');
+    return;
+  }
+
+  // Kiểm tra đổi mật khẩu (nếu đang mở mục đổi mật khẩu)
+  const pwFields = document.getElementById('internPasswordFields');
+  if (pwFields && pwFields.classList.contains('show')) {
+    const newPw = document.getElementById('internNewPassword')?.value;
+    const confirmPw = document.getElementById('internConfirmPassword')?.value;
+
+    if (newPw || confirmPw) {
+      if (!newPw || newPw.length < 6) {
+        showInternToast('Mật khẩu mới phải có tối thiểu 6 ký tự!', 'warning');
+        return;
+      }
+      if (newPw !== confirmPw) {
+        showInternToast('Xác nhận mật khẩu mới không khớp!', 'danger');
+        return;
+      }
+    }
+  }
+
+  // Cập nhật state nội bộ
+  internProfileData.name = newName;
+  internProfileData.email = newEmail;
+  internProfileData.phone = newPhone;
+  internProfileData.school = newSchool;
+  internProfileData.major = newMajor;
+  internProfileData.dept = newDept;
+
+  // Cập nhật localStorage
+  try {
+    const userStr = localStorage.getItem('user');
+    let u = {};
+    if (userStr) u = JSON.parse(userStr);
+    u = { ...u, ...internProfileData };
+    localStorage.setItem('user', JSON.stringify(u));
+  } catch (e) {
+    console.warn('Lỗi ghi user vào localStorage:', e);
+  }
+
+  // Cập nhật DOM giao diện ngoài trang
+  const sidebarName = document.getElementById('sidebarName');
+  const sidebarAvatar = document.getElementById('sidebarAvatar');
+  const welcomeUserName = document.getElementById('welcomeUserName');
+  const pageWelcomeTitle = document.getElementById('pageWelcomeTitle');
+
+  if (sidebarName) sidebarName.textContent = newName;
+  if (sidebarAvatar && internProfileData.avatar) sidebarAvatar.src = internProfileData.avatar;
+  if (welcomeUserName) {
+    welcomeUserName.textContent = newName;
+  } else if (pageWelcomeTitle) {
+    pageWelcomeTitle.textContent = `Xin chào, ${newName}`;
+  }
+
+  // Đồng bộ lên MySQL qua API nếu có internId
+  const internId = internProfileData.internId || internProfileData.id;
+  if (internId && typeof apiUpdateIntern === 'function') {
+    try {
+      await apiUpdateIntern(internId, {
+        name: newName,
+        email: newEmail,
+        phone: newPhone,
+        school: newSchool,
+        major: newMajor,
+        dept: newDept
+      });
+      console.log(`✅ Đã đồng bộ hồ sơ TTS (ID ${internId}) lên MySQL`);
+    } catch (apiErr) {
+      console.warn('Lỗi đồng bộ hồ sơ lên server:', apiErr);
+    }
+  }
+
+  closeInternProfileModal();
+  showInternToast('Cập nhật thông tin hồ sơ cá nhân thành công!', 'success');
+}
+
+// Bắt sự kiện click ra ngoài để đóng modal xác nhận hoặc modal hồ sơ
 window.addEventListener('click', (e) => {
   const modal = document.getElementById('logoutConfirmModal');
   if (e.target === modal) {
@@ -751,6 +1008,10 @@ window.addEventListener('click', (e) => {
   const removeModal = document.getElementById('removeDocModal');
   if (e.target === removeModal) {
     closeRemoveDocModal();
+  }
+  const profileModal = document.getElementById('internProfileModal');
+  if (e.target === profileModal) {
+    closeInternProfileModal();
   }
 });
 
@@ -762,6 +1023,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadDocsState();
 
   // 2. Nạp tên và vai trò từ tài khoản vừa đăng nhập thật
+  loadInternProfileFromStorage();
   try {
     const userStr = localStorage.getItem('user');
     if (userStr) {
@@ -783,6 +1045,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (sideRole && u.role) sideRole.textContent = u.role;
       if (sideAvatar && u.avatar) sideAvatar.src = u.avatar;
+
+      // Nạp thông tin trường/khoa/mentor từ DB nếu có
+      if (typeof apiGetInterns === 'function' && u.email) {
+        apiGetInterns({ search: u.email }).then(res => {
+          if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+            const found = res.data[0];
+            internProfileData.school = found.school || '';
+            internProfileData.major = found.major || '';
+            internProfileData.dept = found.dept || '';
+            internProfileData.mentor = found.mentor || '';
+            const updated = { ...u, ...internProfileData };
+            localStorage.setItem('user', JSON.stringify(updated));
+          }
+        }).catch(() => {});
+      }
     }
   } catch (e) {
     console.warn('Lỗi nạp thông tin user:', e);

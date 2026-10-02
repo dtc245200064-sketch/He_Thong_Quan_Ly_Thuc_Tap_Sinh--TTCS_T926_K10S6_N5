@@ -73,7 +73,7 @@
 
       <!-- Thông tin cá nhân & Nút đăng xuất cuối sidebar (Chuẩn mẫu ảnh) -->
       <div class="sidebar-footer-wrapper">
-        <div class="user-profile" title="Hồ sơ Thực tập sinh">
+        <div class="user-profile" onclick="openInternProfileModal()" title="Xem & chỉnh sửa hồ sơ cá nhân" style="cursor: pointer;">
           <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
             alt="Avatar" class="user-avatar" id="sidebarAvatar">
           <div class="user-info">
@@ -496,6 +496,153 @@
         <button type="button" class="btn btn-outline-secondary px-4 py-2" onclick="closeRemoveDocModal()" style="border-radius: 10px; font-weight: 600;">Hủy</button>
         <button type="button" class="btn btn-danger px-4 py-2" id="btnConfirmRemoveDoc" style="border-radius: 10px; font-weight: 600;">Gỡ tài liệu</button>
       </div>
+    </div>
+  <!-- ================================================================= -->
+  <!-- 8. MODAL HỒ SƠ CÁ NHÂN THỰC TẬP SINH                              -->
+  <!-- ================================================================= -->
+  <div class="modal-overlay" id="internProfileModal">
+    <div class="custom-modal-card intern-profile-modal-card">
+      <!-- Header modal -->
+      <div class="modal-header-section">
+        <div>
+          <h3 class="modal-header-title">
+            <i class="fa-solid fa-id-card text-primary"></i>
+            <span>Thông tin & Hồ sơ cá nhân</span>
+          </h3>
+          <p class="modal-header-sub">Xem và chỉnh sửa thông tin cá nhân, học vấn và bảo mật</p>
+        </div>
+        <button type="button" class="btn-close" onclick="closeInternProfileModal()" aria-label="Đóng"></button>
+      </div>
+
+      <!-- Form cập nhật hồ sơ -->
+      <form id="internProfileForm" onsubmit="handleSaveInternProfile(event)">
+        <div class="intern-profile-scroll-body">
+
+          <!-- Phần 1: Định danh & Nhận diện -->
+          <div class="intern-profile-section">
+            <h5 class="intern-section-title">
+              <i class="fa-solid fa-user-circle text-primary"></i>
+              <span>1. Định danh & Nhận diện</span>
+            </h5>
+            
+            <div class="intern-avatar-row">
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
+                alt="Avatar" class="intern-avatar-preview" id="internProfileAvatarPreview">
+              <div class="intern-avatar-upload-box">
+                <input type="file" id="internAvatarFileInput" accept="image/*" class="d-none"
+                  title="Chọn ảnh đại diện mới" aria-label="Chọn ảnh đại diện mới" onchange="handleInternAvatarChange(event)">
+                <button type="button" class="btn btn-sm btn-outline-secondary px-3 py-1" style="font-weight: 600; border-radius: 8px;"
+                  onclick="document.getElementById('internAvatarFileInput').click()">
+                  <i class="fa-solid fa-camera me-1"></i> Thay đổi ảnh
+                </button>
+                <p class="intern-form-hint">Hỗ trợ JPG, PNG, WebP (Tối đa 2MB)</p>
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="internProfileName" class="form-label fw-semibold" style="font-size: 13px;">Họ và tên đầy đủ <span class="text-danger">*</span></label>
+                <input type="text" id="internProfileName" class="form-control" placeholder="Ví dụ: Trần Minh Khoa" required>
+              </div>
+              <div class="col-md-6">
+                <label for="internProfileRole" class="form-label fw-semibold" style="font-size: 13px;">Chức danh / Vai trò</label>
+                <input type="text" id="internProfileRole" class="form-control" value="Thực tập sinh" readonly disabled style="background-color: #f1f5f9; cursor: not-allowed;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Phần 2: Học vấn & Đào tạo -->
+          <div class="intern-profile-section">
+            <h5 class="intern-section-title">
+              <i class="fa-solid fa-graduation-cap text-primary"></i>
+              <span>2. Học vấn & Đào tạo</span>
+            </h5>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label for="internProfileSchool" class="form-label fw-semibold" style="font-size: 13px;">Trường Đại học / Cao đẳng</label>
+                <input type="text" id="internProfileSchool" class="form-control" placeholder="Ví dụ: ĐH Bách Khoa HN">
+              </div>
+              <div class="col-md-6">
+                <label for="internProfileMajor" class="form-label fw-semibold" style="font-size: 13px;">Chuyên ngành đào tạo</label>
+                <input type="text" id="internProfileMajor" class="form-control" placeholder="Ví dụ: Công nghệ thông tin">
+              </div>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="internProfileDept" class="form-label fw-semibold" style="font-size: 13px;">Phòng ban thực tập</label>
+                <input type="text" id="internProfileDept" class="form-control" placeholder="Ví dụ: Kỹ thuật phần mềm">
+              </div>
+              <div class="col-md-6">
+                <label for="internProfileMentor" class="form-label fw-semibold" style="font-size: 13px;">Người hướng dẫn (Mentor)</label>
+                <input type="text" id="internProfileMentor" class="form-control" placeholder="Chưa phân công mentor" readonly disabled style="background-color: #f1f5f9; cursor: not-allowed;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Phần 3: Thông tin liên hệ -->
+          <div class="intern-profile-section">
+            <h5 class="intern-section-title">
+              <i class="fa-solid fa-address-book text-primary"></i>
+              <span>3. Thông tin liên hệ</span>
+            </h5>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="internProfileEmail" class="form-label fw-semibold" style="font-size: 13px;">Email liên hệ <span class="text-danger">*</span></label>
+                <input type="email" id="internProfileEmail" class="form-control" placeholder="email@student.vn" required>
+              </div>
+              <div class="col-md-6">
+                <label for="internProfilePhone" class="form-label fw-semibold" style="font-size: 13px;">Số điện thoại</label>
+                <input type="tel" id="internProfilePhone" class="form-control" placeholder="Ví dụ: 0912 345 678">
+              </div>
+            </div>
+          </div>
+
+          <!-- Phần 4: Cài đặt bảo mật -->
+          <div class="intern-profile-section">
+            <h5 class="intern-section-title">
+              <i class="fa-solid fa-shield-halved text-primary"></i>
+              <span>4. Cài đặt bảo mật</span>
+            </h5>
+            <div class="intern-password-box">
+              <button type="button" class="intern-btn-toggle-pw" onclick="toggleInternPasswordSection()">
+                <span class="d-inline-flex align-items-center gap-2">
+                  <i class="fa-solid fa-key"></i>
+                  <span>Đổi mật khẩu tài khoản</span>
+                </span>
+                <span id="internPwArrow">▼</span>
+              </button>
+
+              <div id="internPasswordFields" class="intern-password-fields">
+                <div class="mb-3">
+                  <label for="internOldPassword" class="form-label fw-semibold" style="font-size: 13px;">Mật khẩu hiện tại</label>
+                  <input type="password" id="internOldPassword" class="form-control" placeholder="Nhập mật khẩu hiện tại">
+                </div>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="internNewPassword" class="form-label fw-semibold" style="font-size: 13px;">Mật khẩu mới</label>
+                    <input type="password" id="internNewPassword" class="form-control" placeholder="Tối thiểu 6 ký tự">
+                  </div>
+                  <div class="col-md-6">
+                    <label for="internConfirmPassword" class="form-label fw-semibold" style="font-size: 13px;">Xác nhận mật khẩu mới</label>
+                    <input type="password" id="internConfirmPassword" class="form-control" placeholder="Nhập lại mật khẩu mới">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer modal -->
+        <div class="intern-profile-footer">
+          <button type="button" class="btn btn-outline-secondary px-4 py-2" onclick="closeInternProfileModal()" style="border-radius: 10px; font-weight: 600;">
+            Đóng
+          </button>
+          <button type="submit" class="btn btn-primary px-4 py-2" id="btnSaveInternProfile" style="border-radius: 10px; font-weight: 600; background: #0284c7; border-color: #0284c7;">
+            <i class="fa-solid fa-floppy-disk me-1"></i> Lưu thay đổi
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
