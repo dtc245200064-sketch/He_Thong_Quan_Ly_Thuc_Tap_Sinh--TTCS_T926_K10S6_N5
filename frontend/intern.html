@@ -480,6 +480,28 @@
     </div>
   </div>
 
+  <!-- ================================================================= -->
+  <!-- 7. MODAL XÁC NHẬN GỠ TÀI LIỆU (TTS)                               -->
+  <!-- ================================================================= -->
+  <div class="modal-overlay" id="removeDocModal">
+    <div class="custom-modal-card text-center" style="max-width: 400px; padding: 32px 24px 24px;">
+      <div class="modal-icon danger-icon" style="width: 64px; height: 64px; border-radius: 50%; background: #fef2f2; color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 26px;">
+        <i class="fa-solid fa-trash-can"></i>
+      </div>
+      <h4 style="font-weight: 800; color: #111827; margin-bottom: 8px;">Xác nhận gỡ tài liệu</h4>
+      <p id="removeDocMessage" style="font-size: 14px; color: #64748b; line-height: 1.5; margin-bottom: 24px;">
+        Bạn có chắc chắn muốn gỡ tài liệu này khỏi hồ sơ?
+      </p>
+      <div class="d-flex gap-2 justify-content-center">
+        <button type="button" class="btn btn-outline-secondary px-4 py-2" onclick="closeRemoveDocModal()" style="border-radius: 10px; font-weight: 600;">Hủy</button>
+        <button type="button" class="btn btn-danger px-4 py-2" id="btnConfirmRemoveDoc" style="border-radius: 10px; font-weight: 600;">Gỡ tài liệu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER CHO TTS -->
+  <div id="toastContainer" class="toast-container"></div>
+
   <!-- Bootstrap 5 JS via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 

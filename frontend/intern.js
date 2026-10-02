@@ -151,6 +151,43 @@ function handleNativeFileSelected(input) {
   }
 }
 
+// ==============================================================================
+// HỆ THỐNG TOAST THÔNG BÁO CHO THỰC TẬP SINH (KHÔNG DÙNG ALERT)
+// ==============================================================================
+function showInternToast(message, type = "info") {
+  const container = document.getElementById("toastContainer");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+
+  let iconHtml = "";
+  if (type === "success") {
+    iconHtml = `<i class="toast-icon fa-solid fa-circle-check"></i>`;
+  } else if (type === "warning") {
+    iconHtml = `<i class="toast-icon fa-solid fa-triangle-exclamation"></i>`;
+  } else if (type === "danger") {
+    iconHtml = `<i class="toast-icon fa-solid fa-circle-xmark"></i>`;
+  } else {
+    iconHtml = `<i class="toast-icon fa-solid fa-circle-info"></i>`;
+  }
+
+  toast.innerHTML = `
+    ${iconHtml}
+    <div class="toast-message">${message}</div>
+  `;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(40px)";
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 300);
+  }, 4000);
+}
+
 /**
  * Kiểm tra và gán tệp tạm thời trong modal
  * @param {File} file 
@@ -161,14 +198,14 @@ function selectModalFile(file) {
 
   // Kiểm tra định dạng (PDF, DOC, DOCX, PNG, JPG, JPEG)
   if (!allowed.includes(ext)) {
-    alert(`Định dạng tệp .${ext} không được hỗ trợ! Vui lòng chỉ chọn tệp PDF, DOCX hoặc Ảnh (PNG, JPG).`);
+    showInternToast(`Định dạng tệp .${ext} không được hỗ trợ! Vui lòng chỉ chọn tệp PDF, DOCX hoặc Ảnh (PNG, JPG).`, "danger");
     return;
   }
 
   // Kiểm tra dung lượng tối đa 10 MB
   const maxBytes = 10 * 1024 * 1024;
   if (file.size > maxBytes) {
-    alert('Dung lượng tệp vượt quá giới hạn 10 MB! Vui lòng chọn tệp nhỏ hơn.');
+    showInternToast('Dung lượng tệp vượt quá giới hạn 10 MB! Vui lòng chọn tệp nhỏ hơn.', "danger");
     return;
   }
 
@@ -236,6 +273,9 @@ function confirmModalUpload() {
   // Đóng modal
   closeUploadModal();
 
+  // Hiển thị thông báo Toast thành công
+  showInternToast(`Tải lên tài liệu "${file.name}" thành công!`, 'success');
+
   // Cập nhật toàn bộ giao diện
   updateAllPortalUI();
 
@@ -266,12 +306,39 @@ function confirmModalUpload() {
 }
 
 /**
- * Xóa/Gỡ tài liệu đã tải lên
+ * Xóa/Gỡ tài liệu đã tải lên (Sử dụng Modal Web, không dùng confirm)
  * @param {'cv' | 'application'} type 
  */
-async function removeUploadedDoc(type) {
+let pendingRemoveDocType = null;
+
+function removeUploadedDoc(type) {
+  pendingRemoveDocType = type;
   const docName = type === 'cv' ? 'CV' : 'Đơn xin thực tập';
-  if (!confirm(`Bạn có chắc chắn muốn gỡ ${docName}?`)) return;
+  const msgEl = document.getElementById('removeDocMessage');
+  if (msgEl) {
+    msgEl.innerHTML = `Bạn có chắc chắn muốn gỡ <strong>${docName}</strong> khỏi hồ sơ của mình?<br><span style="color:#ef4444; font-size:12.5px; margin-top:4px; display:inline-block;">Hành động này sẽ xóa file đính kèm hiện tại.</span>`;
+  }
+
+  const btnConfirm = document.getElementById('btnConfirmRemoveDoc');
+  if (btnConfirm) {
+    btnConfirm.onclick = executeRemoveDoc;
+  }
+
+  const modal = document.getElementById('removeDocModal');
+  if (modal) modal.classList.add('show');
+}
+
+function closeRemoveDocModal() {
+  const modal = document.getElementById('removeDocModal');
+  if (modal) modal.classList.remove('show');
+}
+
+async function executeRemoveDoc() {
+  const type = pendingRemoveDocType;
+  closeRemoveDocModal();
+  if (!type) return;
+
+  const docName = type === 'cv' ? 'CV' : 'Đơn xin thực tập';
 
   // Lấy thông tin user hiện tại
   const userStr = localStorage.getItem('user');
@@ -281,11 +348,6 @@ async function removeUploadedDoc(type) {
       const u = JSON.parse(userStr);
       if (u && (u.internId || u.id)) internId = u.internId || u.id;
     } catch (e) {}
-  }
-
-  if (!internId) {
-    console.warn('Không xác định được ID thực tập sinh để xóa tài liệu!');
-    return;
   }
 
   const docTypeParam = type === 'cv' ? 'CV' : 'APPLICATION_LETTER';
@@ -304,7 +366,7 @@ async function removeUploadedDoc(type) {
   updateAllPortalUI();
 
   // 2. Gọi API xóa tệp vật lý và bản ghi trong MySQL Database
-  if (typeof apiDeleteDocument === 'function') {
+  if (typeof apiDeleteDocument === 'function' && internId) {
     try {
       const res = await apiDeleteDocument(internId, docTypeParam);
       console.log('🗑️ Đã xóa tài liệu khỏi MySQL & Server:', res);
@@ -312,6 +374,8 @@ async function removeUploadedDoc(type) {
       console.warn('Lỗi khi gọi API xóa tài liệu:', err);
     }
   }
+
+  showInternToast(`Đã gỡ ${docName} khỏi hồ sơ thành công.`, "warning");
 }
 
 // ==============================================================================
@@ -683,6 +747,10 @@ window.addEventListener('click', (e) => {
   const modal = document.getElementById('logoutConfirmModal');
   if (e.target === modal) {
     closeInternLogoutModal();
+  }
+  const removeModal = document.getElementById('removeDocModal');
+  if (e.target === removeModal) {
+    closeRemoveDocModal();
   }
 });
 

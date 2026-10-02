@@ -801,6 +801,21 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL XÁC NHẬN XÓA THỰC TẬP SINH ==================== -->
+  <div class="modal" id="deleteConfirmModal">
+    <div class="modal-box">
+      <div class="modal-icon" style="background: #fef2f2; color: #ef4444;">
+        <i class="fa-solid fa-trash-can fa-2x"></i>
+      </div>
+      <h3>Xác nhận xóa thực tập sinh</h3>
+      <p id="deleteConfirmMessage">Bạn có chắc chắn muốn xóa thực tập sinh này khỏi cơ sở dữ liệu?</p>
+      <div class="modal-buttons">
+        <button type="button" class="btn-cancel" onclick="closeModal('deleteConfirmModal')">Hủy</button>
+        <button type="button" class="btn-logout" id="btnConfirmDeleteIntern" style="background: #ef4444;">Xóa</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== MODAL 7: XÁC NHẬN ĐĂNG XUẤT ==================== -->
   <div class="modal" id="logoutModal">
     <div class="modal-box">

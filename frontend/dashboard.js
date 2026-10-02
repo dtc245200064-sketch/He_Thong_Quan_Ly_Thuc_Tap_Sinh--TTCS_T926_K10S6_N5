@@ -1018,31 +1018,54 @@ function handleEditSubmit(e) {
   }
 }
 
-// Xử lý Xóa thực tập sinh
-async function handleDeleteIntern(id) {
+// Xử lý Xóa thực tập sinh (Sử dụng Modal Web, không dùng confirm/alert)
+let pendingDeleteInternId = null;
+
+function handleDeleteIntern(id) {
   const intern = internList.find((item) => item.id === id);
   if (!intern) return;
 
-  if (confirm(`Bạn có chắc chắn muốn xóa thực tập sinh "${intern.name}" khỏi cơ sở dữ liệu?`)) {
-    if (typeof apiDeleteIntern === 'function') {
-      try {
-        const res = await apiDeleteIntern(id);
-        if (res && res.success) {
-          internList = internList.filter((item) => item.id !== id);
-          filterData();
-          renderOverview();
-          showToast(`Đã xóa thực tập sinh "${intern.name}" khỏi cơ sở dữ liệu MySQL thành công.`, "warning");
-          return;
-        }
-      } catch (e) {
-        console.warn('Lỗi khi gọi API xóa:', e);
-      }
-    }
-    internList = internList.filter((item) => item.id !== id);
-    filterData();
-    renderOverview();
-    showToast(`Đã xóa thực tập sinh "${intern.name}" khỏi danh sách.`, "warning");
+  pendingDeleteInternId = id;
+  const msgEl = document.getElementById("deleteConfirmMessage");
+  if (msgEl) {
+    msgEl.innerHTML = `Bạn có chắc chắn muốn xóa thực tập sinh <strong>"${intern.name}"</strong> khỏi cơ sở dữ liệu?<br><span style="color:#ef4444; font-size:12.5px; margin-top:4px; display:inline-block;">Hành động này không thể hoàn tác.</span>`;
   }
+
+  const btnConfirm = document.getElementById("btnConfirmDeleteIntern");
+  if (btnConfirm) {
+    btnConfirm.onclick = executeDeleteIntern;
+  }
+
+  openModal("deleteConfirmModal");
+}
+
+async function executeDeleteIntern() {
+  const id = pendingDeleteInternId;
+  closeModal("deleteConfirmModal");
+  if (!id) return;
+
+  const intern = internList.find((item) => item.id === id);
+  const internName = intern ? intern.name : "thực tập sinh";
+
+  if (typeof apiDeleteIntern === 'function') {
+    try {
+      const res = await apiDeleteIntern(id);
+      if (res && res.success) {
+        internList = internList.filter((item) => item.id !== id);
+        filterData();
+        renderOverview();
+        showToast(`Đã xóa thực tập sinh "${internName}" khỏi cơ sở dữ liệu MySQL thành công.`, "warning");
+        return;
+      }
+    } catch (e) {
+      console.warn('Lỗi khi gọi API xóa:', e);
+    }
+  }
+
+  internList = internList.filter((item) => item.id !== id);
+  filterData();
+  renderOverview();
+  showToast(`Đã xóa thực tập sinh "${internName}" khỏi danh sách.`, "warning");
 }
 
 // ==========================================================================
@@ -1153,7 +1176,7 @@ function handleSaveProfile(event) {
     const newPw = document.getElementById("newPassword").value;
     const confirmPw = document.getElementById("confirmPassword").value;
     if (newPw && newPw !== confirmPw) {
-      alert("Xác nhận mật khẩu mới không khớp!");
+      showToast("Xác nhận mật khẩu mới không khớp!", "danger");
       return;
     }
   }
