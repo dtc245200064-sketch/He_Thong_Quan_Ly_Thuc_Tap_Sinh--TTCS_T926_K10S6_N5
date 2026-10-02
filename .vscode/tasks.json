@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "🚀 Khởi chạy Backend Server (Port 5000)",
+            "type": "shell",
+            "command": "node backend/server.js",
+            "isBackground": true,
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "🐬 Khởi động MySQL XAMPP",
+            "type": "shell",
+            "command": "C:\\xampp\\mysql_start.bat",
+            "isBackground": true,
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "codegym-intern-management",
+  "version": "1.0.0",
+  "description": "Hệ thống Quản lý Thực tập sinh CodeGym (Fullstack)",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "server": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "backend": "node backend/server.js"
+  },
+  "keywords": [
+    "codegym",
+    "intern-management",
+    "hr-portal"
+  ],
+  "author": "CodeGym Team",
+  "license": "ISC"
+}
