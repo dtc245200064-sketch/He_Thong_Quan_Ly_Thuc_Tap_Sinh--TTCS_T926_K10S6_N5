@@ -789,36 +789,9 @@ function loadInternProfileFromStorage() {
 }
 
 /**
- * Mở modal xem và chỉnh sửa thông tin cá nhân của Thực tập sinh
+ * Điền dữ liệu từ internProfileData vào các trường trong modal hồ sơ
  */
-async function openInternProfileModal() {
-  loadInternProfileFromStorage();
-
-  // Nếu có thông tin email, thử lấy thông tin chi tiết (trường, ngành, phòng ban, mentor) từ DB
-  if (typeof apiGetInterns === 'function' && internProfileData.email) {
-    try {
-      const res = await apiGetInterns({ search: internProfileData.email });
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-        const found = res.data[0];
-        if (found.school) internProfileData.school = found.school;
-        if (found.major) internProfileData.major = found.major;
-        if (found.dept) internProfileData.dept = found.dept;
-        if (found.mentor) internProfileData.mentor = found.mentor;
-        if (found.phone) internProfileData.phone = found.phone;
-        if (found.name) internProfileData.name = found.name;
-
-        try {
-          const userStr = localStorage.getItem('user');
-          const u = userStr ? JSON.parse(userStr) : {};
-          localStorage.setItem('user', JSON.stringify({ ...u, ...internProfileData }));
-        } catch (e) {}
-      }
-    } catch (err) {
-      console.warn('Không thể nạp chi tiết TTS từ API:', err);
-    }
-  }
-
-  // Điền dữ liệu vào form
+function populateInternProfileFields() {
   const inputName = document.getElementById('internProfileName');
   const inputRole = document.getElementById('internProfileRole');
   const inputEmail = document.getElementById('internProfileEmail');
@@ -837,9 +810,20 @@ async function openInternProfileModal() {
   if (inputMajor) inputMajor.value = internProfileData.major || '';
   if (inputDept) inputDept.value = internProfileData.dept || '';
   if (inputMentor) inputMentor.value = internProfileData.mentor || 'Chưa phân công';
-  if (avatarPreview) avatarPreview.src = internProfileData.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80';
+  if (avatarPreview && internProfileData.avatar) avatarPreview.src = internProfileData.avatar;
+}
 
-  // Reset phần đổi mật khẩu
+/**
+ * Mở modal xem và chỉnh sửa thông tin cá nhân của Thực tập sinh
+ */
+function openInternProfileModal() {
+  // 1. Nạp dữ liệu hiện có từ localStorage
+  loadInternProfileFromStorage();
+
+  // 2. Điền form ngay lập tức (0ms độ trễ)
+  populateInternProfileFields();
+
+  // 3. Reset các trường đổi mật khẩu
   const pwFields = document.getElementById('internPasswordFields');
   const pwArrow = document.getElementById('internPwArrow');
   if (pwFields) pwFields.classList.remove('show');
@@ -851,8 +835,38 @@ async function openInternProfileModal() {
   if (newPw) newPw.value = '';
   if (confirmPw) confirmPw.value = '';
 
+  // 4. Hiển thị modal ngay lập tức
   const modal = document.getElementById('internProfileModal');
-  if (modal) modal.classList.add('show');
+  if (modal) {
+    modal.classList.add('show');
+  }
+
+  // 5. Đồng bộ ngầm thông tin chi tiết từ MySQL nếu có
+  if (typeof apiGetInterns === 'function' && internProfileData.email) {
+    apiGetInterns({ search: internProfileData.email })
+      .then(res => {
+        if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const found = res.data[0];
+          if (found.school) internProfileData.school = found.school;
+          if (found.major) internProfileData.major = found.major;
+          if (found.dept) internProfileData.dept = found.dept;
+          if (found.mentor) internProfileData.mentor = found.mentor;
+          if (found.phone) internProfileData.phone = found.phone;
+          if (found.name) internProfileData.name = found.name;
+
+          populateInternProfileFields();
+
+          try {
+            const userStr = localStorage.getItem('user');
+            const u = userStr ? JSON.parse(userStr) : {};
+            localStorage.setItem('user', JSON.stringify({ ...u, ...internProfileData }));
+          } catch (e) {}
+        }
+      })
+      .catch(err => {
+        console.warn('Không thể nạp chi tiết TTS từ API:', err);
+      });
+  }
 }
 
 /**
