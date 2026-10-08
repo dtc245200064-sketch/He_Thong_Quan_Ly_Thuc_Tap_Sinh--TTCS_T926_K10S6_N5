@@ -188,3 +188,99 @@ async function apiUpdateAdminPermissions(role, permissions) {
   return await res.json();
 }
 
+// ==========================================
+// API CLIENT CHO SPRINT 2 (MYSQL PERSISTENCE)
+// ==========================================
+
+// 16. Lấy danh sách chương trình thực tập: GET /api/programs
+async function apiGetPrograms(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  const url = `${API_BASE_URL}/programs${query ? '?' + query : ''}`;
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  return await res.json();
+}
+
+// 17. Tạo mới chương trình thực tập: POST /api/programs
+async function apiCreateProgram(programData) {
+  const res = await fetch(`${API_BASE_URL}/programs`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(programData)
+  });
+  return await res.json();
+}
+
+// 18. Lấy bảng chấm công: GET /api/attendance
+async function apiGetAttendance(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  const url = `${API_BASE_URL}/attendance${query ? '?' + query : ''}`;
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  return await res.json();
+}
+
+// 19. HR chấm công / sửa trạng thái theo ngày: POST /api/attendance/mark
+async function apiMarkAttendance(data) {
+  const res = await fetch(`${API_BASE_URL}/attendance/mark`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+// 20. TTS check-in / check-out hôm nay: POST /api/attendance/check-in-out
+async function apiCheckInOut(internId) {
+  const res = await fetch(`${API_BASE_URL}/attendance/check-in-out`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ intern_id: internId })
+  });
+  return await res.json();
+}
+
+// 21. Lấy danh sách đơn nghỉ phép: GET /api/leaves
+async function apiGetLeaves(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  const url = `${API_BASE_URL}/leaves${query ? '?' + query : ''}`;
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  return await res.json();
+}
+
+// 22. TTS tạo đơn xin nghỉ phép: POST /api/leaves
+async function apiCreateLeave(leaveData) {
+  const res = await fetch(`${API_BASE_URL}/leaves`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(leaveData)
+  });
+  return await res.json();
+}
+
+// 23. HR duyệt / từ chối đơn nghỉ phép: PATCH /api/leaves/:id/review
+async function apiReviewLeave(id, status, reviewNote = '') {
+  const res = await fetch(`${API_BASE_URL}/leaves/${id}/review`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ status, review_note: reviewNote })
+  });
+  return await res.json();
+}
+
+// 24. Lấy danh sách hợp đồng thực tập: GET /api/contracts
+async function apiGetContracts(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  const url = `${API_BASE_URL}/contracts${query ? '?' + query : ''}`;
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  return await res.json();
+}
+
+// 25. TTS xác nhận ký / từ chối hợp đồng: PATCH /api/contracts/:id/confirm
+async function apiConfirmContract(id, status) {
+  const res = await fetch(`${API_BASE_URL}/contracts/${id}/confirm`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ status })
+  });
+  return await res.json();
+}
+

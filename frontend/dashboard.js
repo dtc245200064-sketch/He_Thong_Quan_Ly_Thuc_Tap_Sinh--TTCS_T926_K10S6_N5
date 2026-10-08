@@ -2299,7 +2299,7 @@ function calculateDynamicProgress(startDateStr, endDateStr) {
   return Math.round(((now - start) / (end - start)) * 100);
 }
 
-// Khởi tạo và đồng bộ chương trình thực tập (0% dữ liệu giả, nếu chưa có dữ liệu thì để trống)
+// Khởi tạo và đồng bộ chương trình thực tập (Kết nối MySQL & dự phòng LocalStorage)
 function initPrograms() {
   try {
     localStorage.removeItem("codegym_hr_custom_programs");
@@ -2307,7 +2307,6 @@ function initPrograms() {
     if (old) {
       try {
         const parsed = JSON.parse(old);
-        // Chỉ chấp nhận các chương trình do người dùng trực tiếp tạo từ nút "+ Tạo chương trình"
         if (Array.isArray(parsed)) {
           internshipPrograms = parsed.filter(p => p && p.isUserCreated === true && !p.id.includes("prog_ktpm"));
         } else {
@@ -2319,10 +2318,40 @@ function initPrograms() {
     } else {
       internshipPrograms = [];
     }
-    // Ghi đè lại để dọn dẹp sạch sẽ localStorage
-    localStorage.setItem("codegym_hr_programs", JSON.stringify(internshipPrograms));
   } catch (e) {
     internshipPrograms = [];
+  }
+
+  // Tự động tải danh sách chương trình từ MySQL Database
+  if (typeof apiGetPrograms === 'function') {
+    apiGetPrograms().then(res => {
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        internshipPrograms = res.data.map(p => ({
+          id: 'prog_' + p.id,
+          dbId: p.id,
+          name: p.name,
+          dept: p.dept,
+          positions: `Thực tập sinh ${p.dept}`,
+          mentor: p.mentor_default || 'Nguyễn Anh Tuấn',
+          startDate: p.start_date ? p.start_date.split('T')[0] : '2026-07-01',
+          endDate: p.end_date ? p.end_date.split('T')[0] : '2026-09-30',
+          startDateFormatted: p.start_date ? new Date(p.start_date).toLocaleDateString('vi-VN') : '01/07/2026',
+          endDateFormatted: p.end_date ? new Date(p.end_date).toLocaleDateString('vi-VN') : '30/09/2026',
+          capacity: p.max_interns || 10,
+          status: p.status || 'active',
+          progress: 50,
+          desc: p.description || '',
+          schedule: [],
+          isUserCreated: true
+        }));
+        if (!selectedProgramId && internshipPrograms.length > 0) {
+          selectedProgramId = internshipPrograms[0].id;
+        }
+        localStorage.setItem("codegym_hr_programs", JSON.stringify(internshipPrograms));
+        renderPrograms();
+        populateAttendanceProgramFilter();
+      }
+    }).catch(() => {});
   }
 
   if (internshipPrograms.length > 0) {
@@ -2829,6 +2858,21 @@ function handleProgramFormSubmit(e) {
     internshipPrograms.unshift(progData);
     selectedProgramId = progData.id;
     showToast(`Đã tạo chương trình thực tập "${name}" thành công!`, "success");
+
+    // Lưu vào MySQL Database
+    if (typeof apiCreateProgram === 'function') {
+      apiCreateProgram({
+        name,
+        dept,
+        mentor_default: mentor,
+        start_date: startDate,
+        end_date: endDate,
+        max_interns: capacity,
+        description: desc
+      }).then(res => {
+        if (res && res.data) progData.dbId = res.data.id;
+      }).catch(err => console.warn('Lỗi lưu chương trình vào MySQL:', err));
+    }
   }
 
   try {
@@ -2977,7 +3021,7 @@ const ATTENDANCE_STATUS_MAP = {
   empty: { code: "—", text: "Chưa có dữ liệu", chipClass: "chip-empty" }
 };
 
-// Khởi tạo trạng thái Chấm công & Đơn nghỉ phép
+// Khởi tạo trạng thái Chấm công & Đơn nghỉ phép (Đồng bộ MySQL & LocalStorage)
 function initAttendance() {
   try {
     const savedAtt = localStorage.getItem("codegym_hr_attendance");
@@ -2999,6 +3043,46 @@ function initAttendance() {
     }
   } catch (e) {
     leaveRequests = [];
+  }
+
+  // Tải bảng chấm công từ MySQL Database
+  if (typeof apiGetAttendance === 'function') {
+    apiGetAttendance().then(res => {
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        res.data.forEach(row => {
+          const dKey = row.date.split('T')[0];
+          if (!attendanceRecords[row.intern_id]) attendanceRecords[row.intern_id] = {};
+          attendanceRecords[row.intern_id][dKey] = row.status;
+        });
+        localStorage.setItem("codegym_hr_attendance", JSON.stringify(attendanceRecords));
+        if (currentAttSubtab === "sheet") renderAttendanceSheet();
+      }
+    }).catch(() => {});
+  }
+
+  // Tải danh sách đơn nghỉ phép từ MySQL Database
+  if (typeof apiGetLeaves === 'function') {
+    apiGetLeaves().then(res => {
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const dbLeaves = res.data.map(l => ({
+          id: l.id,
+          internId: l.intern_id,
+          internName: l.intern_name,
+          program: l.intern_dept || "Kỹ thuật phần mềm",
+          startDate: l.start_date.split('T')[0],
+          endDate: l.end_date.split('T')[0],
+          days: l.days_count,
+          reason: l.reason,
+          submittedAt: l.submitted_at ? new Date(l.submitted_at).toLocaleDateString('vi-VN') : '',
+          status: l.status === 'approved' ? 'Đã duyệt' : (l.status === 'rejected' ? 'Từ chối' : 'Chờ duyệt')
+        }));
+        const existingIds = new Set(dbLeaves.map(d => d.id));
+        const locals = leaveRequests.filter(lr => !existingIds.has(lr.id));
+        leaveRequests = [...dbLeaves, ...locals];
+        localStorage.setItem("codegym_hr_leaves", JSON.stringify(leaveRequests));
+        if (currentAttSubtab === "leaves") renderLeaveRequests();
+      }
+    }).catch(() => {});
   }
 
   initAttendanceFilters();
@@ -3353,6 +3437,15 @@ function applyAttendanceMark(status) {
     console.error("Lỗi lưu chấm công:", e);
   }
 
+  // Đồng bộ lên MySQL Database
+  if (typeof apiMarkAttendance === 'function') {
+    apiMarkAttendance({
+      intern_id: internId,
+      date: dateKey,
+      status: status || ''
+    }).catch(err => console.warn('Lỗi lưu chấm công vào MySQL:', err));
+  }
+
   closeModal("markAttendanceModal");
   renderAttendanceSheet();
 
@@ -3650,6 +3743,11 @@ function handleApproveLeave(leaveId) {
     console.error("Lỗi cập nhật:", e);
   }
 
+  // Đồng bộ phê duyệt đơn nghỉ phép lên MySQL Database
+  if (typeof apiReviewLeave === 'function') {
+    apiReviewLeave(leaveId, 'approved').catch(err => console.warn('Lỗi duyệt nghỉ phép trên MySQL:', err));
+  }
+
   renderLeaveRequests();
   renderAttendanceSheet();
   showToast(`Đã duyệt đơn nghỉ phép của ${leave.internName} và tự động cập nhật bảng chấm công (P)!`, "success");
@@ -3666,6 +3764,11 @@ function handleRejectLeave(leaveId) {
     localStorage.setItem("codegym_hr_leaves", JSON.stringify(leaveRequests));
   } catch (e) {
     console.error("Lỗi cập nhật:", e);
+  }
+
+  // Đồng bộ từ chối đơn nghỉ phép lên MySQL Database
+  if (typeof apiReviewLeave === 'function') {
+    apiReviewLeave(leaveId, 'rejected').catch(err => console.warn('Lỗi từ chối nghỉ phép trên MySQL:', err));
   }
 
   renderLeaveRequests();

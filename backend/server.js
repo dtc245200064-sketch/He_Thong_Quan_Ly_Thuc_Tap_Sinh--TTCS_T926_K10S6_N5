@@ -5,6 +5,10 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth.routes');
 const internRoutes = require('./routes/intern.routes');
 const adminRoutes = require('./routes/admin.routes');
+const programRoutes = require('./routes/program.routes');
+const attendanceRoutes = require('./routes/attendance.routes');
+const leaveRoutes = require('./routes/leave.routes');
+const contractRoutes = require('./routes/contract.routes');
 const db = require('./config/db');
 
 const app = express();
@@ -29,6 +33,10 @@ app.use('/api/auth', authRoutes);
 app.post('/api/login', require('./controllers/auth.controller').login); // Alias cho frontend
 app.use('/api/interns', internRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/programs', programRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/leaves', leaveRoutes);
+app.use('/api/contracts', contractRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

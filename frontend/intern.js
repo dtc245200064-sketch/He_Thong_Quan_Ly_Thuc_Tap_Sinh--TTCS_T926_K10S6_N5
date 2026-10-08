@@ -1641,6 +1641,11 @@ function syncAttendanceToHR(status) {
     }
     hrAtt[internId][dateKey] = status;
     localStorage.setItem('codegym_hr_attendance', JSON.stringify(hrAtt));
+
+    // Đồng bộ trực tiếp vào bảng attendance của MySQL
+    if (typeof apiCheckInOut === 'function') {
+      apiCheckInOut(internId).catch(() => {});
+    }
   } catch (e) {
     console.warn('Lỗi đồng bộ chấm công với HR:', e);
   }
@@ -1969,6 +1974,17 @@ function handleSubmitInternLeave(event) {
     console.error('Lỗi lưu đơn nghỉ phép:', err);
   }
 
+  // Đồng bộ lưu đơn nghỉ phép vào bảng leave_requests của MySQL
+  if (typeof apiCreateLeave === 'function') {
+    apiCreateLeave({
+      intern_id: internId,
+      leave_type: leaveType,
+      start_date: startDate,
+      end_date: endDate,
+      reason: reason
+    }).catch(err => console.warn('Lỗi lưu đơn nghỉ phép vào MySQL:', err));
+  }
+
   closeInternLeaveModal();
   renderInternLeaves();
   showInternToast('Đã gửi đơn xin nghỉ phép đến phòng nhân sự (HR) thành công!', 'success');
@@ -2060,7 +2076,7 @@ function renderInternLeaves() {
 }
 
 // ==============================================================================
-// 6.8. QUẢN LÝ HỢP ĐỒNG THỰC TẬP (CONTRACTS) - PERSISTENT & SYNC VỚI HR
+// 6.8. QUẢN LÝ HỢP ĐỒNG THỰC TẬP (CONTRACTS) - PERSISTENT & SYNC VỚI HR & MYSQL
 // ==============================================================================
 
 const ContractsState = {
@@ -2092,6 +2108,29 @@ function loadContractsStateFromStorage() {
         }
       ];
       saveContractsStateToStorage();
+    }
+
+    // Tự động tải hợp đồng thật từ MySQL Database
+    if (typeof apiGetContracts === 'function') {
+      const currentInternId = internProfileData.id || internProfileData.internId || 1;
+      apiGetContracts({ intern_id: currentInternId }).then(res => {
+        if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          ContractsState.contracts = res.data.map(c => ({
+            id: String(c.id),
+            internId: c.intern_id,
+            code: c.code,
+            title: c.title,
+            fileName: c.file_name || 'Hop_Dong.pdf',
+            company: c.company,
+            dept: c.dept,
+            period: c.period || '01/03/2026 - 31/05/2026',
+            status: c.status
+          }));
+          saveContractsStateToStorage();
+          updateContractNoticeBanner();
+          renderContractList();
+        }
+      }).catch(() => {});
     }
   } catch (e) {
     console.warn('Lỗi đọc hợp đồng từ localStorage:', e);
@@ -2330,6 +2369,11 @@ function handleConfirmContract(contractId) {
     console.warn('Lỗi đồng bộ hợp đồng sang HR:', e);
   }
 
+  // Đồng bộ lên MySQL Database
+  if (typeof apiConfirmContract === 'function') {
+    apiConfirmContract(contractId, 'approved').catch(err => console.warn('Lỗi xác nhận hợp đồng trên MySQL:', err));
+  }
+
   closeContractModal();
   updateContractNoticeBanner();
   renderContractList();
@@ -2356,6 +2400,11 @@ function handleRejectContract(contractId) {
     }
   } catch (e) {
     console.warn('Lỗi đồng bộ hợp đồng sang HR:', e);
+  }
+
+  // Đồng bộ lên MySQL Database
+  if (typeof apiConfirmContract === 'function') {
+    apiConfirmContract(contractId, 'rejected').catch(err => console.warn('Lỗi từ chối hợp đồng trên MySQL:', err));
   }
 
   closeContractModal();
