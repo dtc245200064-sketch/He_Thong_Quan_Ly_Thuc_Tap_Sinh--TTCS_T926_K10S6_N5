@@ -57,7 +57,7 @@
           </div>
         </div>
 
-        <!-- Menu điều hướng: 2 Tab chuẩn mẫu ảnh -->
+        <!-- Menu điều hướng: 5 Mục chuẩn theo mẫu ảnh giao diện -->
         <nav class="sidebar-nav">
           <button type="button" class="sidebar-menu-btn active" id="menu-overview"
             onclick="switchPortalTab('overview')">
@@ -68,9 +68,17 @@
             <i class="bi bi-file-earmark-text-fill"></i>
             <span>Hồ sơ & Tài liệu thực tập</span>
           </button>
-          <button type="button" class="sidebar-menu-btn" id="menu-profile" onclick="openInternProfileModal()">
-            <i class="bi bi-person-vcard-fill"></i>
-            <span>Hồ sơ cá nhân</span>
+          <button type="button" class="sidebar-menu-btn" id="menu-schedule" onclick="switchPortalTab('schedule')">
+            <i class="bi bi-calendar4-week"></i>
+            <span>Lịch thực tập</span>
+          </button>
+          <button type="button" class="sidebar-menu-btn" id="menu-attendance" onclick="switchPortalTab('attendance')">
+            <i class="bi bi-clock-fill"></i>
+            <span>Chấm công</span>
+          </button>
+          <button type="button" class="sidebar-menu-btn" id="menu-contracts" onclick="switchPortalTab('contracts')">
+            <i class="bi bi-file-earmark-check-fill"></i>
+            <span>Hợp đồng thực tập</span>
           </button>
         </nav>
       </div>
@@ -96,9 +104,10 @@
     </aside>
 
     <!-- =============================================================== -->
-    <!-- 2. MAIN CONTENT & TOPBAR                                        -->
+    <!-- 2. MAIN CONTENT                                                 -->
     <!-- =============================================================== -->
     <main class="portal-main">
+
       <!-- Nội dung chính -->
       <div class="portal-body">
 
@@ -212,6 +221,113 @@
                 <div class="step-sub" id="step-sub-03">Chưa hoàn thiện</div>
               </div>
 
+            </div>
+          </div>
+
+          <!-- ============================================================= -->
+          <!-- HÀNG 3: LỊCH LÀM VIỆC HÔM NAY & CÔNG VIỆC SẮP TỚI (FRONTEND)   -->
+          <!-- ============================================================= -->
+          <div class="row g-4 mt-1 mb-4">
+
+            <!-- Cột trái: Lịch làm việc hôm nay -->
+            <div class="col-lg-6">
+              <div class="overview-info-card">
+                <div class="overview-card-header">
+                  <span class="overview-card-caption caption-indigo">LỊCH LÀM VIỆC HÔM NAY</span>
+                  <div class="overview-card-iconbox iconbox-indigo">
+                    <i class="bi bi-calendar4"></i>
+                  </div>
+                </div>
+
+                <div class="overview-card-body">
+                  <!-- Dữ liệu để trống/placeholder sẵn sàng cho Backend đổ API -->
+                  <div class="overview-time-display" id="overviewTodayWorkHours">—</div>
+                  <div class="overview-location-display" id="overviewTodayWorkLocation">—</div>
+                </div>
+
+                <div class="overview-card-divider"></div>
+
+                <div class="overview-card-footer">
+                  <div class="overview-attendance-status-wrap">
+                    <div class="overview-footer-label">Trạng thái chấm công</div>
+                    <div class="overview-footer-value" id="overviewAttendanceStatus">Chưa check-in</div>
+                  </div>
+                  <button type="button" class="btn-overview-action" onclick="switchPortalTab('attendance')">
+                    Đi đến Chấm công
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cột phải: Công việc sắp tới -->
+            <div class="col-lg-6">
+              <div class="overview-info-card">
+                <div class="overview-card-header">
+                  <span class="overview-card-caption caption-purple">CÔNG VIỆC SẮP TỚI</span>
+                  <span class="overview-badge-upcoming">Sắp tới</span>
+                </div>
+
+                <div class="overview-card-body">
+                  <!-- Dữ liệu để trống/placeholder sẵn sàng cho Backend đổ API -->
+                  <div class="overview-task-title" id="overviewUpcomingTaskTitle">—</div>
+                  <div class="overview-task-schedule" id="overviewUpcomingTaskSchedule">—</div>
+                </div>
+
+                <div class="overview-card-divider"></div>
+
+                <div class="overview-card-footer">
+                  <div class="overview-mentor-wrap">
+                    <span class="overview-mentor-label">Mentor:</span>
+                    <span class="overview-mentor-value" id="overviewUpcomingTaskMentor">—</span>
+                  </div>
+                  <a href="javascript:void(0)" class="overview-link-schedule" onclick="switchPortalTab('schedule')">
+                    Xem lịch thực tập
+                  </a>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ============================================================= -->
+          <!-- HÀNG 4: LỊCH SỬ XỬ LÝ HỒ SƠ (THEO DÕI CÁC MỐC QUAN TRỌNG)    -->
+          <!-- ============================================================= -->
+          <div class="overview-history-section-card mb-4">
+            <div class="overview-history-header">
+              <div>
+                <h3 class="overview-history-title">Lịch sử xử lý hồ sơ</h3>
+                <p class="overview-history-desc">Theo dõi các mốc quan trọng của hồ sơ thực tập.</p>
+              </div>
+              <a href="javascript:void(0)" class="overview-history-detail-link" onclick="switchPortalTab('documents')">
+                Xem chi tiết
+              </a>
+            </div>
+
+            <div class="overview-milestones-grid">
+              <!-- Mốc 1: Đăng ký tài khoản -->
+              <div class="overview-milestone-box">
+                <div class="milestone-box-label">Đăng ký tài khoản</div>
+                <!-- Dữ liệu để trống cho backend điền ngày -->
+                <div class="milestone-box-value" id="overviewMilestoneRegisterDate">—</div>
+              </div>
+
+              <!-- Mốc 2: Hoàn thiện hồ sơ -->
+              <div class="overview-milestone-box">
+                <div class="milestone-box-label">Hoàn thiện hồ sơ</div>
+                <div class="milestone-box-value" id="overviewMilestoneProfileStatus">Chưa hoàn thiện</div>
+              </div>
+
+              <!-- Mốc 3: Gửi hồ sơ -->
+              <div class="overview-milestone-box">
+                <div class="milestone-box-label">Gửi hồ sơ</div>
+                <div class="milestone-box-value" id="overviewMilestoneSubmitStatus">Chưa gửi</div>
+              </div>
+
+              <!-- Mốc 4: Kết quả xét duyệt -->
+              <div class="overview-milestone-box">
+                <div class="milestone-box-label">Kết quả xét duyệt</div>
+                <div class="milestone-box-value" id="overviewMilestoneApprovalResult">Chưa có kết quả</div>
+              </div>
             </div>
           </div>
 
@@ -352,7 +468,471 @@
                 Upload đơn
               </button>
             </div>
+          </div>
 
+          <!-- Card Gửi hồ sơ đến phòng nhân sự (Theo mẫu thiết kế mới) -->
+          <div class="submit-dossier-card" id="submitDossierCard">
+            <div class="submit-dossier-left">
+              <h3 class="submit-dossier-title">Gửi hồ sơ đến phòng nhân sự</h3>
+              <p class="submit-dossier-desc">Hoàn thiện thông tin cá nhân, CV và đơn xin thực tập trước khi gửi.</p>
+              <div class="submit-dossier-checklist">
+                <span class="checklist-item" id="chkReqInfo" onclick="openInternProfileModal()" title="Bấm để kiểm tra / cập nhật thông tin cá nhân">
+                  <span class="chk-circle" id="iconChkInfo">○</span>
+                  <span class="chk-label">Thông tin cá nhân</span>
+                </span>
+                <span class="checklist-item" id="chkReqCv" onclick="openUploadModal('cv')" title="Bấm để upload CV">
+                  <span class="chk-circle" id="iconChkCv">○</span>
+                  <span class="chk-label">CV</span>
+                </span>
+                <span class="checklist-item" id="chkReqApp" onclick="openUploadModal('application')" title="Bấm để upload đơn xin thực tập">
+                  <span class="chk-circle" id="iconChkApp">○</span>
+                  <span class="chk-label">Đơn xin thực tập</span>
+                </span>
+              </div>
+            </div>
+            <div class="submit-dossier-right">
+              <button type="button" class="btn-submit-dossier" id="btnSubmitDossier" onclick="handleDossierSubmitClick()">
+                Gửi hồ sơ đến phòng nhân sự
+              </button>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 3: LỊCH THỰC TẬP (RENDER HOÀN TOÀN ĐỘNG QUA JAVASCRIPT)    -->
+        <!-- ============================================================= -->
+        <section class="portal-tab-content" id="tab-schedule">
+
+          <!-- Tiêu đề trang & Thanh điều hướng tuần/tháng -->
+          <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+              <h1 class="page-title">Lịch thực tập</h1>
+              <p class="page-desc">Theo dõi lịch làm việc và kế hoạch thực tập cá nhân.</p>
+            </div>
+            
+            <!-- Điều hướng thời gian: Tuần trước / Hiện tại / Tuần sau -->
+            <div class="schedule-period-nav d-flex align-items-center gap-2">
+              <button type="button" class="btn-period-nav" onclick="navigateSchedulePeriod(-1)" title="Tuần trước" aria-label="Tuần trước">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              <button type="button" class="btn-period-current" onclick="resetScheduleToCurrent()" title="Về tuần hiện tại">
+                <i class="bi bi-calendar-check me-1"></i>
+                <span>Hiện tại</span>
+              </button>
+              <button type="button" class="btn-period-nav" onclick="navigateSchedulePeriod(1)" title="Tuần kế tiếp" aria-label="Tuần kế tiếp">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Card thông tin tổng hợp (5 cột chuẩn mẫu thiết kế, nạp động từ Hồ sơ/API) -->
+          <div class="schedule-summary-card">
+            <div class="schedule-summary-grid">
+              <div class="summary-col-item">
+                <span class="summary-col-label">Chương trình thực tập</span>
+                <span class="summary-col-value" id="schedProgramVal">—</span>
+              </div>
+              <div class="summary-col-item">
+                <span class="summary-col-label">Phòng ban</span>
+                <span class="summary-col-value" id="schedDeptVal">—</span>
+              </div>
+              <div class="summary-col-item">
+                <span class="summary-col-label">Mentor hướng dẫn</span>
+                <span class="summary-col-value" id="schedMentorVal">—</span>
+              </div>
+              <div class="summary-col-item">
+                <span class="summary-col-label">Ngày bắt đầu</span>
+                <span class="summary-col-value" id="schedStartDateVal">—</span>
+              </div>
+              <div class="summary-col-item">
+                <span class="summary-col-label">Ngày kết thúc</span>
+                <span class="summary-col-value" id="schedEndDateVal">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bố cục 2 cột chính: Cột trái Lịch biểu & Cột phải Chi tiết kế hoạch -->
+          <div class="schedule-content-row">
+
+            <!-- Cột trái: Card Lịch làm việc tuần / tháng -->
+            <div class="schedule-main-card">
+              <!-- Header của Card Lịch -->
+              <div class="schedule-card-header">
+                <div>
+                  <h3 class="schedule-week-range" id="scheduleWeekRangeTitle">Lịch làm việc</h3>
+                  <div class="schedule-readonly-badge">
+                    <span>Lịch chỉ xem</span>
+                    <span class="readonly-dot">·</span>
+                    <span>Không thể chỉnh sửa</span>
+                  </div>
+                </div>
+
+                <!-- Nút chuyển chế độ: Theo tuần / Theo tháng -->
+                <div class="schedule-view-switcher">
+                  <button type="button" class="view-pill-btn active" id="btnToggleWeek" onclick="setScheduleViewMode('week')">
+                    Theo tuần
+                  </button>
+                  <button type="button" class="view-pill-btn" id="btnToggleMonth" onclick="setScheduleViewMode('month')">
+                    Theo tháng
+                  </button>
+                </div>
+              </div>
+
+              <!-- Vùng hiển thị Lịch Theo tuần (Render hoàn toàn động bằng JavaScript) -->
+              <div class="schedule-week-view" id="scheduleWeekContainer">
+                <!-- Chèn động 5 cột ngày Thứ Hai -> Thứ Sáu bằng renderScheduleWeekView() -->
+              </div>
+
+              <!-- Vùng hiển thị Lịch Theo tháng (Render động bằng JavaScript) -->
+              <div class="schedule-month-view d-none" id="scheduleMonthContainer">
+                <!-- Chèn động lưới lịch tháng bằng renderScheduleMonthView() -->
+              </div>
+            </div>
+
+            <!-- Cột phải: Card Chi tiết kế hoạch của ngày đang chọn -->
+            <div class="schedule-detail-card">
+              <div class="detail-card-header">
+                <div class="detail-caption">CHI TIẾT KẾ HOẠCH</div>
+                <h3 class="detail-selected-date" id="schedDetailDateTitle">—</h3>
+              </div>
+
+              <div class="detail-card-body" id="schedDetailBody">
+                <div class="detail-field-group">
+                  <div class="detail-field-label">Thời gian</div>
+                  <div class="detail-field-value text-primary-time" id="schedDetailTime">—</div>
+                </div>
+
+                <div class="detail-field-group">
+                  <div class="detail-field-label">Nội dung công việc</div>
+                  <div class="detail-field-value" id="schedDetailTask">—</div>
+                </div>
+
+                <div class="detail-field-group">
+                  <div class="detail-field-label">Địa điểm làm việc</div>
+                  <div class="detail-field-value" id="schedDetailLocation">—</div>
+                </div>
+
+                <div class="detail-field-group">
+                  <div class="detail-field-label">Người hướng dẫn</div>
+                  <div class="detail-field-value" id="schedDetailMentor">—</div>
+                </div>
+              </div>
+
+              <!-- Ghi chú chân card -->
+              <div class="detail-notice-box">
+                <i class="bi bi-info-circle-fill notice-info-icon"></i>
+                <span>Lịch được thiết lập bởi phòng nhân sự. Vui lòng liên hệ Mentor nếu cần hỗ trợ.</span>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 4: CHẤM CÔNG CÁ NHÂN (ATTENDANCE - ĐỂ TRỐNG DỮ LIỆU)       -->
+        <!-- ============================================================= -->
+        <section class="portal-tab-content" id="tab-attendance">
+
+          <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+              <h1 class="page-title">Chấm công cá nhân</h1>
+              <p class="page-desc">Ghi nhận thời gian làm việc và theo dõi lịch sử chấm công.</p>
+            </div>
+            <button type="button" class="btn btn-primary px-3 py-2 d-flex align-items-center gap-2" onclick="openInternLeaveModal()" style="border-radius: 10px; font-weight: 600; background: #0284c7; border-color: #0284c7;">
+              <i class="fa-solid fa-calendar-plus"></i>
+              <span>Đăng ký nghỉ phép</span>
+            </button>
+          </div>
+
+          <!-- Phần Hôm nay & Ca làm việc hôm nay (2 cột) -->
+          <div class="attendance-top-row mb-4">
+            
+            <!-- Cột trái: Thẻ Chấm công hôm nay -->
+            <div class="today-attendance-card">
+              <div class="today-card-header">
+                <div>
+                  <div class="today-caption">HÔM NAY</div>
+                  <h3 class="today-date-title" id="todayAttendanceDate">Thứ Bảy, 03/10/2026</h3>
+                </div>
+                <span class="status-pill-badge" id="todayStatusBadge">Chưa check-in</span>
+              </div>
+
+              <!-- 4 hộp thông số chấm công (để trống dữ liệu theo yêu cầu) -->
+              <div class="today-metrics-grid">
+                <div class="metric-box">
+                  <div class="metric-label">Giờ bắt đầu theo lịch</div>
+                  <div class="metric-value" id="todayScheduledStart">—</div>
+                </div>
+                <div class="metric-box">
+                  <div class="metric-label">Giờ kết thúc theo lịch</div>
+                  <div class="metric-value" id="todayScheduledEnd">—</div>
+                </div>
+                <div class="metric-box">
+                  <div class="metric-label">Thời gian check-in</div>
+                  <div class="metric-value text-primary-time" id="todayCheckInTime">—</div>
+                </div>
+                <div class="metric-box">
+                  <div class="metric-label">Thời gian check-out</div>
+                  <div class="metric-value text-primary-time" id="todayCheckOutTime">—</div>
+                </div>
+              </div>
+
+              <!-- Hàng chân: Tổng thời gian & Nút Check-in -->
+              <div class="today-action-row">
+                <div class="total-time-pill">
+                  <div class="total-time-label">Tổng thời gian làm việc</div>
+                  <div class="total-time-value" id="todayTotalWorkTime">—</div>
+                </div>
+                <button type="button" class="btn-checkin-action" id="btnCheckInOut" onclick="handleToggleCheckInOut()">
+                  CHECK-IN
+                </button>
+              </div>
+            </div>
+
+            <!-- Cột phải: Thẻ Xanh Ca làm việc hôm nay -->
+            <div class="today-shift-card">
+              <div class="shift-caption">Ca làm việc hôm nay</div>
+              <div class="shift-time-main" id="todayShiftTime">—</div>
+              
+              <div class="shift-divider"></div>
+
+              <div class="shift-meta-list">
+                <div class="shift-meta-item">
+                  <span class="shift-meta-label">Địa điểm</span>
+                  <span class="shift-meta-val" id="todayShiftLocation">—</span>
+                </div>
+                <div class="shift-meta-item">
+                  <span class="shift-meta-label">Mentor</span>
+                  <span class="shift-meta-val" id="todayShiftMentor">—</span>
+                </div>
+                <div class="shift-meta-item">
+                  <span class="shift-meta-label">Nghỉ trưa</span>
+                  <span class="shift-meta-val" id="todayShiftLunch">—</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Phần Lịch sử chấm công -->
+          <div class="attendance-history-card">
+            <div class="history-card-header">
+              <div>
+                <h3 class="history-card-title">Lịch sử chấm công</h3>
+                <p class="history-card-desc">Theo dõi các lần chấm công gần đây.</p>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table modern-table attendance-table">
+                <thead>
+                  <tr>
+                    <th>NGÀY LÀM VIỆC</th>
+                    <th>GIỜ CHECK-IN</th>
+                    <th>GIỜ CHECK-OUT</th>
+                    <th>TỔNG THỜI GIAN</th>
+                    <th>TRẠNG THÁI</th>
+                  </tr>
+                </thead>
+                <tbody id="attendanceHistoryBody">
+                  <!-- Sẽ render động qua renderAttendanceHistory(), mặc định để trống theo yêu cầu -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Phần Danh sách đơn nghỉ phép của tôi (User Story 24) -->
+          <div class="attendance-history-card mt-4">
+            <div class="history-card-header d-flex justify-content-between align-items-center">
+              <div>
+                <h3 class="history-card-title"><i class="fa-solid fa-file-signature text-primary me-2"></i>Đơn nghỉ phép của tôi</h3>
+                <p class="history-card-desc">Theo dõi tiến độ xét duyệt các đơn xin nghỉ phép đã gửi đến phòng nhân sự (HR).</p>
+              </div>
+              <button type="button" class="btn btn-outline-primary btn-sm px-3 py-2 d-flex align-items-center gap-2" onclick="openInternLeaveModal()" style="border-radius: 8px; font-weight: 600;">
+                <i class="fa-solid fa-plus"></i>
+                <span>Tạo đơn mới</span>
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table modern-table attendance-table">
+                <thead>
+                  <tr>
+                    <th>LOẠI NGHỈ</th>
+                    <th>THỜI GIAN NGHỈ</th>
+                    <th>SỐ NGÀY</th>
+                    <th>LÝ DO</th>
+                    <th>NGÀY GỬI</th>
+                    <th>TRẠNG THÁI</th>
+                  </tr>
+                </thead>
+                <tbody id="internLeavesTableBody">
+                  <!-- Render động qua renderInternLeaves() -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 5: HỢP ĐỒNG THỰC TẬP (CONTRACTS - ĐỂ TRỐNG DỮ LIỆU)        -->
+        <!-- ============================================================= -->
+        <section class="portal-tab-content" id="tab-contracts">
+
+          <div class="page-header">
+            <h1 class="page-title">Hợp đồng thực tập</h1>
+            <p class="page-desc">Xem và phản hồi các hợp đồng thực tập của bạn.</p>
+          </div>
+
+          <!-- Dải thông báo hợp đồng chờ xác nhận (Dynamic Alert Strip) -->
+          <div id="contractNoticeBanner" class="mb-4">
+            <!-- Render động bằng updateContractNoticeBanner() -->
+          </div>
+
+          <!-- Bảng danh sách hợp đồng -->
+          <div class="contract-list-card">
+            <div class="table-responsive">
+              <table class="table modern-table contract-table">
+                <thead>
+                  <tr>
+                    <th>MÃ HỢP ĐỒNG</th>
+                    <th>TÊN HỢP ĐỒNG</th>
+                    <th>CÔNG TY TIẾP NHẬN</th>
+                    <th>PHÒNG BAN</th>
+                    <th>THỜI GIAN</th>
+                    <th>TRẠNG THÁI</th>
+                    <th class="text-end">THAO TÁC</th>
+                  </tr>
+                </thead>
+                <tbody id="contractTableBody">
+                  <!-- Sẽ render động qua renderContractList(), mặc định để trống theo yêu cầu -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 6: HOÀN THIỆN THÔNG TIN CÁ NHÂN (CHUẨN THEO THIẾT KẾ MẪU) -->
+        <!-- ============================================================= -->
+        <section class="portal-tab-content" id="tab-profile">
+
+          <div class="page-header mb-2">
+            <h1 class="page-title">Hoàn thiện thông tin cá nhân</h1>
+            <p class="page-desc">Cung cấp đầy đủ thông tin để hoàn thiện hồ sơ thực tập.</p>
+          </div>
+
+          <!-- Link quay lại Tổng quan -->
+          <div class="mb-4">
+            <a href="javascript:void(0)" class="profile-back-link" onclick="switchPortalTab('overview')">
+              <i class="bi bi-arrow-left"></i>
+              <span>Quay lại Tổng quan</span>
+            </a>
+          </div>
+
+          <!-- Card Thông tin cá nhân -->
+          <div class="profile-form-card mb-4">
+            <div class="profile-card-header">
+              <h3 class="profile-card-title">Thông tin cá nhân</h3>
+              <p class="profile-card-subtitle">Tất cả các trường dưới đây đều là thông tin bắt buộc.</p>
+            </div>
+
+            <form id="internProfileForm" onsubmit="handleSaveInternProfile(event)">
+              <div class="profile-form-grid">
+
+                <!-- 1. Họ và tên -->
+                <div class="form-group-item">
+                  <label class="form-item-label" for="profileInputFullName">
+                    Họ và tên <span class="required-star">*</span>
+                  </label>
+                  <input type="text" id="profileInputFullName" class="form-item-input"
+                    placeholder="Trần Minh Khoa" value="">
+                </div>
+
+                <!-- 2. Ngày sinh -->
+                <div class="form-group-item">
+                  <label class="form-item-label" for="profileInputBirthDate">
+                    Ngày sinh <span class="required-star">*</span>
+                  </label>
+                  <div class="input-with-icon-wrap">
+                    <input type="text" id="profileInputBirthDate" class="form-item-input"
+                      placeholder="dd/mm/yyyy" value="">
+                    <i class="bi bi-calendar4 input-icon-right" onclick="triggerProfileDatePicker()"></i>
+                  </div>
+                </div>
+
+                <!-- 3. Số điện thoại -->
+                <div class="form-group-item">
+                  <label class="form-item-label" for="profileInputPhone">
+                    Số điện thoại <span class="required-star">*</span>
+                  </label>
+                  <input type="tel" id="profileInputPhone" class="form-item-input"
+                    placeholder="0912 345 678" value="">
+                </div>
+
+                <!-- 4. Trường đại học -->
+                <div class="form-group-item">
+                  <label class="form-item-label" for="profileInputUniversity">
+                    Trường đại học <span class="required-star">*</span>
+                  </label>
+                  <input type="text" id="profileInputUniversity" class="form-item-input"
+                    placeholder="Đại học Bách khoa Hà Nội" value="">
+                </div>
+
+                <!-- 5. Khoa -->
+                <div class="form-group-item">
+                  <label class="form-item-label" for="profileInputFaculty">
+                    Khoa <span class="required-star">*</span>
+                  </label>
+                  <input type="text" id="profileInputFaculty" class="form-item-input"
+                    placeholder="Công nghệ thông tin" value="">
+                </div>
+
+                <!-- 6. Ngành học -->
+                <div class="form-group-item">
+                  <label class="form-item-label" for="profileInputMajor">
+                    Ngành học <span class="required-star">*</span>
+                  </label>
+                  <input type="text" id="profileInputMajor" class="form-item-input"
+                    placeholder="Kỹ thuật phần mềm" value="">
+                </div>
+
+                <!-- 7. Khóa học -->
+                <div class="form-group-item">
+                  <label class="form-item-label" for="profileInputCourse">
+                    Khóa học <span class="required-star">*</span>
+                  </label>
+                  <input type="text" id="profileInputCourse" class="form-item-input"
+                    placeholder="K67" value="">
+                </div>
+
+                <!-- 8. Vị trí mong muốn thực tập -->
+                <div class="form-group-item">
+                  <label class="form-item-label" for="profileInputPosition">
+                    Vị trí mong muốn thực tập <span class="required-star">*</span>
+                  </label>
+                  <input type="text" id="profileInputPosition" class="form-item-input"
+                    placeholder="Thực tập sinh Front-end" value="">
+                </div>
+
+              </div>
+
+              <!-- Nút hành động -->
+              <div class="profile-card-footer">
+                <button type="button" class="btn-save-profile" onclick="handleSaveInternProfileOnly()">
+                  Lưu thông tin
+                </button>
+                <button type="submit" class="btn-continue-profile">
+                  <span>Tiếp tục</span>
+                  <i class="bi bi-arrow-right"></i>
+                </button>
+              </div>
+
+            </form>
           </div>
 
         </section>
@@ -509,149 +1089,112 @@
     </div>
   </div>
 
+
+
   <!-- ================================================================= -->
-  <!-- 8. MODAL HỒ SƠ CÁ NHÂN THỰC TẬP SINH                              -->
+  <!-- 9. MODAL XEM CHI TIẾT & PHẢN HỒI HỢP ĐỒNG THỰC TẬP               -->
   <!-- ================================================================= -->
-  <div class="modal-overlay" id="internProfileModal">
-    <div class="custom-modal-card intern-profile-modal-card">
-      <!-- Header modal -->
-      <div class="modal-header-section">
+  <div class="modal-overlay" id="contractDetailModal">
+    <div class="custom-modal-card contract-modal-card">
+      <div class="modal-header-row">
         <div>
-          <h3 class="modal-header-title">
-            <i class="fa-solid fa-id-card text-primary"></i>
-            <span>Thông tin & Hồ sơ cá nhân</span>
-          </h3>
-          <p class="modal-header-sub">Xem và chỉnh sửa thông tin cá nhân, học vấn và bảo mật</p>
+          <h3 class="modal-title-main" id="modalContractTitle">Hợp đồng thực tập Phát triển phần mềm</h3>
+          <p class="modal-subtitle-main" id="modalContractSub">Mã số: HĐTT-2026-089</p>
         </div>
-        <button type="button" class="btn-close" onclick="closeInternProfileModal()" aria-label="Đóng"></button>
+        <button type="button" class="btn-modal-close" onclick="closeContractModal()" title="Đóng modal">
+          <i class="bi bi-x-lg"></i>
+        </button>
       </div>
 
-      <!-- Form cập nhật hồ sơ -->
-      <form id="internProfileForm" onsubmit="handleSaveInternProfile(event)">
-        <div class="intern-profile-scroll-body">
+      <div class="contract-modal-scroll" id="modalContractContent">
+        <!-- Chi tiết hợp đồng render động -->
+      </div>
 
-          <!-- Phần 1: Định danh & Nhận diện -->
-          <div class="intern-profile-section">
-            <h5 class="intern-section-title">
-              <i class="fa-solid fa-user-circle text-primary"></i>
-              <span>1. Định danh & Nhận diện</span>
-            </h5>
-            
-            <div class="intern-avatar-row">
-              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
-                alt="Avatar" class="intern-avatar-preview" id="internProfileAvatarPreview">
-              <div class="intern-avatar-upload-box">
-                <input type="file" id="internAvatarFileInput" accept="image/*" class="d-none"
-                  title="Chọn ảnh đại diện mới" aria-label="Chọn ảnh đại diện mới" onchange="handleInternAvatarChange(event)">
-                <button type="button" class="btn btn-sm btn-outline-secondary px-3 py-1" style="font-weight: 600; border-radius: 8px;"
-                  onclick="document.getElementById('internAvatarFileInput').click()">
-                  <i class="fa-solid fa-camera me-1"></i> Thay đổi ảnh
-                </button>
-                <p class="intern-form-hint">Hỗ trợ JPG, PNG, WebP (Tối đa 2MB)</p>
-              </div>
+      <div class="modal-footer-row mt-4" id="modalContractFooterActions">
+        <!-- Các nút xác nhận / từ chối / tải xuống render động -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- 10. MODAL XÁC NHẬN GỬI HỒ SƠ ĐẾN PHÒNG NHÂN SỰ                    -->
+  <!-- ================================================================= -->
+  <div class="modal-overlay" id="confirmSendDossierModal">
+    <div class="custom-modal-card confirm-modal-card" style="max-width: 480px; padding: 28px 24px;">
+      <div class="text-center mb-3">
+        <div style="width: 60px; height: 60px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 14px;">
+          <i class="bi bi-send-check-fill"></i>
+        </div>
+        <h4 class="fw-bold mb-2" style="font-size: 18px; color: #0f172a;">Gửi hồ sơ đến phòng nhân sự</h4>
+        <p class="text-muted" style="font-size: 13.5px; line-height: 1.5; margin: 0 auto; max-width: 380px;">
+          Bạn có chắc chắn muốn gửi hồ sơ thực tập (bao gồm Thông tin cá nhân, CV và Đơn xin thực tập) đến phòng nhân sự không?
+        </p>
+      </div>
+      <div class="d-flex justify-content-end gap-2 mt-4 pt-2 border-top">
+        <button type="button" class="btn btn-outline-secondary px-3" onclick="closeConfirmSendDossierModal()" style="border-radius: 8px; font-weight: 500; font-size: 13.5px;">Hủy bỏ</button>
+        <button type="button" class="btn btn-primary px-4" onclick="confirmSubmitDossierToHR()" style="border-radius: 8px; font-weight: 600; font-size: 13.5px; background: #2563eb; border-color: #2563eb;">
+          <i class="bi bi-send me-1"></i>Xác nhận gửi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- 11. MODAL ĐĂNG KÝ NGHỈ PHÉP CHO THỰC TẬP SINH (USER STORY 24)      -->
+  <!-- ================================================================= -->
+  <div class="modal-overlay" id="internLeaveModal">
+    <div class="custom-modal-card" style="max-width: 540px; border-radius: 16px; padding: 24px;">
+      <div class="modal-header-section d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+        <div>
+          <h4 class="m-0 fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 18px;">
+            <i class="fa-solid fa-calendar-plus text-primary"></i>
+            <span>Đăng ký nghỉ phép</span>
+          </h4>
+          <p class="text-muted m-0 mt-1" style="font-size: 13px;">Gửi đơn xin nghỉ phép đến phòng nhân sự (HR) xét duyệt</p>
+        </div>
+        <button type="button" class="btn-close" onclick="closeInternLeaveModal()" aria-label="Đóng"></button>
+      </div>
+
+      <form id="internLeaveForm" onsubmit="handleSubmitInternLeave(event)">
+        <div class="modal-body p-0">
+          <div class="mb-3">
+            <label for="internLeaveType" class="form-label fw-semibold" style="font-size: 13px;">Loại nghỉ phép <span class="text-danger">*</span></label>
+            <select id="internLeaveType" class="form-select" required>
+              <option value="Nghỉ ốm">Nghỉ ốm / Điều trị sức khỏe</option>
+              <option value="Việc cá nhân" selected>Việc cá nhân / Gia đình</option>
+              <option value="Nghỉ học / Thi">Trùng lịch học / Lịch thi ở trường</option>
+              <option value="Khác">Lý do khác</option>
+            </select>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="internLeaveStartDate" class="form-label fw-semibold" style="font-size: 13px;">Từ ngày <span class="text-danger">*</span></label>
+              <input type="date" id="internLeaveStartDate" class="form-control" required onchange="calculateInternLeaveDays()">
             </div>
-
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label for="internProfileName" class="form-label fw-semibold" style="font-size: 13px;">Họ và tên đầy đủ <span class="text-danger">*</span></label>
-                <input type="text" id="internProfileName" class="form-control" placeholder="Ví dụ: Trần Minh Khoa" required>
-              </div>
-              <div class="col-md-6">
-                <label for="internProfileRole" class="form-label fw-semibold" style="font-size: 13px;">Chức danh / Vai trò</label>
-                <input type="text" id="internProfileRole" class="form-control" value="Thực tập sinh" readonly disabled style="background-color: #f1f5f9; cursor: not-allowed;">
-              </div>
+            <div class="col-md-6">
+              <label for="internLeaveEndDate" class="form-label fw-semibold" style="font-size: 13px;">Đến ngày <span class="text-danger">*</span></label>
+              <input type="date" id="internLeaveEndDate" class="form-control" required onchange="calculateInternLeaveDays()">
             </div>
           </div>
 
-          <!-- Phần 2: Học vấn & Đào tạo -->
-          <div class="intern-profile-section">
-            <h5 class="intern-section-title">
-              <i class="fa-solid fa-graduation-cap text-primary"></i>
-              <span>2. Học vấn & Đào tạo</span>
-            </h5>
-            <div class="row g-3 mb-3">
-              <div class="col-md-6">
-                <label for="internProfileSchool" class="form-label fw-semibold" style="font-size: 13px;">Trường Đại học / Cao đẳng</label>
-                <input type="text" id="internProfileSchool" class="form-control" placeholder="Ví dụ: ĐH Bách Khoa HN">
-              </div>
-              <div class="col-md-6">
-                <label for="internProfileMajor" class="form-label fw-semibold" style="font-size: 13px;">Chuyên ngành đào tạo</label>
-                <input type="text" id="internProfileMajor" class="form-control" placeholder="Ví dụ: Công nghệ thông tin">
-              </div>
-            </div>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label for="internProfileDept" class="form-label fw-semibold" style="font-size: 13px;">Phòng ban thực tập</label>
-                <input type="text" id="internProfileDept" class="form-control" placeholder="Ví dụ: Kỹ thuật phần mềm">
-              </div>
-              <div class="col-md-6">
-                <label for="internProfileMentor" class="form-label fw-semibold" style="font-size: 13px;">Người hướng dẫn (Mentor)</label>
-                <input type="text" id="internProfileMentor" class="form-control" placeholder="Chưa phân công mentor" readonly disabled style="background-color: #f1f5f9; cursor: not-allowed;">
-              </div>
-            </div>
+          <div class="mb-3 p-2 bg-light rounded d-flex justify-content-between align-items-center" style="font-size: 13px;">
+            <span class="text-muted">Tổng số ngày nghỉ dự kiến:</span>
+            <span class="fw-bold text-primary fs-6" id="internLeaveDaysCount">1 ngày</span>
           </div>
 
-          <!-- Phần 3: Thông tin liên hệ -->
-          <div class="intern-profile-section">
-            <h5 class="intern-section-title">
-              <i class="fa-solid fa-address-book text-primary"></i>
-              <span>3. Thông tin liên hệ</span>
-            </h5>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label for="internProfileEmail" class="form-label fw-semibold" style="font-size: 13px;">Email liên hệ <span class="text-danger">*</span></label>
-                <input type="email" id="internProfileEmail" class="form-control" placeholder="email@student.vn" required>
-              </div>
-              <div class="col-md-6">
-                <label for="internProfilePhone" class="form-label fw-semibold" style="font-size: 13px;">Số điện thoại</label>
-                <input type="tel" id="internProfilePhone" class="form-control" placeholder="Ví dụ: 0912 345 678">
-              </div>
-            </div>
+          <div class="mb-3">
+            <label for="internLeaveReason" class="form-label fw-semibold" style="font-size: 13px;">Lý do nghỉ cụ thể <span class="text-danger">*</span></label>
+            <textarea id="internLeaveReason" class="form-control" rows="3" placeholder="Nhập lý do chi tiết để HR xét duyệt..." required></textarea>
           </div>
-
-          <!-- Phần 4: Cài đặt bảo mật -->
-          <div class="intern-profile-section">
-            <h5 class="intern-section-title">
-              <i class="fa-solid fa-shield-halved text-primary"></i>
-              <span>4. Cài đặt bảo mật</span>
-            </h5>
-            <div class="intern-password-box">
-              <button type="button" class="intern-btn-toggle-pw" onclick="toggleInternPasswordSection()">
-                <span class="d-inline-flex align-items-center gap-2">
-                  <i class="fa-solid fa-key"></i>
-                  <span>Đổi mật khẩu tài khoản</span>
-                </span>
-                <span id="internPwArrow">▼</span>
-              </button>
-
-              <div id="internPasswordFields" class="intern-password-fields">
-                <div class="mb-3">
-                  <label for="internOldPassword" class="form-label fw-semibold" style="font-size: 13px;">Mật khẩu hiện tại</label>
-                  <input type="password" id="internOldPassword" class="form-control" placeholder="Nhập mật khẩu hiện tại">
-                </div>
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <label for="internNewPassword" class="form-label fw-semibold" style="font-size: 13px;">Mật khẩu mới</label>
-                    <input type="password" id="internNewPassword" class="form-control" placeholder="Tối thiểu 6 ký tự">
-                  </div>
-                  <div class="col-md-6">
-                    <label for="internConfirmPassword" class="form-label fw-semibold" style="font-size: 13px;">Xác nhận mật khẩu mới</label>
-                    <input type="password" id="internConfirmPassword" class="form-control" placeholder="Nhập lại mật khẩu mới">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
         </div>
 
-        <!-- Footer modal -->
-        <div class="intern-profile-footer">
-          <button type="button" class="btn btn-outline-secondary px-4 py-2" onclick="closeInternProfileModal()" style="border-radius: 10px; font-weight: 600;">
-            Đóng
+        <div class="modal-footer-row mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-outline-secondary px-4 py-2" onclick="closeInternLeaveModal()" style="border-radius: 10px; font-weight: 600;">
+            Hủy
           </button>
-          <button type="submit" class="btn btn-primary px-4 py-2" id="btnSaveInternProfile" style="border-radius: 10px; font-weight: 600; background: #0284c7; border-color: #0284c7;">
-            <i class="fa-solid fa-floppy-disk me-1"></i> Lưu thay đổi
+          <button type="submit" class="btn btn-primary px-4 py-2" style="border-radius: 10px; font-weight: 600; background: #0284c7; border-color: #0284c7;">
+            <i class="fa-solid fa-paper-plane me-1"></i> Gửi đơn nghỉ phép
           </button>
         </div>
       </form>

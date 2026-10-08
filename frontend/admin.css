@@ -1546,6 +1546,13 @@ body {
   margin-bottom: 22px;
 }
 
+.login-success-box .redirect-hint {
+  font-size: 13px;
+  color: #94a3b8;
+  display: block;
+  margin-top: 10px;
+}
+
 .redirect-progress-bar {
   width: 100%;
   height: 6px;

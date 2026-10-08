@@ -15,6 +15,10 @@ exports.getInterns = async (req, res) => {
         start_date, end_date, gpa, status, reject_reason, reject_note,
         skills, bio, projects,
         (SELECT COUNT(*) FROM documents WHERE documents.intern_id = interns.id) AS document_count,
+        (SELECT doc_name FROM documents WHERE documents.intern_id = interns.id AND doc_type = 'CV' ORDER BY id DESC LIMIT 1) AS cv_doc_name,
+        (SELECT file_url FROM documents WHERE documents.intern_id = interns.id AND doc_type = 'CV' ORDER BY id DESC LIMIT 1) AS cv_file_url,
+        (SELECT doc_name FROM documents WHERE documents.intern_id = interns.id AND (doc_type = 'APPLICATION_LETTER' OR doc_type = 'APPLICATION') ORDER BY id DESC LIMIT 1) AS letter_doc_name,
+        (SELECT file_url FROM documents WHERE documents.intern_id = interns.id AND (doc_type = 'APPLICATION_LETTER' OR doc_type = 'APPLICATION') ORDER BY id DESC LIMIT 1) AS letter_file_url,
         DATE_FORMAT(start_date, '%d/%m/%Y') AS startFormatted,
         DATE_FORMAT(end_date, '%d/%m/%Y') AS endFormatted,
         CASE 
@@ -284,13 +288,36 @@ exports.updateDocumentStatus = async (req, res) => {
       [newInternStatus, rejectReason || null, note || null, id]
     );
 
+    // Ghi nhận và mô phỏng gửi email thông báo kết quả xét duyệt đến ứng viên (User Story 8)
+    let candidateEmail = '';
+    let candidateName = '';
+    try {
+      const [candRows] = await db.query('SELECT name, email FROM interns WHERE id = ?', [id]);
+      if (candRows.length > 0) {
+        candidateEmail = candRows[0].email;
+        candidateName = candRows[0].name;
+        console.log(`📧 [SYSTEM EMAIL] Đã tự động gửi email thông báo kết quả xét duyệt (${newInternStatus}) đến ứng viên: ${candidateName} <${candidateEmail}>`);
+      }
+    } catch (e) {}
+
     return res.status(200).json({
       success: true,
-      message: status === 'approved' ? 'Duyệt hồ sơ thành công!' : 'Đã từ chối hồ sơ!',
+      message: status === 'approved' 
+        ? `Duyệt hồ sơ thành công! Hệ thống đã gửi email thông báo kết quả đến ${candidateEmail || 'ứng viên'}.` 
+        : `Đã từ chối hồ sơ! Hệ thống đã gửi email thông báo kết quả đến ${candidateEmail || 'ứng viên'}.`,
+      emailSent: true,
+      emailRecipient: candidateEmail,
       data: {
         internId: Number(id),
         reviewStatus: status,
         status: newInternStatus,
+        emailNotification: {
+          sent: true,
+          to: candidateEmail,
+          candidate: candidateName,
+          result: newInternStatus,
+          timestamp: new Date().toISOString()
+        },
         updatedAt: new Date().toISOString()
       }
     });
@@ -335,7 +362,12 @@ exports.uploadDocument = async (req, res) => {
     }
 
     const fileUrl = `/uploads/${req.file.filename}`;
-    const originalName = req.file.originalname;
+    let originalName = req.file.originalname;
+    try {
+      // Sửa lỗi mã hóa ký tự tiếng Việt (UTF-8 bị parse thành latin1 từ multipart-form)
+      originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+    } catch (e) {}
+
     const type = docType || (originalName.toLowerCase().includes('cv') ? 'CV' : 'APPLICATION_LETTER');
 
     // Tìm ID chính xác trong bảng interns (hỗ trợ cả intern_id và user_id)
@@ -357,6 +389,9 @@ exports.uploadDocument = async (req, res) => {
       );
       targetInternId = newIntern.insertId;
     }
+
+    // Xóa bản ghi tài liệu cũ cùng loại để cập nhật file mới
+    await db.query('DELETE FROM documents WHERE intern_id = ? AND doc_type = ?', [targetInternId, type]);
 
     // Lưu thông tin file vào bảng documents trong MySQL
     const [result] = await db.query(

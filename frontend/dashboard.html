@@ -61,24 +61,36 @@
 
       <!-- Danh mục điều hướng: Đúng 3 tab của Tuần 1 -->
       <nav class="sidebar-menu">
-        <!-- 1. Tổng quan -->
+        <!-- Tổng quan -->
         <a href="javascript:void(0)" class="menu-item active" id="navOverview" onclick="switchTab('overview')">
           <i class="fa-solid fa-chart-pie"></i>
-          <span>1. Tổng quan</span>
+          <span>Tổng quan</span>
         </a>
 
-        <!-- 2. Tiếp nhận & Xét duyệt -->
+        <!-- Tiếp nhận & Xét duyệt -->
         <a href="javascript:void(0)" class="menu-item" id="navReview" onclick="switchTab('review')">
           <i class="fa-solid fa-clipboard-check"></i>
-          <span>2. Tiếp nhận & Xét duyệt</span>
+          <span>Tiếp nhận & Xét duyệt</span>
           <span class="menu-badge" id="sidebarPendingBadge">5</span>
         </a>
 
-        <!-- 3. Thực tập sinh -->
+        <!-- Thực tập sinh -->
         <a href="javascript:void(0)" class="menu-item" id="navInterns" onclick="switchTab('interns')">
           <i class="fa-solid fa-user-graduate"></i>
-          <span>3. Thực tập sinh</span>
+          <span>Thực tập sinh</span>
           <span class="menu-badge-sub" id="sidebarTotalBadge">7</span>
+        </a>
+
+        <!-- Chấm công & Thời gian -->
+        <a href="javascript:void(0)" class="menu-item" id="navAttendance" onclick="switchTab('attendance')">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>Chấm công & Thời gian</span>
+        </a>
+
+        <!-- Chương trình thực tập -->
+        <a href="javascript:void(0)" class="menu-item" id="navPrograms" onclick="switchTab('programs')">
+          <i class="fa-regular fa-calendar-days"></i>
+          <span>Chương trình thực tập</span>
         </a>
       </nav>
 
@@ -126,7 +138,7 @@
               <i class="fa-solid fa-users"></i>
             </div>
             <div class="stat-details">
-              <span class="stat-label">Thẻ 1: Tổng số thực tập sinh</span>
+              <span class="stat-label">Tổng số thực tập sinh</span>
               <div class="stat-row">
                 <span class="stat-number" id="statTotal">7</span>
                 <span class="stat-sub-badge">Đang quản lý</span>
@@ -140,7 +152,7 @@
               <i class="fa-solid fa-clock"></i>
             </div>
             <div class="stat-details">
-              <span class="stat-label">Thẻ 2: Hồ sơ chờ xét duyệt</span>
+              <span class="stat-label">Hồ sơ chờ xét duyệt</span>
               <div class="stat-row">
                 <span class="stat-number text-amber" id="statPending">5</span>
                 <span class="stat-sub-badge warning">Cần xử lý gấp</span>
@@ -154,7 +166,7 @@
               <i class="fa-solid fa-user-check"></i>
             </div>
             <div class="stat-details">
-              <span class="stat-label">Thẻ 3: Đang thực tập</span>
+              <span class="stat-label">Đang thực tập</span>
               <div class="stat-row">
                 <span class="stat-number text-green" id="statActive">5</span>
                 <span class="stat-sub-badge success">Hoạt động tốt</span>
@@ -168,7 +180,7 @@
               <i class="fa-solid fa-circle-check"></i>
             </div>
             <div class="stat-details">
-              <span class="stat-label">Thẻ 4: Đã hoàn thành / Kết thúc</span>
+              <span class="stat-label">Đã hoàn thành / Kết thúc</span>
               <div class="stat-row">
                 <span class="stat-number text-purple" id="statFinished">2</span>
                 <span class="stat-sub-badge default">Hoàn tất</span>
@@ -338,6 +350,199 @@
         </div>
       </section>
 
+      <!-- ==================== 4. TAB CHẤM CÔNG & THỜI GIAN ==================== -->
+      <section id="attendanceTab" class="tab-pane">
+        <header class="content-header">
+          <div>
+            <h1 class="page-title">Chấm công & Thời gian</h1>
+            <p class="page-subtitle">Theo dõi chuyên cần và đơn nghỉ phép của thực tập sinh</p>
+          </div>
+          <div class="header-actions">
+            <button type="button" class="btn-primary" onclick="exportAttendanceReport()">
+              <i class="fa-solid fa-file-export me-1"></i>
+              <span>Xuất báo cáo</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Sub-tabs chuyển đổi giữa Bảng chấm công & Đơn nghỉ phép (Hình 1 & 2) -->
+        <div class="attendance-subtabs-nav">
+          <button type="button" class="attendance-subtab-btn active" id="btnSubtabSheet" onclick="switchAttendanceSubtab('sheet')">
+            Bảng chấm công
+          </button>
+          <button type="button" class="attendance-subtab-btn" id="btnSubtabLeaves" onclick="switchAttendanceSubtab('leaves')">
+            Đơn nghỉ phép
+          </button>
+        </div>
+
+        <!-- ================= VÙNG 1: BẢNG CHẤM CÔNG (HÌNH 1) ================= -->
+        <div id="attendanceSheetView" class="attendance-view-panel">
+          <!-- 1. Thanh lọc điều kiện -->
+          <div class="attendance-filter-card">
+            <div class="attendance-filter-group">
+              <select id="attFilterMonth" class="form-control att-select-month" title="Chọn tháng chấm công" aria-label="Chọn tháng chấm công" onchange="onAttendanceDateFilterChange()">
+                <option value="1">Tháng 1</option>
+                <option value="2">Tháng 2</option>
+                <option value="3">Tháng 3</option>
+                <option value="4">Tháng 4</option>
+                <option value="5">Tháng 5</option>
+                <option value="6">Tháng 6</option>
+                <option value="7">Tháng 7</option>
+                <option value="8">Tháng 8</option>
+                <option value="9">Tháng 9</option>
+                <option value="10">Tháng 10</option>
+                <option value="11">Tháng 11</option>
+                <option value="12">Tháng 12</option>
+              </select>
+              <select id="attFilterYear" class="form-control att-select-year" title="Chọn năm chấm công" aria-label="Chọn năm chấm công" onchange="onAttendanceDateFilterChange()">
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+              </select>
+              <div class="att-date-range">
+                <input type="date" id="attFilterStartDate" class="form-control att-date-input" title="Từ ngày">
+                <input type="date" id="attFilterEndDate" class="form-control att-date-input" title="Đến ngày">
+              </div>
+              <select id="attFilterProgram" class="form-control att-select-program" title="Chọn chương trình thực tập" aria-label="Chọn chương trình thực tập">
+                <option value="">Tất cả chương trình</option>
+              </select>
+              <div class="att-search-wrapper">
+                <input type="text" id="attSearchIntern" class="form-control att-search-input" placeholder="Tìm thực tập sinh...">
+              </div>
+              <button type="button" class="btn-primary att-apply-btn" onclick="applyAttendanceFilter()">
+                Áp dụng
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Bảng chú giải trạng thái (Legend) -->
+          <div class="attendance-legend-row">
+            <div class="att-legend-item legend-present">
+              <span class="att-chip chip-present">Đ</span>
+              <span class="legend-text">Đúng giờ</span>
+            </div>
+            <div class="att-legend-item legend-late">
+              <span class="att-chip chip-late">T</span>
+              <span class="legend-text">Đi trễ</span>
+            </div>
+            <div class="att-legend-item legend-absent">
+              <span class="att-chip chip-absent">V</span>
+              <span class="legend-text">Vắng mặt</span>
+            </div>
+            <div class="att-legend-item legend-leave">
+              <span class="att-chip chip-leave">P</span>
+              <span class="legend-text">Nghỉ phép</span>
+            </div>
+            <div class="att-legend-item legend-remote">
+              <span class="att-chip chip-remote">R</span>
+              <span class="legend-text">Làm việc từ xa</span>
+            </div>
+            <div class="att-legend-item legend-empty">
+              <span class="att-chip chip-empty">—</span>
+              <span class="legend-text">Chưa có dữ liệu</span>
+            </div>
+          </div>
+
+          <!-- 3. Bảng dữ liệu chấm công (Để trống dữ liệu mặc định) -->
+          <div class="table-container att-table-card">
+            <table class="att-table">
+              <thead id="attTableHead">
+                <!-- Render các cột ngày theo tuần -->
+              </thead>
+              <tbody id="attTableBody">
+                <!-- Render danh sách TTS từ DB, các ngày mặc định để trống '—' -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ================= VÙNG 2: ĐƠN NGHỈ PHÉP (HÌNH 2) ================= -->
+        <div id="attendanceLeavesView" class="attendance-view-panel" style="display: none;">
+          <div class="leaves-header-actions mb-3 d-flex justify-content-between align-items-center">
+            <div class="leaves-filter-wrapper d-flex gap-2">
+              <select id="leaveFilterStatus" class="form-control" title="Lọc trạng thái đơn nghỉ phép" aria-label="Lọc trạng thái đơn nghỉ phép" style="width: 170px;" onchange="renderLeaveRequests()">
+                <option value="">Tất cả trạng thái</option>
+                <option value="Chờ duyệt">Chờ duyệt</option>
+                <option value="Đã duyệt">Đã duyệt</option>
+                <option value="Từ chối">Từ chối</option>
+              </select>
+            </div>
+            <button type="button" class="btn-primary btn-sm" onclick="openCreateLeaveModal()">
+              <i class="fa-solid fa-plus me-1"></i>
+              <span>Tạo đơn nghỉ phép</span>
+            </button>
+          </div>
+
+          <!-- Bảng đơn nghỉ phép (Mặc định để trống hoàn toàn 100%) -->
+          <div class="table-container leaves-table-card">
+            <table class="leaves-table">
+              <thead>
+                <tr>
+                  <th>THỰC TẬP SINH</th>
+                  <th>CHƯƠNG TRÌNH</th>
+                  <th>THỜI GIAN NGHỈ</th>
+                  <th>SỐ NGÀY</th>
+                  <th>LÝ DO</th>
+                  <th>NGÀY GỬI</th>
+                  <th>TRẠNG THÁI</th>
+                  <th class="text-center">THAO TÁC</th>
+                </tr>
+              </thead>
+              <tbody id="leavesTableBody">
+                <!-- Render từ leaveRequests, nếu rỗng thì hiển thị trạng thái chưa có đơn -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ==================== 5. TAB CHƯƠNG TRÌNH THỰC TẬP ==================== -->
+      <section id="programsTab" class="tab-pane">
+        <header class="content-header">
+          <div>
+            <h1 class="page-title">Chương trình thực tập</h1>
+            <p class="page-subtitle">Quản lý và theo dõi các chương trình đang chạy</p>
+          </div>
+          <button type="button" class="btn-primary" onclick="openCreateProgramModal()">
+            <i class="fa-solid fa-plus"></i>
+            <span>Tạo chương trình</span>
+          </button>
+        </header>
+
+        <!-- Bố cục 2 cột chương trình thực tập -->
+        <div class="programs-layout">
+          <!-- Cột trái: Danh sách các thẻ chương trình -->
+          <div class="programs-list-col" id="programsCardsContainer">
+            <!-- Render tự động từ dashboard.js -->
+          </div>
+
+          <!-- Cột phải: Chi tiết chương trình & Lịch trình dự kiến -->
+          <div class="programs-detail-col">
+            <!-- Box 1: Chi tiết chương trình -->
+            <div class="program-detail-card">
+              <h3 class="program-detail-title">Chi tiết chương trình</h3>
+              <div class="program-info-grid" id="programDetailGrid">
+                <!-- Render chi tiết từ dashboard.js -->
+              </div>
+              <div class="program-detail-actions" id="programDetailActions" style="display: none;">
+                <button type="button" class="btn-primary btn-edit-prog" onclick="openEditCurrentProgramModal()">Chỉnh sửa</button>
+                <button type="button" class="btn-secondary btn-view-interns" onclick="openProgramInternsModal()">Xem TTS</button>
+                <button type="button" class="btn-danger btn-delete-prog" onclick="handleDeleteProgram()" title="Xóa chương trình"><i class="fa-solid fa-trash-can"></i></button>
+              </div>
+            </div>
+
+            <!-- Box 2: Lịch trình dự kiến -->
+            <div class="program-schedule-card">
+              <h3 class="program-schedule-title">Lịch trình dự kiến</h3>
+              <div class="program-schedule-timeline" id="programScheduleTimeline">
+                <!-- Render lịch trình từ dashboard.js -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -442,24 +647,59 @@
           <div class="form-row-2">
             <div class="form-group">
               <label for="addCv">CV</label>
-              <div class="file-upload-box">
-                <input type="file" id="addCv" class="file-input-custom" accept=".pdf,.doc,.docx" onchange="updateUploadFileName(this, 'cvFileName')">
+              <div class="file-upload-box" id="addCvBox">
+                <input type="file" id="addCv" class="file-input-custom" accept=".pdf,.doc,.docx" onchange="updateUploadFileName(this, 'cvFileName', 'cvClearBtn', 'addCvBox')">
                 <div class="file-upload-display">
-                  <i class="fa-solid fa-file-pdf"></i>
+                  <i class="fa-solid fa-file-lines file-type-icon"></i>
                   <span id="cvFileName" class="file-name-text">Tải lên CV (PDF, DOCX)</span>
                   <span class="file-btn-browse">Chọn file</span>
                 </div>
+                <button type="button" class="btn-clear-file" id="cvClearBtn" title="Bỏ chọn file này" onclick="clearSelectedFile('addCv', 'cvFileName', 'cvClearBtn', 'addCvBox', 'cv', event)">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <div class="file-meta-bar" id="addCvMetaBar">
+                <span class="file-meta-status"><i class="fa-regular fa-circle"></i> Trạng thái: Chưa tải lên</span>
+                <span class="file-meta-date"><i class="fa-regular fa-calendar"></i> Ngày tải: --/--/----</span>
               </div>
             </div>
             <div class="form-group">
               <label for="addLetter">Đơn xin thực tập</label>
-              <div class="file-upload-box">
-                <input type="file" id="addLetter" class="file-input-custom" accept=".pdf,.doc,.docx" onchange="updateUploadFileName(this, 'letterFileName')">
+              <div class="file-upload-box" id="addLetterBox">
+                <input type="file" id="addLetter" class="file-input-custom" accept=".pdf,.doc,.docx" onchange="updateUploadFileName(this, 'letterFileName', 'letterClearBtn', 'addLetterBox')">
                 <div class="file-upload-display">
-                  <i class="fa-solid fa-file-lines"></i>
+                  <i class="fa-solid fa-file-lines file-type-icon"></i>
                   <span id="letterFileName" class="file-name-text">Tải lên Đơn xin thực tập</span>
                   <span class="file-btn-browse">Chọn file</span>
                 </div>
+                <button type="button" class="btn-clear-file" id="letterClearBtn" title="Bỏ chọn file này" onclick="clearSelectedFile('addLetter', 'letterFileName', 'letterClearBtn', 'addLetterBox', 'letter', event)">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <div class="file-meta-bar" id="addLetterMetaBar">
+                <span class="file-meta-status"><i class="fa-regular fa-circle"></i> Trạng thái: Chưa tải lên</span>
+                <span class="file-meta-date"><i class="fa-regular fa-calendar"></i> Ngày tải: --/--/----</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row-2" style="margin-top: 10px;">
+            <div class="form-group">
+              <label for="addContract">Hợp đồng thực tập</label>
+              <div class="file-upload-box" id="addContractBox">
+                <input type="file" id="addContract" class="file-input-custom" accept=".pdf,.doc,.docx" onchange="updateUploadFileName(this, 'contractFileName', 'contractClearBtn', 'addContractBox')">
+                <div class="file-upload-display">
+                  <i class="fa-solid fa-file-lines file-type-icon"></i>
+                  <span id="contractFileName" class="file-name-text">Tải lên Hợp đồng thực tập</span>
+                  <span class="file-btn-browse">Chọn file</span>
+                </div>
+                <button type="button" class="btn-clear-file" id="contractClearBtn" title="Bỏ chọn file này" onclick="clearSelectedFile('addContract', 'contractFileName', 'contractClearBtn', 'addContractBox', 'contract', event)">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <div class="file-meta-bar" id="addContractMetaBar">
+                <span class="file-meta-status"><i class="fa-regular fa-circle"></i> Trạng thái: Chưa tải lên</span>
+                <span class="file-meta-date"><i class="fa-regular fa-calendar"></i> Ngày tải: --/--/----</span>
               </div>
             </div>
           </div>
@@ -481,65 +721,171 @@
 
   <!-- ==================== MODAL 2: CHỈNH SỬA HỒ SƠ TTS ==================== -->
   <div class="modal" id="editModal">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
       <div class="modal-header">
-        <h3 class="modal-title">Chỉnh sửa thông tin thực tập sinh</h3>
+        <div class="modal-title-flex">
+          <span class="modal-badge-icon">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </span>
+          <h3 class="modal-title">CHỈNH SỬA THÔNG TIN THỰC TẬP SINH</h3>
+        </div>
         <button type="button" class="btn-close" onclick="closeModal('editModal')" aria-label="Đóng">&times;</button>
       </div>
       <form onsubmit="handleEditSubmit(event)">
         <input type="hidden" id="editId">
         <div class="modal-body">
-          <div class="form-row-2">
-            <div class="form-group">
-              <label for="editName">Họ và tên *</label>
-              <input type="text" id="editName" class="form-control" required>
-            </div>
-            <div class="form-group">
-              <label for="editEmail">Email liên hệ *</label>
-              <input type="email" id="editEmail" class="form-control" required>
-            </div>
+
+          <!-- 1. Thông tin cá nhân -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-user"></i>
+            <span>Thông tin cá nhân</span>
           </div>
           <div class="form-row-2">
             <div class="form-group">
-              <label for="editMajor">Ngành học *</label>
-              <input type="text" id="editMajor" class="form-control" required>
+              <label for="editName">Họ và tên <span class="text-danger">*</span></label>
+              <input type="text" id="editName" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
             </div>
             <div class="form-group">
-              <label for="editSchool">Trường đại học *</label>
-              <input type="text" id="editSchool" class="form-control" required>
+              <label for="editPhone">Số điện thoại</label>
+              <input type="tel" id="editPhone" class="form-control" placeholder="Ví dụ: 0987 654 321">
             </div>
+          </div>
+          <div class="form-group">
+            <label for="editEmail">Email liên hệ <span class="text-danger">*</span></label>
+            <input type="email" id="editEmail" class="form-control" placeholder="Ví dụ: anhnv@company.vn" required>
+          </div>
+
+          <!-- 2. Thông tin học tập -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span>Thông tin học tập</span>
           </div>
           <div class="form-row-2">
             <div class="form-group">
-              <label for="editDept">Phòng ban *</label>
+              <label for="editSchool">Trường <span class="text-danger">*</span></label>
+              <input type="text" id="editSchool" class="form-control" placeholder="Ví dụ: ĐH Bách Khoa HN" required>
+            </div>
+            <div class="form-group">
+              <label for="editMajor">Ngành <span class="text-danger">*</span></label>
+              <input type="text" id="editMajor" class="form-control" placeholder="Ví dụ: CNTT" required>
+            </div>
+          </div>
+
+          <!-- 3. Thông tin thực tập -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-briefcase"></i>
+            <span>Thông tin thực tập</span>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="editPosition">Vị trí thực tập</label>
+              <input type="text" id="editPosition" class="form-control" placeholder="Ví dụ: Thực tập sinh Frontend React/JS">
+            </div>
+            <div class="form-group">
+              <label for="editDept">Phòng ban <span class="text-danger">*</span></label>
               <select id="editDept" class="form-control" title="Chọn phòng ban" required>
                 <option value="Kỹ thuật phần mềm">Kỹ thuật phần mềm</option>
                 <option value="Tài chính">Tài chính</option>
                 <option value="Marketing">Marketing</option>
                 <option value="Nhân sự">Nhân sự</option>
+                <option value="An ninh mạng">An ninh mạng</option>
               </select>
             </div>
+          </div>
+          <div class="form-row-2">
             <div class="form-group">
-              <label for="editMentor">Người hướng dẫn (Mentor) *</label>
-              <input type="text" id="editMentor" class="form-control" required>
+              <label for="editMentor">Mentor (Người hướng dẫn) <span class="text-danger">*</span></label>
+              <input type="text" id="editMentor" class="form-control" placeholder="Ví dụ: Anh Tuấn" required>
+            </div>
+            <div class="form-group">
+              <label for="editStatus">Trạng thái</label>
+              <select id="editStatus" class="form-control" title="Chọn trạng thái">
+                <option value="Đang thực tập">Đang thực tập</option>
+                <option value="Đã hoàn thành">Đã hoàn thành</option>
+                <option value="Kết thúc">Kết thúc</option>
+              </select>
             </div>
           </div>
           <div class="form-group">
-            <label for="editTime">Thời gian thực tập (Chuỗi hiển thị)</label>
-            <input type="text" id="editTime" class="form-control" placeholder="01/07/2026 - 30/09/2026" required>
+            <label for="editTime">Thời gian thực tập</label>
+            <input type="text" id="editTime" class="form-control" placeholder="01/10/2026 - 31/12/2026" required>
           </div>
-          <div class="form-group">
-            <label for="editStatus">Trạng thái</label>
-            <select id="editStatus" class="form-control" title="Chọn trạng thái">
-              <option value="Đang thực tập">Đang thực tập</option>
-              <option value="Đã hoàn thành">Đã hoàn thành</option>
-              <option value="Kết thúc">Kết thúc</option>
-            </select>
+
+          <!-- 4. Tài liệu -->
+          <div class="form-section-title">
+            <i class="fa-solid fa-file-lines"></i>
+            <span>Tài liệu</span>
           </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="editCv">CV</label>
+              <div class="file-upload-box" id="editCvBox">
+                <input type="file" id="editCv" class="file-input-custom" accept=".pdf,.doc,.docx" onchange="updateUploadFileName(this, 'editCvFileName', 'editCvClearBtn', 'editCvBox')">
+                <div class="file-upload-display">
+                  <i class="fa-solid fa-file-lines file-type-icon"></i>
+                  <span id="editCvFileName" class="file-name-text">Tải lên CV (PDF, DOCX)</span>
+                  <span class="file-btn-browse">Chọn file</span>
+                </div>
+                <button type="button" class="btn-clear-file" id="editCvClearBtn" title="Xóa file này" onclick="clearSelectedFile('editCv', 'editCvFileName', 'editCvClearBtn', 'editCvBox', 'cv', event)">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <div class="file-meta-bar" id="editCvMetaBar">
+                <span class="file-meta-status"><i class="fa-regular fa-circle"></i> Trạng thái: Chưa tải lên</span>
+                <span class="file-meta-date"><i class="fa-regular fa-calendar"></i> Ngày tải: --/--/----</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="editLetter">Đơn xin thực tập</label>
+              <div class="file-upload-box" id="editLetterBox">
+                <input type="file" id="editLetter" class="file-input-custom" accept=".pdf,.doc,.docx" onchange="updateUploadFileName(this, 'editLetterFileName', 'editLetterClearBtn', 'editLetterBox')">
+                <div class="file-upload-display">
+                  <i class="fa-solid fa-file-lines file-type-icon"></i>
+                  <span id="editLetterFileName" class="file-name-text">Tải lên Đơn xin thực tập</span>
+                  <span class="file-btn-browse">Chọn file</span>
+                </div>
+                <button type="button" class="btn-clear-file" id="editLetterClearBtn" title="Xóa file này" onclick="clearSelectedFile('editLetter', 'editLetterFileName', 'editLetterClearBtn', 'editLetterBox', 'letter', event)">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <div class="file-meta-bar" id="editLetterMetaBar">
+                <span class="file-meta-status"><i class="fa-regular fa-circle"></i> Trạng thái: Chưa tải lên</span>
+                <span class="file-meta-date"><i class="fa-regular fa-calendar"></i> Ngày tải: --/--/----</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row-2" style="margin-top: 10px;">
+            <div class="form-group">
+              <label for="editContract">Hợp đồng thực tập</label>
+              <div class="file-upload-box" id="editContractBox">
+                <input type="file" id="editContract" class="file-input-custom" accept=".pdf,.doc,.docx" onchange="updateUploadFileName(this, 'editContractFileName', 'editContractClearBtn', 'editContractBox')">
+                <div class="file-upload-display">
+                  <i class="fa-solid fa-file-lines file-type-icon"></i>
+                  <span id="editContractFileName" class="file-name-text">Tải lên Hợp đồng thực tập</span>
+                  <span class="file-btn-browse">Chọn file</span>
+                </div>
+                <button type="button" class="btn-clear-file" id="editContractClearBtn" title="Xóa file này" onclick="clearSelectedFile('editContract', 'editContractFileName', 'editContractClearBtn', 'editContractBox', 'contract', event)">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <div class="file-meta-bar" id="editContractMetaBar">
+                <span class="file-meta-status"><i class="fa-regular fa-circle"></i> Trạng thái: Chưa tải lên</span>
+                <span class="file-meta-date"><i class="fa-regular fa-calendar"></i> Ngày tải: --/--/----</span>
+              </div>
+            </div>
+          </div>
+
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn-secondary" onclick="closeModal('editModal')">Hủy</button>
-          <button type="submit" class="btn-primary">Lưu thay đổi</button>
+          <button type="button" class="btn-secondary" onclick="closeModal('editModal')">
+            <i class="fa-solid fa-xmark"></i>
+            <span>Hủy</span>
+          </button>
+          <button type="submit" class="btn-primary">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Lưu thay đổi</span>
+          </button>
         </div>
       </form>
     </div>
@@ -605,7 +951,7 @@
           aria-label="Đóng">&times;</button>
       </div>
 
-      <!-- Thanh chọn tài liệu: CV hoặc Đơn xin thực tập -->
+      <!-- Thanh chọn tài liệu: CV, Đơn xin thực tập, Hợp đồng thực tập -->
       <div class="doc-tabs-bar">
         <button type="button" class="doc-tab-btn active" id="btnTabCV" onclick="switchDocTab('cv')">
           <i class="fa-solid fa-file-lines"></i>
@@ -614,6 +960,10 @@
         <button type="button" class="doc-tab-btn" id="btnTabLetter" onclick="switchDocTab('letter')">
           <i class="fa-solid fa-file-signature"></i>
           <span id="docTabLetterLabel">2. Đơn xin thực tập & Bảng điểm</span>
+        </button>
+        <button type="button" class="doc-tab-btn" id="btnTabContract" onclick="switchDocTab('contract')">
+          <i class="fa-solid fa-file-contract"></i>
+          <span id="docTabContractLabel">3. Hợp đồng thực tập</span>
         </button>
       </div>
 
@@ -853,6 +1203,325 @@
         <span>Về trang đăng nhập ngay</span>
         <i class="fa-solid fa-arrow-right"></i>
       </button>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 9: TẠO / SỬA CHƯƠNG TRÌNH THỰC TẬP ==================== -->
+  <div class="modal" id="programModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-flex">
+          <span class="modal-badge-icon">
+            <i class="fa-regular fa-calendar-days"></i>
+          </span>
+          <h3 class="modal-title" id="programModalTitle">TẠO CHƯƠNG TRÌNH THỰC TẬP MỚI</h3>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('programModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <form onsubmit="handleProgramFormSubmit(event)">
+        <input type="hidden" id="progFormId">
+        <div class="modal-body" style="padding: 20px 24px; max-height: 72vh; overflow-y: auto;">
+          
+          <!-- A. Thông tin chương trình -->
+          <div class="form-section-letter-title" style="margin-top: 0;">
+            <span class="section-letter-badge">A</span>
+            <span>Thông tin chương trình</span>
+          </div>
+          <div class="form-group">
+            <label for="progFormName">Tên chương trình <span class="text-danger">*</span></label>
+            <input type="text" id="progFormName" class="form-control" placeholder="Ví dụ: Chương trình Kỹ thuật phần mềm Q3/2026" required>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="progFormDept">Phòng ban <span class="text-danger">*</span></label>
+              <select id="progFormDept" class="form-control" title="Chọn phòng ban chương trình" aria-label="Chọn phòng ban chương trình" required onchange="onProgramDeptChange()">
+                <option value="Kỹ thuật phần mềm">Kỹ thuật phần mềm</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Tài chính">Tài chính</option>
+                <option value="Nhân sự">Nhân sự</option>
+                <option value="An ninh mạng">An ninh mạng</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="progFormPositions">Vị trí thực tập <span class="text-danger">*</span></label>
+              <input type="text" id="progFormPositions" class="form-control" placeholder="Ví dụ: Nhiều vị trí" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="progFormDesc">Mô tả chương trình</label>
+            <textarea id="progFormDesc" class="form-control text-area-custom" rows="3" placeholder="Mô tả mục tiêu, nội dung và yêu cầu của chương trình..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="progFormStatus">Trạng thái <span class="text-danger">*</span></label>
+            <select id="progFormStatus" class="form-control" title="Chọn trạng thái chương trình" aria-label="Chọn trạng thái chương trình">
+              <option value="Đang diễn ra">Đang diễn ra</option>
+              <option value="Sắp diễn ra">Sắp diễn ra</option>
+              <option value="Đã kết thúc">Đã kết thúc</option>
+            </select>
+          </div>
+
+          <!-- B. Thời gian & Chỉ tiêu tiếp nhận -->
+          <div class="form-section-letter-title">
+            <span class="section-letter-badge">B</span>
+            <span>Thời gian & Chỉ tiêu tiếp nhận</span>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="progFormStartDate">Ngày bắt đầu</label>
+              <input type="date" id="progFormStartDate" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="progFormEndDate">Ngày kết thúc</label>
+              <input type="date" id="progFormEndDate" class="form-control">
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="progFormCapacity">Chỉ tiêu TTS tối đa</label>
+              <input type="number" id="progFormCapacity" class="form-control" placeholder="Không bắt buộc" min="1">
+            </div>
+            <div class="form-group">
+              <label for="progFormEnrolled">Số TTS thực tế trong hệ thống</label>
+              <input type="number" id="progFormEnrolled" class="form-control" readonly disabled style="background-color: #f1f5f9; cursor: not-allowed;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="progFormProgress">Tiến độ chương trình (%)</label>
+            <input type="number" id="progFormProgress" class="form-control" placeholder="Tự động tính theo ngày hoặc nhập 0-100" min="0" max="100">
+          </div>
+
+          <!-- C. Người phụ trách -->
+          <div class="form-section-letter-title">
+            <span class="section-letter-badge">C</span>
+            <span>Người phụ trách</span>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="progFormMentor">Mentor phụ trách <span class="text-danger">*</span></label>
+              <select id="progFormMentor" class="form-control" title="Chọn Mentor phụ trách" aria-label="Chọn Mentor phụ trách" required>
+                <option value="">Chọn Mentor trong danh sách...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>HR phụ trách</label>
+              <div class="hr-assignee-box">
+                <div class="hr-assignee-user">
+                  <span class="hr-avatar-badge" id="progFormHRAvatar">H</span>
+                  <span class="hr-assignee-name" id="progFormHRName">Nguyễn Thị Hoa</span>
+                </div>
+                <span class="hr-current-tag">Tài khoản hiện tại</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- D. Lịch trình dự kiến -->
+          <div class="form-section-letter-title" style="margin-bottom: 2px;">
+            <span class="section-letter-badge">D</span>
+            <span>Lịch trình dự kiến</span>
+          </div>
+          <p class="form-section-subtitle">Nội dung các giai đoạn của chương trình</p>
+
+          <!-- Danh sách các thẻ giai đoạn (Render từ currentModalStages, mặc định hoàn toàn để trống) -->
+          <div id="progFormStagesContainer" class="stages-list-container">
+            <!-- Render động bằng renderModalStages() -->
+          </div>
+
+          <!-- Nút thêm giai đoạn & khung nhập giai đoạn -->
+          <div class="stage-add-wrapper">
+            <button type="button" class="btn-add-stage-trigger" id="btnToggleAddStage" onclick="toggleAddStageForm()">
+              <i class="fa-solid fa-plus me-1"></i>
+              <span>Thêm giai đoạn</span>
+            </button>
+
+            <div class="stage-add-form" id="stageAddForm" style="display: none;">
+              <div class="stage-add-form-title">Thêm giai đoạn mới</div>
+              <div class="form-row-2 mb-2">
+                <div class="form-group mb-0">
+                  <label style="font-size: 12px; margin-bottom: 3px;">Thời gian / Giai đoạn</label>
+                  <input type="text" id="newStageWeek" class="form-control" placeholder="Ví dụ: Tuần 1–2" style="font-size: 13px;">
+                </div>
+                <div class="form-group mb-0">
+                  <label style="font-size: 12px; margin-bottom: 3px;">Tiêu đề giai đoạn</label>
+                  <input type="text" id="newStageTitle" class="form-control" placeholder="Ví dụ: Làm quen và hội nhập" style="font-size: 13px;">
+                </div>
+              </div>
+              <div class="form-group mb-2">
+                <label style="font-size: 12px; margin-bottom: 3px;">Mô tả nội dung</label>
+                <input type="text" id="newStageDesc" class="form-control" placeholder="Ví dụ: Giới thiệu công ty, nội quy, công cụ làm việc." style="font-size: 13px;">
+              </div>
+              <div class="d-flex justify-content-end gap-2 mt-2">
+                <button type="button" class="btn-stage-cancel" onclick="toggleAddStageForm(false)">Hủy</button>
+                <button type="button" class="btn-stage-confirm" onclick="confirmAddStage()">Thêm vào lịch trình</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer" style="padding: 14px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; background: #ffffff;">
+          <button type="button" class="btn-modal-cancel" onclick="closeModal('programModal')">Hủy</button>
+          <button type="submit" class="btn-modal-submit-prog" id="btnSaveProgram">Lưu chương trình</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 10: XEM DANH SÁCH TTS THUỘC CHƯƠNG TRÌNH ==================== -->
+  <div class="modal" id="programInternsModal">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-header">
+        <div class="modal-title-flex">
+          <span class="modal-badge-icon">
+            <i class="fa-solid fa-users"></i>
+          </span>
+          <div>
+            <h3 class="modal-title" id="programInternsModalTitle">DANH SÁCH THỰC TẬP SINH</h3>
+            <p id="programInternsModalSub" style="font-size: 12.5px; color: var(--text-sub); margin: 0;"></p>
+          </div>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('programInternsModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px 24px; max-height: 70vh; overflow-y: auto;">
+        <div class="table-container" style="box-shadow: none; border: 1px solid var(--border-color);">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>THỰC TẬP SINH</th>
+                <th>TRƯỜNG & NGÀNH</th>
+                <th>VỊ TRÍ</th>
+                <th>MENTOR</th>
+                <th>THỜI GIAN</th>
+                <th>TRẠNG THÁI</th>
+              </tr>
+            </thead>
+            <tbody id="programInternsTableBody">
+              <!-- Render danh sách TTS thuộc chương trình -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 14px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #ffffff;">
+        <span id="programInternsCountNote" style="font-size: 13px; color: var(--text-sub);"></span>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn-secondary" onclick="closeModal('programInternsModal')">Đóng</button>
+          <button type="button" class="btn-primary" id="btnGoToInternsTab" onclick="goToFilteredInternsTab()">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            <span>Xem trong tab Thực tập sinh</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 11: CHẤM CÔNG NHANH ==================== -->
+  <div class="modal" id="markAttendanceModal">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <div class="modal-title-flex">
+          <span class="modal-badge-icon">
+            <i class="fa-solid fa-calendar-check"></i>
+          </span>
+          <div>
+            <h3 class="modal-title" style="font-size: 15px;">CHẤM CÔNG NGÀY</h3>
+            <p id="markAttModalSubtitle" style="font-size: 12px; color: var(--text-sub); margin: 0;"></p>
+          </div>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('markAttendanceModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px;">
+        <input type="hidden" id="markAttInternId">
+        <input type="hidden" id="markAttDateKey">
+        <p style="font-size: 13px; color: #475569; margin-bottom: 12px;">Chọn trạng thái chấm công:</p>
+        <div class="mark-att-options-grid">
+          <button type="button" class="btn-mark-status status-present" onclick="applyAttendanceMark('present')">
+            <span class="att-chip chip-present">Đ</span>
+            <span>Đúng giờ</span>
+          </button>
+          <button type="button" class="btn-mark-status status-late" onclick="applyAttendanceMark('late')">
+            <span class="att-chip chip-late">T</span>
+            <span>Đi trễ</span>
+          </button>
+          <button type="button" class="btn-mark-status status-absent" onclick="applyAttendanceMark('absent')">
+            <span class="att-chip chip-absent">V</span>
+            <span>Vắng mặt</span>
+          </button>
+          <button type="button" class="btn-mark-status status-leave" onclick="applyAttendanceMark('leave')">
+            <span class="att-chip chip-leave">P</span>
+            <span>Nghỉ phép</span>
+          </button>
+          <button type="button" class="btn-mark-status status-remote" onclick="applyAttendanceMark('remote')">
+            <span class="att-chip chip-remote">R</span>
+            <span>Làm việc từ xa</span>
+          </button>
+          <button type="button" class="btn-mark-status status-clear" onclick="applyAttendanceMark('')">
+            <span class="att-chip chip-empty">—</span>
+            <span>Xóa chấm công (Để trống)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 12: TẠO ĐƠN NGHỈ PHÉP ==================== -->
+  <div class="modal" id="createLeaveModal">
+    <div class="modal-dialog modal-md">
+      <div class="modal-header">
+        <div class="modal-title-flex">
+          <span class="modal-badge-icon">
+            <i class="fa-solid fa-envelope-open-text"></i>
+          </span>
+          <h3 class="modal-title">TẠO ĐƠN NGHỈ PHÉP MỚI</h3>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('createLeaveModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <form onsubmit="handleCreateLeaveSubmit(event)">
+        <div class="modal-body" style="padding: 20px 24px;">
+          <div class="form-group mb-3">
+            <label for="leaveInternSelect">Thực tập sinh <span class="text-danger">*</span></label>
+            <select id="leaveInternSelect" class="form-control" title="Chọn thực tập sinh xin nghỉ phép" aria-label="Chọn thực tập sinh xin nghỉ phép" required>
+              <!-- Nạp danh sách TTS từ internList -->
+            </select>
+          </div>
+          <div class="form-row-2 mb-3">
+            <div class="form-group">
+              <label for="leaveStartDate">Từ ngày <span class="text-danger">*</span></label>
+              <input type="date" id="leaveStartDate" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="leaveEndDate">Đến ngày <span class="text-danger">*</span></label>
+              <input type="date" id="leaveEndDate" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-group mb-2">
+            <label for="leaveReason">Lý do nghỉ phép <span class="text-danger">*</span></label>
+            <textarea id="leaveReason" class="form-control" rows="3" placeholder="Nhập lý do xin nghỉ phép..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding: 14px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; background: #ffffff;">
+          <button type="button" class="btn-secondary" onclick="closeModal('createLeaveModal')">Hủy</button>
+          <button type="submit" class="btn-primary">Gửi đơn nghỉ phép</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 13: CHI TIẾT ĐƠN NGHỈ PHÉP ==================== -->
+  <div class="modal" id="leaveDetailModal">
+    <div class="modal-dialog modal-md">
+      <div class="modal-header">
+        <div class="modal-title-flex">
+          <span class="modal-badge-icon">
+            <i class="fa-regular fa-file-lines"></i>
+          </span>
+          <h3 class="modal-title">CHI TIẾT ĐƠN NGHỈ PHÉP</h3>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('leaveDetailModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px 24px;" id="leaveDetailBody">
+        <!-- Render chi tiết đơn nghỉ phép -->
+      </div>
+      <div class="modal-footer" id="leaveDetailFooter" style="padding: 14px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; background: #ffffff;">
+        <!-- Render các nút Duyệt / Từ chối / Đóng -->
+      </div>
     </div>
   </div>
 
