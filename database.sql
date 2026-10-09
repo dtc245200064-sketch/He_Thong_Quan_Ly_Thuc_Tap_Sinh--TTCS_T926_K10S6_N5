@@ -138,13 +138,14 @@ CREATE TABLE IF NOT EXISTS leave_requests (
 -- DỮ LIỆU MẪU BAN ĐẦU (SEED DATA KHỚP VỚI GIAO DIỆN FRONTEND)
 -- ==============================================================================
 
--- Mật khẩu mặc định: 123456 (được băm bằng bcrypt: $2a$10$wK1b8B.k72p4T14oZ.k7teq8vIe1r58v9u1oR/Qd7yC0hZ0f6G9wO)
+-- Mật khẩu mặc định: 123456 (được băm bằng bcrypt: $2b$10$mA/3TNEpZxS6.rvbnxt50eFKBore8bil8wpklMgnG4ql8tF.0N58S)
 INSERT INTO users (id, email, username, password, name, role, status, avatar, phone) VALUES
-(1, 'admin@company.vn', 'admin', '$2a$10$wK1b8B.k72p4T14oZ.k7teq8vIe1r58v9u1oR/Qd7yC0hZ0f6G9wO', 'Lê Văn Admin', 'Admin', 'active', 'image/GiangVien.png', '0901 000 001'),
-(2, 'hr@company.vn', 'hr.hoa', '$2a$10$wK1b8B.k72p4T14oZ.k7teq8vIe1r58v9u1oR/Qd7yC0hZ0f6G9wO', 'Nguyễn Thị Hoa', 'HR Manager', 'active', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120', '0988 888 999'),
-(3, 'intern@student.vn', 'khoa.tm', '$2a$10$wK1b8B.k72p4T14oZ.k7teq8vIe1r58v9u1oR/Qd7yC0hZ0f6G9wO', 'Trần Minh Khoa', 'Thực tập sinh', 'active', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', '0912 345 678'),
-(4, 'mentor@company.vn', 'mentor.tuan', '$2a$10$wK1b8B.k72p4T14oZ.k7teq8vIe1r58v9u1oR/Qd7yC0hZ0f6G9wO', 'Nguyễn Anh Tuấn', 'Mentor', 'active', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120', '0945 667 889')
+(1, 'admin@company.vn', 'admin', '$2b$10$mA/3TNEpZxS6.rvbnxt50eFKBore8bil8wpklMgnG4ql8tF.0N58S', 'Lê Văn Admin', 'Admin', 'active', 'image/GiangVien.png', '0901 000 001'),
+(2, 'hr@company.vn', 'hr.hoa', '$2b$10$mA/3TNEpZxS6.rvbnxt50eFKBore8bil8wpklMgnG4ql8tF.0N58S', 'Nguyễn Thị Hoa', 'HR Manager', 'active', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120', '0988 888 999'),
+(3, 'intern@student.vn', 'khoa.tm', '$2b$10$mA/3TNEpZxS6.rvbnxt50eFKBore8bil8wpklMgnG4ql8tF.0N58S', 'Trần Minh Khoa', 'Thực tập sinh', 'active', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', '0912 345 678'),
+(4, 'mentor@company.vn', 'mentor.tuan', '$2b$10$mA/3TNEpZxS6.rvbnxt50eFKBore8bil8wpklMgnG4ql8tF.0N58S', 'Nguyễn Anh Tuấn', 'Mentor', 'active', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120', '0945 667 889')
 ON DUPLICATE KEY UPDATE 
+    password=VALUES(password),
     username=VALUES(username), 
     role=VALUES(role), 
     status=VALUES(status);
