@@ -48,6 +48,9 @@ CREATE TABLE IF NOT EXISTS interns (
     skills TEXT DEFAULT NULL,
     bio TEXT DEFAULT NULL,
     projects TEXT DEFAULT NULL,
+    birth_date VARCHAR(50) DEFAULT NULL,
+    course VARCHAR(50) DEFAULT NULL,
+    faculty VARCHAR(100) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -94,6 +97,7 @@ CREATE TABLE IF NOT EXISTS contracts (
     file_name VARCHAR(255) DEFAULT NULL,
     file_url VARCHAR(255) DEFAULT NULL,
     status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    reject_reason TEXT DEFAULT NULL,
     confirmed_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (intern_id) REFERENCES interns(id) ON DELETE CASCADE
@@ -148,7 +152,7 @@ ON DUPLICATE KEY UPDATE
 -- Ma trận phân quyền chi tiết cho 4 vai trò
 INSERT INTO role_permissions (role, permissions) VALUES
 ('Admin', '{"acc_manage": [true, true, true, true, false], "perm_system": [true, false, true, false, false], "profile_manage": [false, false, false, false, false], "search_intern": [false, false, false, false, false], "view_docs": [false, false, false, false, false], "review_docs": [false, false, false, false, false], "view_own_profile": [false, false, false, false, false], "upload_cv": [false, false, false, false, false], "upload_letter": [false, false, false, false, false], "view_status": [false, false, false, false, false]}'),
-('HR Manager', '{"acc_manage": [true, false, false, false, false], "perm_system": [false, false, false, false, false], "profile_manage": [true, true, true, false, false], "search_intern": [true, false, false, false, false], "view_docs": [true, false, false, false, false], "review_docs": [true, false, false, false, true], "view_own_profile": [true, false, true, false, false], "upload_cv": [false, false, false, false, false], "upload_letter": [false, false, false, false, false], "view_status": [true, false, false, false, false]}'),
+('HR Manager', '{"acc_manage": [true, false, false, false, false], "perm_system": [false, false, false, false, false], "profile_manage": [true, true, true, true, true], "search_intern": [true, true, true, true, false], "view_docs": [true, true, true, true, false], "review_docs": [true, true, true, true, true], "view_own_profile": [true, false, true, false, false], "upload_cv": [false, false, false, false, false], "upload_letter": [false, false, false, false, false], "view_status": [true, false, false, false, false]}'),
 ('Mentor', '{"acc_manage": [false, false, false, false, false], "perm_system": [false, false, false, false, false], "profile_manage": [true, false, true, false, false], "search_intern": [true, false, false, false, false], "view_docs": [true, false, false, false, false], "review_docs": [false, false, false, false, false], "view_own_profile": [true, false, true, false, false], "upload_cv": [false, false, false, false, false], "upload_letter": [false, false, false, false, false], "view_status": [false, false, false, false, false]}'),
 ('Thực tập sinh', '{"acc_manage": [false, false, false, false, false], "perm_system": [false, false, false, false, false], "profile_manage": [false, false, false, false, false], "search_intern": [false, false, false, false, false], "view_docs": [false, false, false, false, false], "review_docs": [false, false, false, false, false], "view_own_profile": [true, false, true, false, false], "upload_cv": [true, true, true, false, false], "upload_letter": [true, true, true, false, false], "view_status": [true, false, false, false, false]}')
 ON DUPLICATE KEY UPDATE permissions=VALUES(permissions);
@@ -162,15 +166,6 @@ INSERT INTO interns (id, user_id, name, email, phone, school, major, dept, mento
 (5, NULL, 'Lê Quốc Thái', 'thai.lq@fpt.edu.vn', '0934 889 900', 'ĐH FPT', 'Kỹ thuật phần mềm', 'Kỹ thuật phần mềm', 'Anh Nam', 'Thực tập sinh Backend Node.js', '2026-10-01', '2026-12-31', '3.45', 'Chờ xét duyệt', 'Node.js, Express, PostgreSQL, MongoDB', 'Định hướng trở thành Backend Developer chất lượng cao.')
 ON DUPLICATE KEY UPDATE id=id;
 
--- Danh sách tài liệu đính kèm
-INSERT INTO documents (intern_id, doc_name, doc_type, file_url, file_size, review_status) VALUES
-(1, 'CV_TranMinhKhoa_Frontend.pdf', 'CV', '/uploads/cv_tranminhkhoa.pdf', '1.2 MB', 'approved'),
-(1, 'Don_Xin_Thuc_Tap_Khoa.pdf', 'APPLICATION_LETTER', '/uploads/don_khoa.pdf', '850 KB', 'approved'),
-(3, 'CV_NguyenHoangNam_Frontend.pdf', 'CV', '/uploads/cv_nam.pdf', '1.4 MB', 'pending'),
-(3, 'Don_Xin_Thuc_Tap_BK.pdf', 'APPLICATION_LETTER', '/uploads/don_nam.pdf', '920 KB', 'pending'),
-(4, 'CV_TranBaoNgoc_Marketing.pdf', 'CV', '/uploads/cv_ngoc.pdf', '1.1 MB', 'pending'),
-(5, 'CV_LeQuocThai_Backend.pdf', 'CV', '/uploads/cv_thai.pdf', '1.5 MB', 'pending')
-ON DUPLICATE KEY UPDATE id=id;
 
 -- Danh sách chương trình thực tập (Sprint 2)
 INSERT INTO programs (name, dept, mentor_default, start_date, end_date, max_interns, status, description) VALUES
@@ -180,23 +175,3 @@ INSERT INTO programs (name, dept, mentor_default, start_date, end_date, max_inte
 ('Chương trình thực tập Digital Marketing', 'Marketing', 'Chị Mai', '2026-09-01', '2026-11-30', 10, 'upcoming', 'Triển khai chiến dịch SEO, Social Media và Content Marketing cho CodeGym.')
 ON DUPLICATE KEY UPDATE id=id;
 
--- Danh sách hợp đồng thực tập (Sprint 2)
-INSERT INTO contracts (intern_id, code, title, company, dept, period, file_name, file_url, status) VALUES
-(1, 'HĐTT-2026-001', 'Hợp đồng thực tập Phát triển phần mềm', 'Hệ thống Đào tạo CodeGym Việt Nam', 'Phòng Phát triển Phần mềm', '01/07/2026 - 30/09/2026', 'Hop_Dong_Thuc_Tap_TranMinhKhoa.pdf', '/uploads/contract_khoa.pdf', 'pending'),
-(2, 'HĐTT-2026-002', 'Hợp đồng thực tập Tuyển dụng nhân sự', 'Hệ thống Đào tạo CodeGym Việt Nam', 'Phòng Nhân sự', '15/07/2026 - 15/10/2026', 'Hop_Dong_Thuc_Tap_LeThiLan.pdf', '/uploads/contract_lan.pdf', 'approved')
-ON DUPLICATE KEY UPDATE id=id;
-
--- Dữ liệu chấm công mẫu (Sprint 2)
-INSERT INTO attendance (intern_id, date, check_in, check_out, total_hours, status, notes) VALUES
-(1, '2026-10-05', '08:25', '17:35', '8 giờ 10 phút', 'present', 'Đúng giờ'),
-(1, '2026-10-06', '08:42', '17:30', '7 giờ 48 phút', 'late', 'Đi muộn 12 phút'),
-(1, '2026-10-07', '08:28', '17:32', '8 giờ 04 phút', 'present', 'Đúng giờ'),
-(2, '2026-10-05', '08:20', '17:30', '8 giờ 10 phút', 'present', 'Đúng giờ'),
-(2, '2026-10-06', '08:30', '17:35', '8 giờ 05 phút', 'present', 'Đúng giờ')
-ON DUPLICATE KEY UPDATE id=id;
-
--- Dữ liệu đơn nghỉ phép mẫu (Sprint 2)
-INSERT INTO leave_requests (intern_id, leave_type, start_date, end_date, days_count, reason, status) VALUES
-(1, 'Nghỉ học / Thi', '2026-10-12', '2026-10-13', 2, 'Trùng lịch thi môn Kiến trúc phần mềm tại trường ĐH Bách Khoa', 'pending'),
-(2, 'Việc cá nhân', '2026-10-08', '2026-10-08', 1, 'Giải quyết thủ tục hành chính tại địa phương', 'approved')
-ON DUPLICATE KEY UPDATE id=id;

@@ -1,5 +1,17 @@
 const db = require('../config/db');
 
+// Hàm giải quyết intern_id (nếu truyền user_id thì tự động tìm id của thực tập sinh trong bảng interns)
+async function resolveInternId(internIdOrUserId) {
+  if (!internIdOrUserId) return null;
+  const [internCheck] = await db.query('SELECT id FROM interns WHERE id = ?', [internIdOrUserId]);
+  if (internCheck.length > 0) return internCheck[0].id;
+
+  const [userCheck] = await db.query('SELECT id FROM interns WHERE user_id = ?', [internIdOrUserId]);
+  if (userCheck.length > 0) return userCheck[0].id;
+
+  return internIdOrUserId;
+}
+
 // GET /api/leaves
 exports.getLeaves = async (req, res) => {
   try {
@@ -13,8 +25,9 @@ exports.getLeaves = async (req, res) => {
     const params = [];
 
     if (intern_id) {
-      sql += ' AND l.intern_id = ?';
-      params.push(intern_id);
+      const resolvedId = await resolveInternId(intern_id);
+      sql += ' AND (l.intern_id = ? OR i.user_id = ?)';
+      params.push(resolvedId, intern_id);
     }
     if (status) {
       sql += ' AND l.status = ?';
@@ -38,13 +51,14 @@ exports.createLeave = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ thông tin xin nghỉ phép' });
     }
 
+    const resolvedId = await resolveInternId(intern_id);
     const diffTime = Math.abs(new Date(end_date) - new Date(start_date));
     const days_count = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
     const [result] = await db.query(`
       INSERT INTO leave_requests (intern_id, leave_type, start_date, end_date, days_count, reason, status)
       VALUES (?, ?, ?, ?, ?, ?, 'pending')
-    `, [intern_id, leave_type || 'Việc cá nhân', start_date, end_date, days_count, reason]);
+    `, [resolvedId, leave_type || 'Việc cá nhân', start_date, end_date, days_count, reason]);
 
     const [created] = await db.query('SELECT * FROM leave_requests WHERE id = ?', [result.insertId]);
     res.status(201).json({ success: true, message: 'Gửi đơn nghỉ phép thành công', data: created[0] });

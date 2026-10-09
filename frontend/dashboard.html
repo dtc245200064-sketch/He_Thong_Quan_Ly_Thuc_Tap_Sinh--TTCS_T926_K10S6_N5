@@ -12,22 +12,22 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="dashboard.css">
   <script>
-    // Kiểm tra phiên đăng nhập: nếu không phải vai trò HR Manager thì chuyển về màn hình đăng nhập index.html
+    // Kiểm tra phiên đăng nhập: HR Manager, Mentor hoặc Admin có thể truy cập dashboard
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
     const userRole = localStorage.getItem("userRole");
     const userStr = localStorage.getItem("user") || localStorage.getItem("currentUser");
-    let isHR = false;
+    let hasAccess = false;
     if (isLoggedIn) {
-      if (userRole === "HR" || userRole === "HR Manager") {
-        isHR = true;
+      if (["HR", "HR Manager", "Mentor", "MENTOR", "Admin", "ADMIN"].includes(userRole)) {
+        hasAccess = true;
       } else if (userStr) {
         try {
           const u = JSON.parse(userStr);
-          if (u && (u.role === "HR Manager" || u.role === "HR")) isHR = true;
+          if (u && ["HR Manager", "HR", "Mentor", "MENTOR", "Admin", "ADMIN"].includes(u.role)) hasAccess = true;
         } catch (e) {}
       }
     }
-    if (!isHR) {
+    if (!hasAccess) {
       window.location.href = "index.html";
     }
   </script>
@@ -55,7 +55,7 @@
         <span class="role-label">Phân quyền hệ thống</span>
         <div class="role-value">
           <span class="status-dot"></span>
-          <span>HR Manager</span>
+          <span id="sidebarRoleDisplay">HR Manager</span>
         </div>
       </div>
 
@@ -625,8 +625,10 @@
             </div>
           </div>
           <div class="form-group">
-            <label for="addMentor">Mentor</label>
-            <input type="text" id="addMentor" class="form-control" placeholder="Ví dụ: Anh Tuấn">
+            <label for="addMentor">Mentor (Người hướng dẫn)</label>
+            <select id="addMentor" class="form-control">
+              <option value="">-- Chọn Mentor trong hệ thống --</option>
+            </select>
           </div>
           <div class="form-row-2">
             <div class="form-group">
@@ -795,7 +797,9 @@
           <div class="form-row-2">
             <div class="form-group">
               <label for="editMentor">Mentor (Người hướng dẫn) <span class="text-danger">*</span></label>
-              <input type="text" id="editMentor" class="form-control" placeholder="Ví dụ: Anh Tuấn" required>
+              <select id="editMentor" class="form-control" required>
+                <option value="">-- Chọn Mentor trong hệ thống --</option>
+              </select>
             </div>
             <div class="form-group">
               <label for="editStatus">Trạng thái</label>
@@ -806,9 +810,15 @@
               </select>
             </div>
           </div>
-          <div class="form-group">
-            <label for="editTime">Thời gian thực tập</label>
-            <input type="text" id="editTime" class="form-control" placeholder="01/10/2026 - 31/12/2026" required>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="editStartDate">Thời gian bắt đầu <span class="text-danger">*</span></label>
+              <input type="date" id="editStartDate" class="form-control" title="Thời gian bắt đầu" required>
+            </div>
+            <div class="form-group">
+              <label for="editEndDate">Thời gian kết thúc <span class="text-danger">*</span></label>
+              <input type="date" id="editEndDate" class="form-control" title="Thời gian kết thúc" required>
+            </div>
           </div>
 
           <!-- 4. Tài liệu -->
@@ -1381,6 +1391,22 @@
         <button type="button" class="btn-close" onclick="closeModal('programInternsModal')" aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body" style="padding: 20px 24px; max-height: 70vh; overflow-y: auto;">
+        <!-- Khối thêm sinh viên vào chương trình & lịch thực tập (US 11, 12, 13) -->
+        <div class="program-assign-bar" style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 300px;">
+            <label for="assignInternSelect" style="font-size: 13px; font-weight: 600; color: #1e293b; white-space: nowrap; margin-bottom: 0;">
+              <i class="fa-solid fa-user-plus" style="color: var(--primary); margin-right: 6px;"></i> Thêm sinh viên vào lịch thực tập:
+            </label>
+            <select id="assignInternSelect" class="form-control" style="flex: 1; padding: 7px 12px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff;">
+              <option value="">-- Chọn thực tập sinh --</option>
+            </select>
+          </div>
+          <button type="button" class="btn-primary" id="btnAssignInternToProgram" onclick="handleAssignInternToCurrentProgram()" style="padding: 7px 16px; font-size: 13px; white-space: nowrap; border-radius: 6px;">
+            <i class="fa-solid fa-plus"></i>
+            <span>Thêm vào lịch & chương trình</span>
+          </button>
+        </div>
+
         <div class="table-container" style="box-shadow: none; border: 1px solid var(--border-color);">
           <table class="data-table">
             <thead>
@@ -1391,6 +1417,7 @@
                 <th>MENTOR</th>
                 <th>THỜI GIAN</th>
                 <th>TRẠNG THÁI</th>
+                <th style="text-align: center;">THAO TÁC</th>
               </tr>
             </thead>
             <tbody id="programInternsTableBody">

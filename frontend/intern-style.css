@@ -2615,17 +2615,17 @@ body {
 
 /* Modal Xem Hợp đồng thực tập */
 .contract-modal-card {
-  max-width: 720px;
-  width: 92%;
-  max-height: 88vh;
+  max-width: 860px;
+  width: 95%;
+  max-height: 92vh;
   display: flex;
   flex-direction: column;
 }
 
 .contract-modal-scroll {
   overflow-y: auto;
-  max-height: 55vh;
-  padding: 16px 4px;
+  max-height: 72vh;
+  padding: 12px 6px;
 }
 
 .contract-doc-paper {

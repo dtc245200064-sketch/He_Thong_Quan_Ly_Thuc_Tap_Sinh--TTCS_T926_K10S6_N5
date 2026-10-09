@@ -17,152 +17,11 @@ function getFormattedUploadDate() {
 }
 window.getFormattedUploadDate = getFormattedUploadDate;
 
-const DEFAULT_MOCK_INTERNS = [
-  {
-    id: 1,
-    name: "Trần Minh Khoa",
-    email: "khoatran@student.vn",
-    phone: "0912 345 678",
-    school: "Đại học Bách Khoa",
-    major: "CNTT",
-    position: "Thực tập sinh Frontend React",
-    dept: "Kỹ thuật phần mềm",
-    mentor: "Nguyễn Văn Hùng",
-    time: "01/10/2026 - 31/12/2026",
-    status: "Đang thực tập",
-    docCvName: null,
-    docLetterName: null,
-    cvFileUrl: null,
-    letterFileUrl: null,
-    docContractName: null,
-    contractFileUrl: null,
-    cvUploadDate: null,
-    letterUploadDate: null,
-    contractUploadDate: null
-  },
-  {
-    id: 2,
-    name: "Lê Thị Lan",
-    email: "lan.lt@ftu.edu.vn",
-    phone: "0934 567 890",
-    school: "Đại học Ngoại Thương",
-    major: "Quản trị Nhân lực",
-    position: "Thực tập sinh Tuyển dụng",
-    dept: "Nhân sự (HR)",
-    mentor: "Nguyễn Thị Hoa",
-    time: "01/10/2026 - 31/12/2026",
-    status: "Đang thực tập",
-    docCvName: null,
-    docLetterName: null,
-    cvFileUrl: null,
-    letterFileUrl: null,
-    docContractName: null,
-    contractFileUrl: null,
-    cvUploadDate: null,
-    letterUploadDate: null,
-    contractUploadDate: null
-  },
-  {
-    id: 7,
-    name: "Nguyễn Thị Hồng Nhung",
-    email: "nhung@gmail.com",
-    phone: "0987 111 222",
-    school: "Đại học Công Nghệ",
-    major: "Khoa học Máy tính",
-    position: "Thực tập sinh Backend Node.js",
-    dept: "Kỹ thuật phần mềm",
-    mentor: "Phạm Minh Đức",
-    time: "01/10/2026 - 31/12/2026",
-    status: "Đang thực tập",
-    docCvName: null,
-    docLetterName: null,
-    cvFileUrl: null,
-    letterFileUrl: null,
-    docContractName: null,
-    contractFileUrl: null,
-    cvUploadDate: null,
-    letterUploadDate: null,
-    contractUploadDate: null
-  },
-  {
-    id: 8,
-    name: "Thiện",
-    email: "thien@gmail.com",
-    phone: "0977 888 999",
-    school: "Đại học FPT",
-    major: "Kỹ thuật Phần mềm",
-    position: "Thực tập sinh Frontend",
-    dept: "Kỹ thuật phần mềm",
-    mentor: "Nguyễn Văn Hùng",
-    time: "01/10/2026 - 31/12/2026",
-    status: "Đang thực tập",
-    docCvName: null,
-    docLetterName: null,
-    cvFileUrl: null,
-    letterFileUrl: null,
-    docContractName: null,
-    contractFileUrl: null,
-    cvUploadDate: null,
-    letterUploadDate: null,
-    contractUploadDate: null
-  }
-];
+const DEFAULT_MOCK_INTERNS = [];
+const DEFAULT_MOCK_APPLICATIONS = [];
 
-const DEFAULT_MOCK_APPLICATIONS = [
-  {
-    id: 3,
-    name: "Nguyễn Hoàng Nam",
-    email: "nam.nh@student.hust.edu.vn",
-    phone: "0965 432 109",
-    school: "Đại học Bách Khoa",
-    major: "CNTT",
-    gpa: "3.6 / 4.0",
-    dept: "Kỹ thuật phần mềm",
-    mentor: "Trần Bảo Nam",
-    position: "Thực tập sinh Frontend React/JS",
-    appliedDate: "05/10/2026",
-    status: "Chờ xét duyệt",
-    rejectReason: "",
-    rejectNote: "",
-    docCvName: null,
-    docLetterName: null,
-    cvFileUrl: null,
-    letterFileUrl: null,
-    docContractName: null,
-    contractFileUrl: null,
-    cvUploadDate: null,
-    letterUploadDate: null,
-    contractUploadDate: null
-  },
-  {
-    id: 4,
-    name: "Trần Bảo Ngọc",
-    email: "ngoc.tb@ftu.edu.vn",
-    phone: "0945 678 901",
-    school: "Đại học Ngoại Thương",
-    major: "Marketing",
-    gpa: "3.4 / 4.0",
-    dept: "Marketing",
-    mentor: "Lê Minh Tuấn",
-    position: "Thực tập sinh Digital Marketing",
-    appliedDate: "06/10/2026",
-    status: "Chờ xét duyệt",
-    rejectReason: "",
-    rejectNote: "",
-    docCvName: null,
-    docLetterName: null,
-    cvFileUrl: null,
-    letterFileUrl: null,
-    docContractName: null,
-    contractFileUrl: null,
-    cvUploadDate: null,
-    letterUploadDate: null,
-    contractUploadDate: null
-  }
-];
-
-let applications = JSON.parse(JSON.stringify(DEFAULT_MOCK_APPLICATIONS));
-let internList = JSON.parse(JSON.stringify(DEFAULT_MOCK_INTERNS));
+let applications = [];
+let internList = [];
 
 // HỒ SƠ NGƯỜI DÙNG ĐĂNG NHẬP (LẤY TỪ PHIÊN ĐĂNG NHẬP THỰC TẾ)
 let userProfile = (() => {
@@ -178,6 +37,17 @@ let userProfile = (() => {
     avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
   };
 })();
+
+// MA TRẬN PHÂN QUYỀN HỆ THỐNG VÀ THÔNG TIN TÀI KHOẢN TỪ MYSQL (User Story 40)
+let DashboardPermissions = null;
+let CurrentSessionUser = null;
+
+function hasPermission(moduleKey, actionIndex) {
+  if (!DashboardPermissions) return true; // Chưa tải xong thì tạm thời mở
+  if (!DashboardPermissions[moduleKey]) return false;
+  return DashboardPermissions[moduleKey][actionIndex] === true;
+}
+window.hasPermission = hasPermission;
 
 // Biến lưu trạng thái đang xem hồ sơ / tài liệu
 let currentDocCandidateId = null;
@@ -327,11 +197,11 @@ function filterReviewData() {
 
   const filtered = applications.filter((item) => {
     const matchKeyword =
-      item.name.toLowerCase().includes(keyword) ||
-      item.school.toLowerCase().includes(keyword) ||
-      item.major.toLowerCase().includes(keyword) ||
-      item.position.toLowerCase().includes(keyword) ||
-      item.email.toLowerCase().includes(keyword);
+      (item.name || "").toLowerCase().includes(keyword) ||
+      (item.school || "").toLowerCase().includes(keyword) ||
+      (item.major || "").toLowerCase().includes(keyword) ||
+      (item.position || "").toLowerCase().includes(keyword) ||
+      (item.email || "").toLowerCase().includes(keyword);
 
     const matchStatus = selectedStatus === "" || item.status === selectedStatus;
     return matchKeyword && matchStatus;
@@ -357,7 +227,10 @@ function filterReviewData() {
       statusBadge = `<span class="status-badge status-rejected" title="${item.rejectReason || 'Từ chối'}">Đã từ chối</span>`;
     }
 
-    // Nút hành động tương ứng với trạng thái
+    // Nút hành động tương ứng với trạng thái (Tuân thủ phân quyền CSDL MySQL)
+    const canViewDoc = hasPermission('view_docs', 0);
+    const canApproveCandidate = hasPermission('review_docs', 4);
+
     let actionsHtml = "";
     if (item.status === "Chờ xét duyệt") {
       actionsHtml = `
@@ -365,22 +238,24 @@ function filterReviewData() {
           <button type="button" class="btn-action btn-detail" onclick="openCandidateDetailModal(${item.id})" title="Xem chi tiết ứng viên">
             Chi tiết
           </button>
+          ${canViewDoc ? `
           <button type="button" class="btn-action btn-doc" onclick="openDocumentModal(${item.id})" title="Xem tài liệu CV & Đơn">
             Tài liệu
-          </button>
+          </button>` : ''}
+          ${canApproveCandidate ? `
           <button type="button" class="btn-action btn-approve" onclick="approveApplication(${item.id})" title="Duyệt ứng viên">
             Duyệt
           </button>
           <button type="button" class="btn-action btn-reject" onclick="openRejectModal(${item.id})" title="Từ chối hồ sơ">
             Từ chối
-          </button>
+          </button>` : ''}
         </div>
       `;
     } else if (item.status === "Đã duyệt") {
       actionsHtml = `
         <div class="action-buttons">
           <button type="button" class="btn-action btn-detail" onclick="openCandidateDetailModal(${item.id})">Chi tiết</button>
-          <button type="button" class="btn-action btn-doc" onclick="openDocumentModal(${item.id})">Tài liệu</button>
+          ${canViewDoc ? `<button type="button" class="btn-action btn-doc" onclick="openDocumentModal(${item.id})">Tài liệu</button>` : ''}
           <span style="font-size: 11.5px; color: #059669; font-weight: 600;">✓ Đã thêm vào TTS</span>
         </div>
       `;
@@ -388,7 +263,7 @@ function filterReviewData() {
       actionsHtml = `
         <div class="action-buttons">
           <button type="button" class="btn-action btn-detail" onclick="openCandidateDetailModal(${item.id})">Chi tiết</button>
-          <button type="button" class="btn-action btn-doc" onclick="openDocumentModal(${item.id})">Tài liệu</button>
+          ${canViewDoc ? `<button type="button" class="btn-action btn-doc" onclick="openDocumentModal(${item.id})">Tài liệu</button>` : ''}
           <span style="font-size: 11.5px; color: #dc2626; font-weight: 600;" title="${item.rejectReason}">✕ Đã từ chối</span>
         </div>
       `;
@@ -560,6 +435,10 @@ function openDocumentModalWithType(id, type) {
 }
 
 async function openDocumentModal(id) {
+  if (typeof hasPermission === 'function' && !hasPermission('view_docs', 0)) {
+    showToast('Bạn không có quyền Xem tài liệu! Quyền đã bị vô hiệu hóa trong CSDL.', 'error');
+    return;
+  }
   currentDocCandidateId = id;
   let candidate = applications.find((item) => item.id === id);
   if (!candidate) {
@@ -587,10 +466,32 @@ async function openDocumentModal(id) {
         if (contractDoc) {
           candidate.docContractName = contractDoc.name;
           candidate.contractFileUrl = contractDoc.fileUrl;
+          candidate.contractStatus = contractDoc.reviewStatus;
+          candidate.contractUploadDate = contractDoc.uploadedAt;
+          candidate.contractRejectReason = contractDoc.rejectReason;
         }
       }
     } catch (e) {
       console.warn('Lỗi tải tài liệu từ DB:', e);
+    }
+  }
+
+  // Tải thông tin hợp đồng thực tế từ MySQL contracts nếu có
+  if (typeof apiGetContracts === 'function') {
+    try {
+      const cRes = await apiGetContracts({ intern_id: id });
+      if (cRes && cRes.success && Array.isArray(cRes.data) && cRes.data.length > 0) {
+        const c = cRes.data[0];
+        candidate.docContractName = c.file_name || candidate.docContractName || 'Hop_Dong_Thuc_Tap.pdf';
+        candidate.contractFileUrl = c.file_url || candidate.contractFileUrl;
+        candidate.contractUploadDate = c.created_at_formatted || candidate.contractUploadDate || getFormattedUploadDate();
+        candidate.contractStatus = c.status;
+        candidate.contractRejectReason = c.reject_reason;
+        candidate.contractCode = c.code;
+        candidate.contractTitle = c.title;
+      }
+    } catch (e) {
+      console.warn('Lỗi tải hợp đồng:', e);
     }
   }
 
@@ -650,6 +551,14 @@ function switchDocTab(type) {
   if (candidate.realDocuments && candidate.realDocuments.length > 0) {
     const targetType = type === "cv" ? "CV" : (type === "letter" ? "APPLICATION_LETTER" : "CONTRACT");
     realDoc = candidate.realDocuments.find((d) => d.type === targetType);
+  }
+  if (!realDoc && type === "contract" && candidate.contractFileUrl) {
+    realDoc = {
+      type: "CONTRACT",
+      name: candidate.docContractName || "Hop_Dong_Thuc_Tap.pdf",
+      fileUrl: candidate.contractFileUrl,
+      size: "Tài liệu hợp đồng"
+    };
   }
 
   if (btnCV) btnCV.classList.toggle("active", type === "cv");
@@ -853,6 +762,10 @@ function approveFromDoc() {
 // Thao tác DUYỆT HỒ SƠ ỨNG VIÊN
 // (Chuyển trạng thái sang Đã duyệt -> Tự động chuyển TTS sang danh sách chính Tab 3)
 function approveApplication(id) {
+  if (typeof hasPermission === 'function' && !hasPermission('review_docs', 4)) {
+    showToast('Bạn không có quyền Duyệt hồ sơ ứng viên! Quyền đã bị vô hiệu hóa trong CSDL.', 'error');
+    return;
+  }
   const candidate = applications.find((item) => item.id === id);
   if (!candidate) return;
 
@@ -911,6 +824,10 @@ function approveCandidate(candidate) {
 
 // Thao tác TỪ CHỐI HỒ SƠ (Mở Modal nhập lý do)
 function openRejectModal(id) {
+  if (typeof hasPermission === 'function' && !hasPermission('review_docs', 4)) {
+    showToast('Bạn không có quyền Từ chối hồ sơ ứng viên! Quyền đã bị vô hiệu hóa trong CSDL.', 'error');
+    return;
+  }
   const candidate = applications.find((item) => item.id === id);
   if (!candidate) return;
 
@@ -995,11 +912,11 @@ function filterData() {
 
   const filtered = internList.filter((item) => {
     const matchKeyword =
-      item.name.toLowerCase().includes(keyword) ||
-      item.school.toLowerCase().includes(keyword) ||
-      item.major.toLowerCase().includes(keyword) ||
-      item.email.toLowerCase().includes(keyword) ||
-      item.mentor.toLowerCase().includes(keyword);
+      (item.name || "").toLowerCase().includes(keyword) ||
+      (item.school || "").toLowerCase().includes(keyword) ||
+      (item.major || "").toLowerCase().includes(keyword) ||
+      (item.email || "").toLowerCase().includes(keyword) ||
+      (item.mentor || "").toLowerCase().includes(keyword);
 
     const matchSchool = selectedSchool === "" || item.school === selectedSchool;
     const matchMajor = selectedMajor === "" || item.major === selectedMajor;
@@ -1047,10 +964,16 @@ function filterData() {
             <i class="fa-solid fa-eye"></i>
             <span>Xem</span>
           </button>
+          ${hasPermission('profile_manage', 2) ? `
           <button type="button" class="btn-action btn-edit" onclick="openEditModal(${item.id})" title="Chỉnh sửa thông tin">
             <i class="fa-solid fa-pen-to-square"></i>
             <span>Sửa</span>
-          </button>
+          </button>` : ''}
+          ${hasPermission('profile_manage', 3) ? `
+          <button type="button" class="btn-action btn-delete" onclick="handleDeleteIntern(${item.id})" title="Xóa thực tập sinh" style="color: #ef4444; border-color: #fecaca; background: #fff5f5;">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>Xóa</span>
+          </button>` : ''}
         </div>
       </td>
     `;
@@ -1266,6 +1189,10 @@ window.clearSelectedFile = clearSelectedFile;
 
 // Bấm nút Mở Modal Thêm mới thực tập sinh
 function openAddModal() {
+  if (typeof hasPermission === 'function' && !hasPermission('profile_manage', 1)) {
+    showToast('Bạn không có quyền Thêm mới thực tập sinh! Quyền đã bị vô hiệu hóa trong CSDL.', 'error');
+    return;
+  }
   document.getElementById("addName").value = "";
   if (document.getElementById("addBirthDate")) document.getElementById("addBirthDate").value = "";
   if (document.getElementById("addPhone")) document.getElementById("addPhone").value = "";
@@ -1377,6 +1304,17 @@ function handleAddSubmit(e) {
         if (letterInput && letterInput.files && letterInput.files[0] && typeof apiUploadDocument === 'function') {
           apiUploadDocument(res.data.id, 'APPLICATION_LETTER', letterInput.files[0]).catch(e => console.warn(e));
         }
+        if (contractInput && contractInput.files && contractInput.files[0] && typeof apiCreateContract === 'function') {
+          const cCode = `HĐTT-2026-${String(res.data.id).padStart(3, '0')}`;
+          apiCreateContract({
+            intern_id: res.data.id,
+            code: cCode,
+            title: `Hợp đồng thực tập ${newIntern.dept || newIntern.position || 'Phát triển phần mềm'}`,
+            company: 'Hệ thống Đào tạo CodeGym Việt Nam',
+            dept: newIntern.dept || 'Phòng Phát triển Phần mềm',
+            period: newIntern.time
+          }, contractInput.files[0]).catch(e => console.warn(e));
+        }
       }
     }).catch(err => console.warn('Lỗi khi lưu vào MySQL:', err));
   }
@@ -1421,10 +1359,32 @@ async function openViewInternModal(id) {
         if (contractDoc) {
           intern.docContractName = contractDoc.name;
           intern.contractFileUrl = contractDoc.fileUrl;
+          intern.contractStatus = contractDoc.reviewStatus;
+          intern.contractUploadDate = contractDoc.uploadedAt;
+          intern.contractRejectReason = contractDoc.rejectReason;
         }
       }
     } catch (e) {
       console.warn('Lỗi tải tài liệu TTS:', e);
+    }
+  }
+
+  // Luôn nạp thông tin hợp đồng từ API contracts để đồng bộ chính xác nhất
+  if (typeof apiGetContracts === 'function') {
+    try {
+      const cRes = await apiGetContracts({ intern_id: id });
+      if (cRes && cRes.success && Array.isArray(cRes.data) && cRes.data.length > 0) {
+        const c = cRes.data[0];
+        intern.docContractName = c.file_name || intern.docContractName || 'Hop_Dong_Thuc_Tap.pdf';
+        intern.contractFileUrl = c.file_url || intern.contractFileUrl;
+        intern.contractUploadDate = c.created_at_formatted || intern.contractUploadDate || getFormattedUploadDate();
+        intern.contractStatus = c.status;
+        intern.contractRejectReason = c.reject_reason;
+        intern.contractCode = c.code;
+        intern.contractTitle = c.title;
+      }
+    } catch (e) {
+      console.warn('Lỗi tải hợp đồng TTS:', e);
     }
   }
 
@@ -1548,6 +1508,34 @@ async function openViewInternModal(id) {
   `;
 
   // Card Hợp đồng thực tập
+  let contractStatusText = 'Đã tải lên';
+  let contractStatusClass = 'uploaded text-success';
+  let contractStatusIcon = 'fa-circle-check';
+  let contractBgColor = '#f0fdf4';
+  let contractBorderColor = '#bbf7d0';
+
+  if (intern.contractStatus === 'approved') {
+    contractStatusText = 'TTS đã đồng ý ký kết';
+    contractStatusClass = 'uploaded text-success';
+    contractStatusIcon = 'fa-circle-check';
+    contractBgColor = '#f0fdf4';
+    contractBorderColor = '#bbf7d0';
+  } else if (intern.contractStatus === 'rejected') {
+    contractStatusText = `TTS từ chối${intern.contractRejectReason ? ' (' + intern.contractRejectReason + ')' : ''}`;
+    contractStatusClass = 'text-danger';
+    contractStatusIcon = 'fa-circle-xmark';
+    contractBgColor = '#fef2f2';
+    contractBorderColor = '#fecaca';
+  } else {
+    contractStatusText = 'Chờ TTS xác nhận';
+    contractStatusClass = 'text-warning-emphasis';
+    contractStatusIcon = 'fa-clock';
+    contractBgColor = '#fffbeb';
+    contractBorderColor = '#fde68a';
+  }
+
+  const contractStatusBadge = `<span class="badge ${intern.contractStatus === 'approved' ? 'bg-success' : (intern.contractStatus === 'rejected' ? 'bg-danger' : 'bg-warning text-dark')}" style="font-size: 10.5px; padding: 3px 7px;">${intern.contractStatus === 'approved' ? 'Đã ký kết' : (intern.contractStatus === 'rejected' ? 'Đã từ chối' : 'Chờ ký')}</span>`;
+
   const contractCardHtml = hasContract ? `
     <div class="doc-card-interactive" style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; background: #ffffff; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
       <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
@@ -1556,7 +1544,10 @@ async function openViewInternModal(id) {
             <i class="${contractIcon.icon}"></i>
           </div>
           <div style="min-width: 0;">
-            <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Hợp đồng thực tập</div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+              <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Hợp đồng thực tập</span>
+              ${contractStatusBadge}
+            </div>
             <div style="font-size: 13px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${intern.docContractName}">${intern.docContractName}</div>
           </div>
         </div>
@@ -1565,8 +1556,8 @@ async function openViewInternModal(id) {
           <span>Xem HĐ</span>
         </button>
       </div>
-      <div class="file-meta-bar" style="margin-top: 4px; padding: 6px 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; font-size: 11.5px; display: flex; align-items: center; justify-content: space-between; gap: 6px;">
-        <span class="file-meta-status uploaded" style="font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Trạng thái:  Đã tải lên</span>
+      <div class="file-meta-bar" style="margin-top: 4px; padding: 6px 10px; background: ${contractBgColor}; border: 1px solid ${contractBorderColor}; border-radius: 6px; font-size: 11.5px; display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+        <span class="file-meta-status ${contractStatusClass}" style="font-weight: 600;"><i class="fa-solid ${contractStatusIcon}"></i> Trạng thái: ${contractStatusText}</span>
         <span class="file-meta-date uploaded"><i class="fa-regular fa-calendar-check"></i> Ngày tải: ${intern.contractUploadDate || getFormattedUploadDate()}</span>
       </div>
     </div>
@@ -1671,20 +1662,30 @@ async function openViewInternModal(id) {
   }
 
   if (footerEl) {
+    const canViewDoc = hasPermission('view_docs', 0);
+    const canEdit = hasPermission('profile_manage', 2);
+    const canDelete = hasPermission('profile_manage', 3);
+
     footerEl.innerHTML = `
       <button type="button" class="btn-secondary" onclick="closeModal('internDetailModal')">
         <i class="fa-solid fa-xmark"></i>
         <span>Đóng</span>
       </button>
-      ${docCount > 0 ? `
+      ${(docCount > 0 && canViewDoc) ? `
       <button type="button" class="btn-action btn-doc" style="padding: 9px 16px;" onclick="closeModal('internDetailModal'); openDocumentModal(${intern.id})">
         <i class="fa-solid fa-file-lines"></i>
         <span>Xem tài liệu đính kèm</span>
       </button>` : ''}
+      ${canEdit ? `
       <button type="button" class="btn-primary" onclick="closeModal('internDetailModal'); openEditModal(${intern.id})">
         <i class="fa-solid fa-pen-to-square"></i>
         <span>Chỉnh sửa thông tin</span>
-      </button>
+      </button>` : ''}
+      ${canDelete ? `
+      <button type="button" class="btn-danger" style="background: #ef4444; color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="closeModal('internDetailModal'); handleDeleteIntern(${intern.id})">
+        <i class="fa-solid fa-trash-can"></i>
+        <span>Xóa thực tập sinh</span>
+      </button>` : ''}
     `;
   }
 
@@ -1695,6 +1696,10 @@ window.openViewInternModal = openViewInternModal;
 
 // Mở Modal Chỉnh sửa TTS
 async function openEditModal(id) {
+  if (typeof hasPermission === 'function' && !hasPermission('profile_manage', 2)) {
+    showToast('Bạn không có quyền Chỉnh sửa thông tin thực tập sinh! Quyền đã bị vô hiệu hóa trong CSDL.', 'error');
+    return;
+  }
   let intern = internList.find((item) => item.id === id);
   if (!intern) {
     intern = applications.find((item) => item.id === id);
@@ -1713,9 +1718,64 @@ async function openEditModal(id) {
     document.getElementById("editPosition").value = intern.position || `Thực tập sinh ${intern.major || ''}`;
   }
   document.getElementById("editDept").value = intern.dept || "Kỹ thuật phần mềm";
-  document.getElementById("editMentor").value = intern.mentor || "";
-  document.getElementById("editTime").value = intern.time || "";
+  const parseDMYtoYMD = (str) => {
+    if (!str) return "";
+    str = String(str).trim();
+    if (str.includes("/")) {
+      const parts = str.split("/");
+      if (parts.length === 3) {
+        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+    }
+    if (str.match(/^\d{4}-\d{2}-\d{2}/)) {
+      if (str.includes("T")) {
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${y}-${m}-${day}`;
+        }
+      }
+      return str.substring(0, 10);
+    }
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+    return "";
+  };
+
+  let rawStart = intern.startFormatted || intern.start_date || intern.startDate;
+  let rawEnd = intern.endFormatted || intern.end_date || intern.endDate;
+  if ((!rawStart || !rawEnd) && intern.time && intern.time.includes("-")) {
+    const timeParts = intern.time.split("-").map(p => p.trim());
+    if (!rawStart && timeParts[0]) rawStart = timeParts[0];
+    if (!rawEnd && timeParts[1]) rawEnd = timeParts[1];
+  }
+
+  if (document.getElementById("editStartDate")) {
+    document.getElementById("editStartDate").value = parseDMYtoYMD(rawStart);
+  }
+  if (document.getElementById("editEndDate")) {
+    document.getElementById("editEndDate").value = parseDMYtoYMD(rawEnd);
+  }
   document.getElementById("editStatus").value = intern.status || "Đang thực tập";
+
+  // Đồng bộ chọn Mentor từ danh sách người dùng hệ thống
+  const editMentorSelect = document.getElementById("editMentor");
+  if (editMentorSelect) {
+    if (intern.mentor && !Array.from(editMentorSelect.options).some(o => o.value === intern.mentor)) {
+      const opt = document.createElement("option");
+      opt.value = intern.mentor;
+      opt.textContent = `${intern.mentor} (Hệ thống)`;
+      editMentorSelect.appendChild(opt);
+    }
+    editMentorSelect.value = intern.mentor || "";
+  }
 
   // Reset file inputs & cờ xóa
   if (document.getElementById("editCv")) document.getElementById("editCv").value = "";
@@ -1730,6 +1790,47 @@ async function openEditModal(id) {
   updateDocBoxDisplay("editCvBox", "editCvFileName", "editCvClearBtn", intern.docCvName, "Tải lên CV (PDF, DOCX)", intern.cvUploadDate);
   updateDocBoxDisplay("editLetterBox", "editLetterFileName", "editLetterClearBtn", intern.docLetterName, "Tải lên Đơn xin thực tập", intern.letterUploadDate);
   updateDocBoxDisplay("editContractBox", "editContractFileName", "editContractClearBtn", intern.docContractName, "Tải lên Hợp đồng thực tập", intern.contractUploadDate);
+
+  // Tải thông tin hợp đồng thực tế từ MySQL Database để hiển thị trạng thái và lý do từ chối (nếu có)
+  const editContractMetaBar = document.getElementById("editContractMetaBar");
+  if (editContractMetaBar) {
+    editContractMetaBar.innerHTML = '';
+    editContractMetaBar.style.display = 'none';
+  }
+  if (typeof apiGetContracts === 'function') {
+    apiGetContracts({ intern_id: intern.id }).then(res => {
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const c = res.data[0];
+        intern.docContractName = c.file_name || 'Hop_Dong_Thuc_Tap.pdf';
+        intern.contractFileUrl = c.file_url || intern.contractFileUrl;
+        intern.contractUploadDate = c.created_at_formatted || getFormattedUploadDate();
+        intern.contractStatus = c.status;
+        intern.contractRejectReason = c.reject_reason;
+
+        let statusText = 'Chờ thực tập sinh xác nhận';
+        let statusBadgeClass = 'badge bg-warning text-dark';
+        if (c.status === 'approved') {
+          statusText = `TTS đã ký kết (${c.confirmed_at_formatted || 'Đã xác nhận'})`;
+          statusBadgeClass = 'badge bg-success';
+        } else if (c.status === 'rejected') {
+          statusText = `TTS đã từ chối (${c.reject_reason || 'Không rõ lý do'})`;
+          statusBadgeClass = 'badge bg-danger';
+        }
+
+        updateDocBoxDisplay("editContractBox", "editContractFileName", "editContractClearBtn", intern.docContractName, "Tải lên Hợp đồng thực tập", intern.contractUploadDate);
+
+        if (editContractMetaBar) {
+          editContractMetaBar.innerHTML = `
+            <div style="font-size: 12px; margin-top: 6px; padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+              <span class="${statusBadgeClass} me-2" style="font-weight: 600;">${statusText}</span>
+              <span class="text-secondary">Mã: <b>${c.code}</b></span>
+            </div>
+          `;
+          editContractMetaBar.style.display = 'block';
+        }
+      }
+    }).catch(() => {});
+  }
 
   openModal("editModal");
 }
@@ -1756,7 +1857,21 @@ async function handleEditSubmit(e) {
     }
     intern.dept = document.getElementById("editDept").value;
     intern.mentor = document.getElementById("editMentor").value.trim();
-    intern.time = document.getElementById("editTime").value.trim();
+    const sDateVal = document.getElementById("editStartDate") ? document.getElementById("editStartDate").value : "";
+    const eDateVal = document.getElementById("editEndDate") ? document.getElementById("editEndDate").value : "";
+    intern.start_date = sDateVal || null;
+    intern.end_date = eDateVal || null;
+    intern.startDate = sDateVal || null;
+    intern.endDate = eDateVal || null;
+    if (sDateVal && eDateVal) {
+      const partsS = sDateVal.split('-');
+      const partsE = eDateVal.split('-');
+      intern.startFormatted = `${partsS[2]}/${partsS[1]}/${partsS[0]}`;
+      intern.endFormatted = `${partsE[2]}/${partsE[1]}/${partsE[0]}`;
+      intern.time = `${intern.startFormatted} - ${intern.endFormatted}`;
+    } else {
+      intern.time = "Chưa xếp lịch";
+    }
     intern.status = document.getElementById("editStatus").value;
 
     // Xử lý upload tài liệu mới nếu HR chọn tệp mới
@@ -1815,89 +1930,97 @@ async function handleEditSubmit(e) {
     if (editContractInput && editContractInput.files && editContractInput.files[0]) {
       const file = editContractInput.files[0];
       intern.docContractName = file.name;
-      intern.contractFileUrl = URL.createObjectURL(file);
       intern.contractUploadDate = editContractInput.dataset.uploadDate || getFormattedUploadDate();
       intern.deleteContractOnSave = false;
 
-      // Đồng bộ hợp đồng mới tải lên sang hệ thống cổng Thực tập sinh (User Story 9 & 10)
-      try {
-        let contracts = [];
-        const savedContracts = localStorage.getItem('tts_intern_contracts');
-        if (savedContracts) contracts = JSON.parse(savedContracts) || [];
-        const cCode = `HĐTT-2026-${String(id).padStart(3, '0')}`;
-        const existingIdx = contracts.findIndex(c => String(c.internId) === String(id) || c.code === cCode);
-        const contractObj = {
-          id: `HD-2026-${String(id).padStart(3, '0')}`,
-          internId: id,
-          code: cCode,
-          title: `Hợp đồng thực tập ${intern.dept || intern.position || 'Phát triển phần mềm'}`,
-          fileName: file.name,
-          company: 'Hệ thống Đào tạo CodeGym Việt Nam',
-          dept: intern.dept || intern.position || 'Phòng Phát triển Phần mềm',
-          period: (intern.startFormatted && intern.endFormatted) ? `${intern.startFormatted} - ${intern.endFormatted}` : '01/03/2026 - 31/05/2026',
-          status: 'pending'
-        };
-        if (existingIdx >= 0) {
-          contracts[existingIdx] = contractObj;
-        } else {
-          contracts.unshift(contractObj);
-        }
-        localStorage.setItem('tts_intern_contracts', JSON.stringify(contracts));
-      } catch (err) {
-        console.warn('Lỗi đồng bộ hợp đồng sang cổng TTS:', err);
-      }
+      const cCode = `HĐTT-2026-${String(id).padStart(3, '0')}`;
+      const contractPayload = {
+        intern_id: Number(id),
+        code: cCode,
+        title: `Hợp đồng thực tập ${intern.dept || intern.position || 'Phát triển phần mềm'}`,
+        company: 'Hệ thống Đào tạo CodeGym Việt Nam',
+        dept: intern.dept || intern.position || 'Phòng Phát triển Phần mềm',
+        period: (intern.startFormatted && intern.endFormatted) ? `${intern.startFormatted} - ${intern.endFormatted}` : '01/03/2026 - 31/05/2026'
+      };
 
-      if (typeof apiUploadDocument === 'function') {
+      // Tải lên tệp hợp đồng thật vào MySQL Database qua Multer và cập nhật URL
+      if (typeof apiCreateContract === 'function') {
         try {
-          apiUploadDocument(id, 'CONTRACT', file).then(res => {
-            if (res && res.data && res.data.fileUrl) intern.contractFileUrl = res.data.fileUrl;
-          }).catch(() => {});
-        } catch (err) {}
+          const res = await apiCreateContract(contractPayload, file);
+          if (res && res.success && res.data) {
+            intern.contractFileUrl = res.data.file_url;
+            intern.docContractName = res.data.file_name || file.name;
+            intern.contractStatus = 'pending';
+            intern.contractRejectReason = null;
+          }
+        } catch (e) {
+          console.warn('Lỗi tải lên hợp đồng vào MySQL:', e);
+        }
       }
     } else if (intern.deleteContractOnSave) {
       intern.docContractName = null;
       intern.contractFileUrl = null;
       intern.contractUploadDate = null;
+      intern.contractStatus = null;
 
-      try {
-        let contracts = [];
-        const savedContracts = localStorage.getItem('tts_intern_contracts');
-        if (savedContracts) {
-          contracts = JSON.parse(savedContracts) || [];
-          contracts = contracts.filter(c => String(c.internId) !== String(id));
-          localStorage.setItem('tts_intern_contracts', JSON.stringify(contracts));
+      if (typeof apiDeleteContract === 'function') {
+        try {
+          await apiDeleteContract(id);
+        } catch (e) {
+          console.warn('Lỗi xóa hợp đồng trên MySQL:', e);
         }
-      } catch (err) {}
-
+      }
       if (typeof apiDeleteDocument === 'function') {
         try {
-          apiDeleteDocument(id, 'CONTRACT').catch(() => {});
+          await apiDeleteDocument(id, 'CONTRACT');
         } catch (err) {}
+      }
+    }
+
+    // Phân tích khoảng thời gian thành startDate và endDate
+    let sDate = intern.start_date || intern.startDate || null;
+    let eDate = intern.end_date || intern.endDate || null;
+    if (!sDate && intern.time && intern.time.includes("-")) {
+      const parts = intern.time.split("-").map(p => p.trim());
+      const parseDMY = (str) => {
+        if (!str) return null;
+        if (str.includes("/")) {
+          const segs = str.split("/");
+          if (segs.length === 3) {
+            return `${segs[2]}-${segs[1].padStart(2, '0')}-${segs[0].padStart(2, '0')}`;
+          }
+        }
+        return str;
+      };
+      if (parts[0]) sDate = parseDMY(parts[0]);
+      if (parts[1]) eDate = parseDMY(parts[1]);
+    }
+
+    // Cập nhật dữ liệu vào MySQL Database
+    if (typeof apiUpdateIntern === 'function') {
+      try {
+        await apiUpdateIntern(id, {
+          name: intern.name,
+          email: intern.email,
+          phone: intern.phone,
+          major: intern.major,
+          school: intern.school,
+          position: intern.position,
+          dept: intern.dept,
+          mentor: intern.mentor,
+          startDate: sDate,
+          endDate: eDate,
+          status: intern.status
+        });
+        console.log('✅ Đã cập nhật thực tập sinh và lịch vào MySQL thành công!');
+      } catch (err) {
+        console.warn('Lỗi khi cập nhật vào MySQL:', err);
       }
     }
 
     closeModal("editModal");
     filterData();
     renderOverview();
-
-    // Cập nhật dữ liệu vào MySQL Database
-    if (typeof apiUpdateIntern === 'function') {
-      apiUpdateIntern(id, {
-        name: intern.name,
-        email: intern.email,
-        phone: intern.phone,
-        major: intern.major,
-        school: intern.school,
-        position: intern.position,
-        dept: intern.dept,
-        mentor: intern.mentor,
-        status: intern.status
-      }).then(res => {
-        if (res && res.success) {
-          console.log('✅ Đã cập nhật thực tập sinh vào MySQL thành công!');
-        }
-      }).catch(err => console.warn('Lỗi khi cập nhật vào MySQL:', err));
-    }
 
     showToast(`Cập nhật thông tin thực tập sinh "${intern.name}" thành công!`, "success");
   }
@@ -1907,6 +2030,10 @@ async function handleEditSubmit(e) {
 let pendingDeleteInternId = null;
 
 function handleDeleteIntern(id) {
+  if (typeof hasPermission === 'function' && !hasPermission('profile_manage', 3)) {
+    showToast('Bạn không có quyền Xóa thực tập sinh! Quyền đã bị vô hiệu hóa trong CSDL.', 'error');
+    return;
+  }
   const intern = internList.find((item) => item.id === id);
   if (!intern) return;
 
@@ -2183,7 +2310,138 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Nạp dữ liệu mới nhất từ MySQL Database
   loadInternsFromDB();
+
+  // Nạp danh sách Mentor hệ thống từ MySQL Database
+  loadSystemMentors();
+
+  // Đồng bộ và áp dụng ma trận phân quyền từ MySQL Database (User Story 40)
+  applyRolePermissionsToDashboard();
 });
+
+// ==========================================
+// ĐỒNG BỘ VÀ ÁP DỤNG PHÂN QUYỀN VAI TRÒ TỪ MYSQL (User Story 40)
+// ==========================================
+async function applyRolePermissionsToDashboard() {
+  let meRes = null;
+  try {
+    if (typeof apiGetMe === 'function') {
+      meRes = await apiGetMe();
+    }
+  } catch (e) {
+    console.warn('Lỗi gọi apiGetMe:', e);
+  }
+
+  // Tự động kết nối lấy token từ MySQL nếu chưa có phiên đăng nhập hợp lệ
+  if (!meRes || !meRes.success || !meRes.user) {
+    const savedRole = localStorage.getItem('userRole') || 'HR Manager';
+    let defaultEmail = 'hr@company.vn';
+    if (savedRole === 'Mentor' || savedRole === 'MENTOR') defaultEmail = 'mentor@company.vn';
+    else if (savedRole === 'Admin' || savedRole === 'ADMIN') defaultEmail = 'admin@company.vn';
+    else if (savedRole === 'INTERN' || savedRole === 'Thực tập sinh') defaultEmail = 'intern@student.vn';
+
+    try {
+      if (typeof apiLogin === 'function') {
+        const loginRes = await apiLogin(defaultEmail, '123456');
+        if (loginRes && loginRes.success && loginRes.token) {
+          localStorage.setItem('token', loginRes.token);
+          localStorage.setItem('user', JSON.stringify(loginRes.user));
+          localStorage.setItem('userRole', loginRes.user.role);
+          if (typeof apiGetMe === 'function') {
+            meRes = await apiGetMe();
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Lỗi tự động kết nối tài khoản DB:', e);
+    }
+  }
+
+  if (meRes && meRes.success && meRes.user) {
+    CurrentSessionUser = meRes.user;
+    DashboardPermissions = meRes.permissions;
+    
+    // Đồng bộ lại vào localStorage
+    localStorage.setItem('user', JSON.stringify(meRes.user));
+    localStorage.setItem('userRole', meRes.user.role);
+
+    // Cập nhật thông tin Profile trên giao diện từ CSDL MySQL thực tế
+    const sidebarName = document.getElementById("sidebarName");
+    const sidebarRole = document.getElementById("sidebarRole");
+    const sidebarAvatar = document.getElementById("sidebarAvatar");
+    const roleDisplay = document.getElementById("sidebarRoleDisplay");
+    const roleDisplayBadge = document.getElementById("roleDisplayBadge");
+
+    if (sidebarName && meRes.user.name) sidebarName.textContent = meRes.user.name;
+    if (sidebarAvatar && meRes.user.avatar) sidebarAvatar.src = meRes.user.avatar;
+    if (sidebarRole && meRes.user.role) sidebarRole.textContent = meRes.user.role;
+    if (roleDisplayBadge && meRes.user.role) roleDisplayBadge.textContent = meRes.user.role;
+    if (roleDisplay) {
+      if (meRes.user.role === 'Mentor') roleDisplay.textContent = 'Mentor (Người hướng dẫn)';
+      else if (meRes.user.role === 'Admin') roleDisplay.textContent = 'Quản trị viên (Admin)';
+      else roleDisplay.textContent = 'HR Manager';
+    }
+  } else {
+    // Dự phòng: Lấy trực tiếp từ apiGetAdminPermissions theo roleKey
+    const role = localStorage.getItem('userRole') || 'HR Manager';
+    const roleKey = (role === 'Mentor' || role === 'MENTOR') ? 'Mentor' : ((role === 'Admin' || role === 'ADMIN') ? 'Admin' : 'HR Manager');
+    try {
+      if (typeof apiGetAdminPermissions === 'function') {
+        const res = await apiGetAdminPermissions(roleKey);
+        if (res && res.success && res.permissions) {
+          DashboardPermissions = res.permissions;
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (!DashboardPermissions) return;
+
+  // 1. Phân quyền Xét duyệt hồ sơ (review_docs):
+  const canViewReview = hasPermission('review_docs', 0);
+  const navReview = document.getElementById('navReview');
+  if (navReview) {
+    if (!canViewReview) {
+      navReview.style.display = 'none';
+      if (currentTab === 'review') {
+        switchTab('overview');
+      }
+    } else {
+      navReview.style.display = '';
+    }
+  }
+
+  // 2. Phân quyền Quản lý hồ sơ thực tập sinh (profile_manage):
+  const canCreateIntern = hasPermission('profile_manage', 1);
+  const addButtons = document.querySelectorAll('[onclick="openAddModal()"], .btn-add-intern, #btnAddIntern');
+  addButtons.forEach(btn => {
+    btn.style.display = canCreateIntern ? '' : 'none';
+  });
+
+  // 3. Phân quyền Tìm kiếm / lọc (search_intern):
+  const canSearch = hasPermission('search_intern', 0);
+  const searchInput = document.getElementById('searchInput');
+  const schoolFilter = document.getElementById('schoolFilter');
+  const majorFilter = document.getElementById('majorFilter');
+  if (searchInput) {
+    searchInput.disabled = !canSearch;
+    if (!canSearch) searchInput.placeholder = 'Tính năng tìm kiếm đã bị Admin vô hiệu hóa';
+  }
+  if (schoolFilter) schoolFilter.disabled = !canSearch;
+  if (majorFilter) majorFilter.disabled = !canSearch;
+
+  // 4. Nếu là Mentor, thêm huy hiệu chào mừng Mentor
+  const activeRole = CurrentSessionUser ? CurrentSessionUser.role : (localStorage.getItem('userRole') || 'HR Manager');
+  if (activeRole === 'Mentor') {
+    const welcomeHeader = document.querySelector('.header-title h1');
+    if (welcomeHeader && !welcomeHeader.innerHTML.includes('Mentor')) {
+      welcomeHeader.innerHTML += ' <span class="badge bg-info text-dark ms-2" style="font-size: 13px; vertical-align: middle;">Chế độ Mentor</span>';
+    }
+  }
+
+  // 5. Cập nhật lại các bảng dữ liệu để áp dụng quyền Sửa / Xóa / Duyệt mới nhất
+  filterData();
+  filterReviewData();
+}
 
 // ==========================================
 // ĐỒNG BỘ DỮ LIỆU VỚI BACKEND MYSQL
@@ -2209,6 +2467,12 @@ async function loadInternsFromDB() {
           school: i.school,
           dept: i.dept,
           mentor: i.mentor,
+          startDate: i.start_date,
+          endDate: i.end_date,
+          start_date: i.start_date,
+          end_date: i.end_date,
+          startFormatted: i.startFormatted,
+          endFormatted: i.endFormatted,
           time: i.time || 'Chưa xếp lịch',
           status: i.status || 'Đang thực tập',
           phone: i.phone,
@@ -2218,7 +2482,14 @@ async function loadInternsFromDB() {
           docCvName: i.cv_doc_name || null,
           docLetterName: i.letter_doc_name || null,
           cvFileUrl: i.cv_file_url || null,
-          letterFileUrl: i.letter_file_url || null
+          letterFileUrl: i.letter_file_url || null,
+          docContractName: i.contract_file_name || null,
+          contractFileUrl: i.contract_file_url || null,
+          contractStatus: i.contract_status || null,
+          contractCode: i.contract_code || null,
+          contractTitle: i.contract_title || null,
+          contractUploadDate: i.contract_created_at_formatted || null,
+          contractRejectReason: i.contract_reject_reason || null
         }));
 
         applications = apps.map(i => ({
@@ -2233,6 +2504,12 @@ async function loadInternsFromDB() {
           mentor: i.mentor,
           position: i.position || `Thực tập sinh ${i.major || ''}`,
           appliedDate: i.appliedDate || '',
+          startDate: i.start_date,
+          endDate: i.end_date,
+          start_date: i.start_date,
+          end_date: i.end_date,
+          startFormatted: i.startFormatted,
+          endFormatted: i.endFormatted,
           status: i.status,
           rejectReason: i.reject_reason || '',
           rejectNote: i.reject_note || '',
@@ -2240,6 +2517,13 @@ async function loadInternsFromDB() {
           docLetterName: i.letter_doc_name || null,
           cvFileUrl: i.cv_file_url || null,
           letterFileUrl: i.letter_file_url || null,
+          docContractName: i.contract_file_name || null,
+          contractFileUrl: i.contract_file_url || null,
+          contractStatus: i.contract_status || null,
+          contractCode: i.contract_code || null,
+          contractTitle: i.contract_title || null,
+          contractUploadDate: i.contract_created_at_formatted || null,
+          contractRejectReason: i.contract_reject_reason || null,
           skills: i.skills || '',
           bio: i.bio || '',
           projects: i.projects || ''
@@ -2660,11 +2944,71 @@ function removeModalStage(idx) {
   }
 }
 
+// ==========================================
+// QUẢN LÝ DANH SÁCH MENTOR TỪ HỆ THỐNG
+// ==========================================
+let systemMentors = [];
+
+async function loadSystemMentors() {
+  try {
+    if (typeof apiGetAdminUsers === 'function') {
+      const res = await apiGetAdminUsers({ role: 'Mentor' });
+      const list = (res && (res.users || res.data)) ? (res.users || res.data) : [];
+      if (res && res.success && Array.isArray(list) && list.length > 0) {
+        systemMentors = list;
+      }
+    }
+  } catch (e) {
+    console.warn('Lỗi tải danh sách Mentor từ hệ thống:', e);
+  }
+
+  // Nếu rỗng, fallback về tài khoản mentor mặc định từ cơ sở dữ liệu
+  if (!systemMentors || systemMentors.length === 0) {
+    systemMentors = [
+      { id: 4, name: 'Nguyễn Anh Tuấn', email: 'mentor@company.vn', role: 'Mentor' }
+    ];
+  }
+
+  populateMentorDropdowns();
+}
+
+function populateMentorDropdowns() {
+  const optionsHtml = systemMentors.map(m => 
+    `<option value="${m.name}">${m.name} (${m.email || 'Mentor'})</option>`
+  ).join('');
+
+  // 1. Thêm TTS modal (#addMentor)
+  const addMentor = document.getElementById('addMentor');
+  if (addMentor) {
+    const curVal = addMentor.value;
+    addMentor.innerHTML = `<option value="">-- Chọn Mentor trong hệ thống --</option>` + optionsHtml;
+    if (curVal) addMentor.value = curVal;
+  }
+
+  // 2. Sửa TTS modal (#editMentor)
+  const editMentor = document.getElementById('editMentor');
+  if (editMentor) {
+    const curVal = editMentor.value;
+    editMentor.innerHTML = `<option value="">-- Chọn Mentor trong hệ thống --</option>` + optionsHtml;
+    if (curVal) editMentor.value = curVal;
+  }
+
+  // 3. Chương trình thực tập modal (#progFormMentor)
+  const progMentor = document.getElementById('progFormMentor');
+  if (progMentor) {
+    const curVal = progMentor.value;
+    progMentor.innerHTML = `<option value="">Chọn Mentor trong danh sách...</option>` + optionsHtml;
+    if (curVal) progMentor.value = curVal;
+  }
+}
+
 function getAvailableMentors() {
+  if (systemMentors && systemMentors.length > 0) {
+    return systemMentors.map(m => m.name);
+  }
   const fromInterns = Array.isArray(internList) ? internList.map(i => i.mentor) : [];
-  const fromApps = Array.isArray(applications) ? applications.map(i => i.mentor) : [];
-  const defaults = ["Anh Nam", "Chị Mai", "Anh Tuấn", "Chị Lan"];
-  const all = [...fromInterns, ...fromApps, ...defaults];
+  const defaults = ["Nguyễn Anh Tuấn"];
+  const all = [...fromInterns, ...defaults];
   return [...new Set(all)].filter(Boolean).filter(m => m !== 'Chưa phân công' && m !== '—');
 }
 
@@ -2907,6 +3251,7 @@ function openProgramInternsModal() {
   const modalSub = document.getElementById("programInternsModalSub");
   const tbody = document.getElementById("programInternsTableBody");
   const countNote = document.getElementById("programInternsCountNote");
+  const assignSelect = document.getElementById("assignInternSelect");
 
   if (modalTitle) modalTitle.textContent = `DANH SÁCH THỰC TẬP SINH - ${prog.name}`;
   if (modalSub) modalSub.textContent = `Phòng ban: ${prog.dept}${prog.mentor ? ' | Mentor: ' + prog.mentor : ''}`;
@@ -2917,14 +3262,28 @@ function openProgramInternsModal() {
     countNote.innerHTML = `Hệ thống ghi nhận <strong>${interns.length}</strong> thực tập sinh thuộc phòng ban <strong>${prog.dept}</strong> trong cơ sở dữ liệu.`;
   }
 
+  // Cập nhật danh sách thực tập sinh có thể phân công vào chương trình & lịch
+  if (assignSelect) {
+    const assignedIds = new Set(interns.map(i => i.id));
+    const available = internList.filter(i => !assignedIds.has(i.id));
+    if (available.length === 0) {
+      assignSelect.innerHTML = `<option value="">-- Tất cả TTS đã được xếp vào chương trình này --</option>`;
+      assignSelect.disabled = true;
+    } else {
+      assignSelect.disabled = false;
+      assignSelect.innerHTML = `<option value="">-- Chọn thực tập sinh (${available.length} khả dụng) --</option>` +
+        available.map(i => `<option value="${i.id}">${i.name} (${i.school} - ${i.dept || 'Chưa phân bổ'}) [${i.status}]</option>`).join("");
+    }
+  }
+
   if (tbody) {
     if (interns.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align: center; padding: 40px; color: #64748b;">
+          <td colspan="7" style="text-align: center; padding: 40px; color: #64748b;">
             <i class="fa-solid fa-user-slash fa-2x" style="color: #cbd5e1; margin-bottom: 10px; display: block;"></i>
-            Hiện chưa có thực tập sinh nào thuộc phòng ban <strong>${prog.dept}</strong> trong cơ sở dữ liệu.<br>
-            <span style="font-size: 12.5px; color: #94a3b8;">Bạn có thể chuyển sang Tab Thực tập sinh để thêm mới.</span>
+            Hiện chưa có thực tập sinh nào thuộc phòng ban <strong>${prog.dept}</strong> trong chương trình này.<br>
+            <span style="font-size: 12.5px; color: #94a3b8;">Bạn có thể chọn thực tập sinh ở ô phía trên và nhấn "Thêm vào lịch & chương trình".</span>
           </td>
         </tr>
       `;
@@ -2940,7 +3299,7 @@ function openProgramInternsModal() {
         }
 
         const initials = getInitials(i.name);
-        const timeText = i.time || (i.startFormatted && i.endFormatted ? `${i.startFormatted} - ${i.endFormatted}` : 'Chưa xếp lịch');
+        const timeText = i.time || (i.startFormatted && i.endFormatted ? `${i.startFormatted} - ${i.endFormatted}` : (prog.period || 'Chưa xếp lịch'));
 
         return `
           <tr>
@@ -2961,6 +3320,16 @@ function openProgramInternsModal() {
             <td>${i.mentor || prog.mentor || 'Chưa phân công'}</td>
             <td><i class="fa-regular fa-calendar-days" style="margin-right: 5px; color: var(--primary);"></i>${timeText}</td>
             <td>${statusBadge}</td>
+            <td style="text-align: center;">
+              <div style="display: flex; gap: 6px; justify-content: center;">
+                <button type="button" class="btn-action btn-edit" style="padding: 4px 8px; border-radius: 6px; font-size: 12px;" onclick="openEditModal(${i.id}); closeModal('programInternsModal');" title="Điều chỉnh lịch hoặc mentor">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button type="button" class="btn-action btn-danger" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 4px 8px; border-radius: 6px; font-size: 12px;" onclick="handleRemoveInternFromProgram(${i.id})" title="Rút khỏi chương trình & lịch">
+                  <i class="fa-solid fa-user-minus"></i>
+                </button>
+              </div>
+            </td>
           </tr>
         `;
       }).join("");
@@ -2969,6 +3338,81 @@ function openProgramInternsModal() {
 
   openModal("programInternsModal");
 }
+
+// Phân công thực tập sinh vào chương trình & lịch thực tập (US 11, 12, 13)
+async function handleAssignInternToCurrentProgram() {
+  const prog = internshipPrograms.find(p => p.id === selectedProgramId);
+  if (!prog) {
+    showToast("Vui lòng chọn một chương trình thực tập trước!", "warning");
+    return;
+  }
+  const select = document.getElementById("assignInternSelect");
+  if (!select || !select.value) {
+    showToast("Vui lòng chọn một thực tập sinh từ danh sách để phân công!", "warning");
+    return;
+  }
+  const internId = Number(select.value);
+  let intern = internList.find(i => i.id === internId);
+  if (!intern) {
+    intern = applications.find(i => i.id === internId);
+  }
+  if (!intern) return;
+
+  const periodText = prog.period || (prog.startDate && prog.endDate ? `${prog.startDate} - ${prog.endDate}` : '01/03/2026 - 31/05/2026');
+  
+  intern.dept = prog.dept;
+  intern.mentor = prog.mentor || intern.mentor || "Anh Tuấn";
+  intern.time = periodText;
+  intern.status = "Đang thực tập";
+
+  // Cập nhật vào MySQL Database
+  if (typeof apiUpdateIntern === 'function') {
+    try {
+      await apiUpdateIntern(internId, {
+        dept: prog.dept,
+        mentor: prog.mentor || intern.mentor || "Anh Tuấn",
+        startDate: prog.startDate || '2026-03-01',
+        endDate: prog.endDate || '2026-05-31',
+        status: "Đang thực tập"
+      });
+      console.log(`✅ Đã phân công TTS ID ${internId} vào chương trình ${prog.name} và lưu MySQL!`);
+    } catch (err) {
+      console.warn("Lỗi cập nhật TTS vào chương trình:", err);
+    }
+  }
+
+  showToast(`Đã thêm thực tập sinh "${intern.name}" vào chương trình "${prog.name}" và lịch thực tập thành công!`, "success");
+  filterData();
+  renderOverview();
+  renderPrograms();
+  openProgramInternsModal();
+}
+
+// Rút thực tập sinh khỏi chương trình & lịch
+async function handleRemoveInternFromProgram(internId) {
+  const intern = internList.find(i => i.id === internId);
+  if (!intern) return;
+
+  intern.dept = "Chưa phân bổ";
+  intern.time = "Chưa xếp lịch";
+
+  if (typeof apiUpdateIntern === 'function') {
+    try {
+      await apiUpdateIntern(internId, {
+        dept: "Chưa phân bổ"
+      });
+    } catch (err) {}
+  }
+
+  showToast(`Đã rút thực tập sinh "${intern.name}" khỏi chương trình!`, "info");
+  filterData();
+  renderOverview();
+  renderPrograms();
+  openProgramInternsModal();
+}
+
+window.handleAssignInternToCurrentProgram = handleAssignInternToCurrentProgram;
+window.handleRemoveInternFromProgram = handleRemoveInternFromProgram;
 
 function goToFilteredInternsTab() {
   const prog = internshipPrograms.find(p => p.id === selectedProgramId);
@@ -3021,50 +3465,29 @@ const ATTENDANCE_STATUS_MAP = {
   empty: { code: "—", text: "Chưa có dữ liệu", chipClass: "chip-empty" }
 };
 
-// Khởi tạo trạng thái Chấm công & Đơn nghỉ phép (Đồng bộ MySQL & LocalStorage)
-function initAttendance() {
-  try {
-    const savedAtt = localStorage.getItem("codegym_hr_attendance");
-    if (savedAtt) {
-      attendanceRecords = JSON.parse(savedAtt) || {};
-    } else {
-      attendanceRecords = {};
-    }
-  } catch (e) {
-    attendanceRecords = {};
-  }
-
-  try {
-    const savedLeaves = localStorage.getItem("codegym_hr_leaves");
-    if (savedLeaves) {
-      leaveRequests = JSON.parse(savedLeaves) || [];
-    } else {
-      leaveRequests = [];
-    }
-  } catch (e) {
-    leaveRequests = [];
-  }
-
-  // Tải bảng chấm công từ MySQL Database
+// Tải bảng chấm công và danh sách đơn nghỉ phép trực tiếp từ MySQL Database (Không phụ thuộc vào cookie/localStorage)
+async function loadAttendanceFromDB() {
   if (typeof apiGetAttendance === 'function') {
-    apiGetAttendance().then(res => {
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+    try {
+      const res = await apiGetAttendance();
+      attendanceRecords = {};
+      if (res && res.success && Array.isArray(res.data)) {
         res.data.forEach(row => {
-          const dKey = row.date.split('T')[0];
+          const dKey = row.date.includes('T') ? row.date.split('T')[0] : row.date;
           if (!attendanceRecords[row.intern_id]) attendanceRecords[row.intern_id] = {};
           attendanceRecords[row.intern_id][dKey] = row.status;
         });
-        localStorage.setItem("codegym_hr_attendance", JSON.stringify(attendanceRecords));
-        if (currentAttSubtab === "sheet") renderAttendanceSheet();
       }
-    }).catch(() => {});
+    } catch (e) {
+      console.warn('Lỗi tải bảng chấm công từ MySQL:', e);
+    }
   }
 
-  // Tải danh sách đơn nghỉ phép từ MySQL Database
   if (typeof apiGetLeaves === 'function') {
-    apiGetLeaves().then(res => {
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-        const dbLeaves = res.data.map(l => ({
+    try {
+      const res = await apiGetLeaves();
+      if (res && res.success && Array.isArray(res.data)) {
+        leaveRequests = res.data.map(l => ({
           id: l.id,
           internId: l.intern_id,
           internName: l.intern_name,
@@ -3073,28 +3496,40 @@ function initAttendance() {
           endDate: l.end_date.split('T')[0],
           days: l.days_count,
           reason: l.reason,
-          submittedAt: l.submitted_at ? new Date(l.submitted_at).toLocaleDateString('vi-VN') : '',
+          submittedAt: l.created_at ? new Date(l.created_at).toLocaleDateString('vi-VN') : '',
           status: l.status === 'approved' ? 'Đã duyệt' : (l.status === 'rejected' ? 'Từ chối' : 'Chờ duyệt')
         }));
-        const existingIds = new Set(dbLeaves.map(d => d.id));
-        const locals = leaveRequests.filter(lr => !existingIds.has(lr.id));
-        leaveRequests = [...dbLeaves, ...locals];
-        localStorage.setItem("codegym_hr_leaves", JSON.stringify(leaveRequests));
-        if (currentAttSubtab === "leaves") renderLeaveRequests();
+      } else {
+        leaveRequests = [];
       }
-    }).catch(() => {});
+    } catch (e) {
+      console.warn('Lỗi tải danh sách nghỉ phép từ MySQL:', e);
+    }
   }
+}
 
+// Khởi tạo trạng thái Chấm công & Đơn nghỉ phép từ MySQL Database
+async function initAttendance() {
+  attendanceRecords = {};
+  leaveRequests = [];
   initAttendanceFilters();
+  await loadAttendanceFromDB();
+  if (currentAttSubtab === "sheet") {
+    renderAttendanceSheet();
+  } else {
+    renderLeaveRequests();
+  }
 }
 
 // Chuyển đổi Subtab: Bảng chấm công (sheet) vs Đơn nghỉ phép (leaves)
-function switchAttendanceSubtab(subtab) {
+async function switchAttendanceSubtab(subtab) {
   currentAttSubtab = subtab;
   const btnSheet = document.getElementById("btnSubtabSheet");
   const btnLeaves = document.getElementById("btnSubtabLeaves");
   const sheetView = document.getElementById("attendanceSheetView");
   const leavesView = document.getElementById("attendanceLeavesView");
+
+  await loadAttendanceFromDB();
 
   if (subtab === "sheet") {
     if (btnSheet) btnSheet.classList.add("active");
@@ -3231,7 +3666,8 @@ function getDatesInRange(startStr, endStr) {
 
   let curr = new Date(startStr);
   const end = new Date(endStr);
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayNow = new Date();
+  const todayStr = `${todayNow.getFullYear()}-${String(todayNow.getMonth() + 1).padStart(2, '0')}-${String(todayNow.getDate()).padStart(2, '0')}`;
 
   // Giới hạn tối đa 31 ngày
   let count = 0;
@@ -3259,8 +3695,9 @@ function getDatesInRange(startStr, endStr) {
 }
 
 // Render toàn bộ Tab Chấm công & Thời gian
-function renderAttendanceTab() {
+async function renderAttendanceTab() {
   populateAttendanceProgramFilter();
+  await loadAttendanceFromDB();
   if (currentAttSubtab === "leaves") {
     renderLeaveRequests();
   } else {
@@ -3410,7 +3847,7 @@ function openMarkAttendanceModal(internId, dateKey, internName, dateStr) {
 }
 
 // Modal Chấm Công Nhanh: Lưu trạng thái khi chọn chip
-function applyAttendanceMark(status) {
+async function applyAttendanceMark(status) {
   const hiddenId = document.getElementById("markAttInternId");
   const hiddenDate = document.getElementById("markAttDateKey");
 
@@ -3419,34 +3856,22 @@ function applyAttendanceMark(status) {
   const internId = hiddenId.value;
   const dateKey = hiddenDate.value;
 
-  if (!attendanceRecords[internId]) {
-    attendanceRecords[internId] = {};
-  }
-
-  if (status) {
-    attendanceRecords[internId][dateKey] = status;
-  } else {
-    // Nếu status là rỗng -> Xóa bản ghi (trả về Chưa có dữ liệu '—')
-    delete attendanceRecords[internId][dateKey];
-  }
-
-  // Lưu vào localStorage
-  try {
-    localStorage.setItem("codegym_hr_attendance", JSON.stringify(attendanceRecords));
-  } catch (e) {
-    console.error("Lỗi lưu chấm công:", e);
-  }
-
-  // Đồng bộ lên MySQL Database
-  if (typeof apiMarkAttendance === 'function') {
-    apiMarkAttendance({
-      intern_id: internId,
-      date: dateKey,
-      status: status || ''
-    }).catch(err => console.warn('Lỗi lưu chấm công vào MySQL:', err));
-  }
-
   closeModal("markAttendanceModal");
+
+  // Đồng bộ trực tiếp lên MySQL Database
+  if (typeof apiMarkAttendance === 'function') {
+    try {
+      await apiMarkAttendance({
+        intern_id: internId,
+        date: dateKey,
+        status: status || ''
+      });
+    } catch (err) {
+      console.warn('Lỗi lưu chấm công vào MySQL:', err);
+    }
+  }
+
+  await loadAttendanceFromDB();
   renderAttendanceSheet();
 
   const statusLabel = status ? (ATTENDANCE_STATUS_MAP[status]?.text || status) : "Chưa có dữ liệu";
@@ -3713,66 +4138,43 @@ function openLeaveDetailModal(leaveId) {
   openModal("leaveDetailModal");
 }
 
-// Duyệt đơn nghỉ phép: Tự động đánh dấu trạng thái 'leave' (P) vào các ngày nghỉ trên Bảng chấm công
-function handleApproveLeave(leaveId) {
+// Duyệt đơn nghỉ phép: Tự động cập nhật MySQL và đánh dấu trạng thái 'leave' (P) trên Bảng chấm công
+async function handleApproveLeave(leaveId) {
   const leave = leaveRequests.find(l => l.id === leaveId);
   if (!leave) return;
 
-  leave.status = "Đã duyệt";
-
-  if (!attendanceRecords[leave.internId]) {
-    attendanceRecords[leave.internId] = {};
-  }
-
-  let curr = new Date(leave.startDate);
-  const end = new Date(leave.endDate);
-  while (curr <= end) {
-    const y = curr.getFullYear();
-    const m = String(curr.getMonth() + 1).padStart(2, "0");
-    const d = String(curr.getDate()).padStart(2, "0");
-    const dateKey = `${y}-${m}-${d}`;
-
-    attendanceRecords[leave.internId][dateKey] = "leave";
-    curr.setDate(curr.getDate() + 1);
-  }
-
   try {
-    localStorage.setItem("codegym_hr_leaves", JSON.stringify(leaveRequests));
-    localStorage.setItem("codegym_hr_attendance", JSON.stringify(attendanceRecords));
-  } catch (e) {
-    console.error("Lỗi cập nhật:", e);
+    if (typeof apiReviewLeave === 'function') {
+      await apiReviewLeave(leaveId, 'approved');
+    }
+    showToast(`Đã duyệt đơn nghỉ phép của ${leave.internName} và tự động cập nhật bảng chấm công (P)!`, "success");
+  } catch (err) {
+    console.error("Lỗi duyệt nghỉ phép trên MySQL:", err);
+    showToast("Không thể duyệt đơn nghỉ phép lúc này", "danger");
   }
 
-  // Đồng bộ phê duyệt đơn nghỉ phép lên MySQL Database
-  if (typeof apiReviewLeave === 'function') {
-    apiReviewLeave(leaveId, 'approved').catch(err => console.warn('Lỗi duyệt nghỉ phép trên MySQL:', err));
-  }
-
+  await loadAttendanceFromDB();
   renderLeaveRequests();
   renderAttendanceSheet();
-  showToast(`Đã duyệt đơn nghỉ phép của ${leave.internName} và tự động cập nhật bảng chấm công (P)!`, "success");
 }
 
-// Từ chối đơn nghỉ phép
-function handleRejectLeave(leaveId) {
+// Từ chối đơn nghỉ phép: Cập nhật trạng thái trực tiếp lên MySQL Database
+async function handleRejectLeave(leaveId) {
   const leave = leaveRequests.find(l => l.id === leaveId);
   if (!leave) return;
 
-  leave.status = "Từ chối";
-
   try {
-    localStorage.setItem("codegym_hr_leaves", JSON.stringify(leaveRequests));
-  } catch (e) {
-    console.error("Lỗi cập nhật:", e);
+    if (typeof apiReviewLeave === 'function') {
+      await apiReviewLeave(leaveId, 'rejected');
+    }
+    showToast(`Đã từ chối đơn nghỉ phép của ${leave.internName}`, "info");
+  } catch (err) {
+    console.error("Lỗi từ chối nghỉ phép trên MySQL:", err);
+    showToast("Không thể từ chối đơn nghỉ phép lúc này", "danger");
   }
 
-  // Đồng bộ từ chối đơn nghỉ phép lên MySQL Database
-  if (typeof apiReviewLeave === 'function') {
-    apiReviewLeave(leaveId, 'rejected').catch(err => console.warn('Lỗi từ chối nghỉ phép trên MySQL:', err));
-  }
-
+  await loadAttendanceFromDB();
   renderLeaveRequests();
-  showToast(`Đã từ chối đơn nghỉ phép của ${leave.internName}`, "info");
 }
 
 // ==========================================================================

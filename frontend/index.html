@@ -80,77 +80,70 @@
 
       <!-- CỘT PHẢI: FORM ĐĂNG NHẬP -->
       <div class="login-box">
-        <!-- Icon ổ khóa phía trên -->
-        <div class="lock-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-        </div>
+        <div class="login-box-inner">
+          <!-- Icon ổ khóa phía trên -->
+          <div class="lock-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
 
-        <h2 class="title">ĐĂNG NHẬP</h2>
-        <p class="subtitle">Hệ thống quản lý thực tập sinh</p>
+          <h2 class="title">ĐĂNG NHẬP</h2>
+          <p class="subtitle">Hệ thống Quản lý Thực tập sinh CodeGym</p>
 
-        <!-- 4 VAI TRÒ: HR & THỰC TẬP SINH HOẠT ĐỘNG, ADMIN & MASTER ĐANG PHÁT TRIỂN -->
-        <div class="role-tabs">
-          <button type="button" class="role-btn active" id="btnRoleHR" onclick="selectHRRole(this)">HR</button>
-          <button type="button" class="role-btn" id="btnRoleAdmin"
-            onclick="selectAdminRole(this)">Admin</button>
-          <button type="button" class="role-btn role-dev" id="btnRoleMaster"
-            onclick="notifyRoleDeveloping('Master')">Master</button>
-          <button type="button" class="role-btn" id="btnRoleIntern" onclick="selectInternRole(this)">Thực tập
-            sinh</button>
-        </div>
+          <!-- Form đăng nhập -->
+          <form id="loginForm" onsubmit="handleLogin(event)">
+            <!-- Hộp hiển thị lỗi khi tài khoản / vai trò không hợp lệ -->
+            <div id="loginErrorMsg" class="login-error-msg"></div>
 
-        <!-- Form đăng nhập -->
-        <form id="loginForm" onsubmit="handleLogin(event)">
-          <!-- Hộp hiển thị lỗi khi tài khoản / vai trò không hợp lệ -->
-          <div id="loginErrorMsg" class="login-error-msg"></div>
-
-          <!-- Tên đăng nhập -->
-          <div class="form-group">
-            <label for="username">Tên đăng nhập / Email</label>
-            <div class="input-box">
-              <span class="icon">
-                <img src="image/user.svg" alt="User">
-              </span>
-              <input type="text" id="username" placeholder="Nhập tên đăng nhập hoặc email" value="hr@company.vn"
-                required>
+            <!-- Tên đăng nhập -->
+            <div class="form-group">
+              <label for="username">Tên đăng nhập / Email</label>
+              <div class="input-box">
+                <span class="icon">
+                  <img src="image/user.svg" alt="User">
+                </span>
+                <input type="text" id="username" placeholder="Nhập email hoặc tên tài khoản" required autocomplete="username">
+              </div>
             </div>
-          </div>
 
-          <!-- Mật khẩu -->
-          <div class="form-group">
-            <label for="password">Mật khẩu</label>
-            <div class="input-box">
-              <span class="icon">
-                <img src="image/lock.svg" alt="Lock">
-              </span>
-              <input type="password" id="password" placeholder="Nhập mật khẩu" value="123456" required>
-              <span class="toggle-eye" onclick="togglePass()" title="Hiện/ẩn mật khẩu">
-                <img id="eyeIcon" src="image/eye.svg" alt="Hiện/ẩn mật khẩu">
-              </span>
+            <!-- Mật khẩu -->
+            <div class="form-group">
+              <label for="password">Mật khẩu</label>
+              <div class="input-box">
+                <span class="icon">
+                  <img src="image/lock.svg" alt="Lock">
+                </span>
+                <input type="password" id="password" placeholder="Nhập mật khẩu của bạn" required autocomplete="current-password">
+                <span class="toggle-eye" onclick="togglePass()" title="Hiện/ẩn mật khẩu">
+                  <img id="eyeIcon" src="image/eye.svg" alt="Hiện/ẩn mật khẩu">
+                </span>
+              </div>
             </div>
-          </div>
 
-          <!-- Ghi nhớ & Quên mật khẩu -->
-          <div class="form-row">
-            <label class="remember">
-              <input type="checkbox" id="rememberMe" checked> Ghi nhớ đăng nhập
-            </label>
-            <a href="javascript:void(0)" class="forgot-link"
-              onclick="showWebNotice('Quên mật khẩu', 'Vui lòng liên hệ Quản trị viên hệ thống để được hỗ trợ cấp lại mật khẩu.')">Quên mật khẩu?</a>
-          </div>
+            <!-- Ghi nhớ & Quên mật khẩu -->
+            <div class="form-row">
+              <label class="remember">
+                <input type="checkbox" id="rememberMe" checked> Ghi nhớ đăng nhập
+              </label>
+              <a href="javascript:void(0)" class="forgot-link"
+                onclick="showWebNotice('Quên mật khẩu', 'Vui lòng liên hệ Quản trị viên hệ thống để được hỗ trợ cấp lại mật khẩu.')">Quên mật khẩu?</a>
+            </div>
 
-          <!-- Nút Đăng nhập chính -->
-          <button type="submit" class="btn-login" id="btnLoginSubmit">ĐĂNG NHẬP</button>
-        </form>
+            <!-- Nút Đăng nhập chính -->
+            <button type="submit" class="btn-login" id="btnLoginSubmit">
+              <span>ĐĂNG NHẬP</span>
+              <i class="fa-solid fa-arrow-right-to-bracket" style="font-size: 14px;"></i>
+            </button>
+          </form>
+        </div>
 
         <!-- Dòng bảo mật cuối trang -->
         <div class="security-note">
           <img src="image/shield.svg" alt="Shield" width="16" height="16">
-          <span>Bảo mật thông tin - An toàn dữ liệu</span>
+          <span>Bảo mật thông tin • An toàn dữ liệu</span>
         </div>
       </div>
 

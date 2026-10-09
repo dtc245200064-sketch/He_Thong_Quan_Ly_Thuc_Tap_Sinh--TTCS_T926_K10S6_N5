@@ -4,13 +4,34 @@
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
-// Hàm lấy token từ localStorage
+// Hàm lấy token từ localStorage và vai trò người dùng
 function getAuthHeaders() {
   const token = localStorage.getItem('token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  const role = localStorage.getItem('userRole');
+  const headers = {
+    'Content-Type': 'application/json'
   };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  if (role) {
+    headers['x-user-role'] = role;
+  }
+  return headers;
+}
+
+// 0. Lấy thông tin tài khoản và ma trận quyền mới nhất từ MySQL: GET /api/auth/me
+async function apiGetMe() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi gọi apiGetMe:', e);
+    return { success: false, message: e.message };
+  }
 }
 
 // 1. Đăng nhập HR Manager: POST /api/auth/login
@@ -84,10 +105,10 @@ async function apiUploadDocument(internId, docType, file) {
   formData.append('docType', docType || 'CV');
 
   const token = localStorage.getItem('token');
+  const role = localStorage.getItem('userRole');
   const headers = {};
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (role) headers['x-user-role'] = role;
 
   const res = await fetch(`${API_BASE_URL}/interns/${internId}/documents`, {
     method: 'POST',
@@ -109,10 +130,11 @@ async function apiDeleteIntern(id) {
 // 9. Xóa tài liệu của thực tập sinh: DELETE /api/interns/:id/documents/:docType
 async function apiDeleteDocument(internId, docType) {
   const token = localStorage.getItem('token');
+  const role = localStorage.getItem('userRole');
   const headers = {};
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (role) headers['x-user-role'] = role;
+
   const res = await fetch(`${API_BASE_URL}/interns/${internId}/documents/${docType}`, {
     method: 'DELETE',
     headers: headers
@@ -229,11 +251,13 @@ async function apiMarkAttendance(data) {
 }
 
 // 20. TTS check-in / check-out hôm nay: POST /api/attendance/check-in-out
-async function apiCheckInOut(internId) {
+async function apiCheckInOut(internId, date = '') {
+  const payload = { intern_id: internId };
+  if (date) payload.date = date;
   const res = await fetch(`${API_BASE_URL}/attendance/check-in-out`, {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ intern_id: internId })
+    body: JSON.stringify(payload)
   });
   return await res.json();
 }
@@ -274,13 +298,76 @@ async function apiGetContracts(params = {}) {
   return await res.json();
 }
 
+// 24.1. Tạo / Cập nhật hợp đồng thực tập: POST /api/contracts
+async function apiCreateContract(contractData, file = null) {
+  try {
+    const token = localStorage.getItem('token');
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    let body;
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      Object.keys(contractData).forEach(key => {
+        if (contractData[key] !== undefined && contractData[key] !== null) {
+          formData.append(key, contractData[key]);
+        }
+      });
+      body = formData;
+    } else {
+      headers['Content-Type'] = 'application/json';
+      body = JSON.stringify(contractData);
+    }
+
+    const res = await fetch(`${API_BASE_URL}/contracts`, {
+      method: 'POST',
+      headers,
+      body
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi gọi apiCreateContract:', e);
+    return { success: false, message: e.message };
+  }
+}
+
+// 24.2. Xóa hợp đồng thực tập: DELETE /api/contracts/:id
+async function apiDeleteContract(idOrInternId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/contracts/${idOrInternId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi gọi apiDeleteContract:', e);
+    return { success: false, message: e.message };
+  }
+}
+
 // 25. TTS xác nhận ký / từ chối hợp đồng: PATCH /api/contracts/:id/confirm
-async function apiConfirmContract(id, status) {
+async function apiConfirmContract(id, status, reason = '') {
   const res = await fetch(`${API_BASE_URL}/contracts/${id}/confirm`, {
     method: 'PATCH',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ status })
+    body: JSON.stringify({ status, reason })
   });
   return await res.json();
 }
+
+// 26. Lấy lịch sử email hệ thống đã gửi (User Story 8): GET /api/interns/emails/history
+async function apiGetSystemEmails(email = '') {
+  try {
+    const query = email ? `?email=${encodeURIComponent(email)}` : '';
+    const res = await fetch(`${API_BASE_URL}/interns/emails/history${query}`, {
+      headers: getAuthHeaders()
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi gọi apiGetSystemEmails:', e);
+    return { success: false, data: [] };
+  }
+}
+
 

@@ -125,13 +125,21 @@ exports.createUser = async (req, res) => {
 
     const newUserId = result.insertId;
 
-    // Nếu tạo tài khoản là Thực tập sinh, tự động tạo sẵn hồ sơ trong bảng interns
+    // Nếu tạo tài khoản là Thực tập sinh, tự động liên kết hồ sơ đã có hoặc tạo mới
     if (standardRole === 'Thực tập sinh' || standardRole === 'INTERN') {
-      await db.query(
-        `INSERT INTO interns (user_id, name, email, school, major, dept, status) 
-         VALUES (?, ?, ?, 'Chưa cập nhật', 'Chưa cập nhật', 'Chưa phân bổ', 'Chưa hoàn thiện')`,
-        [newUserId, name.trim(), email.trim()]
+      const [existingInterns] = await db.query(
+        'SELECT id FROM interns WHERE email = ? OR name = ? ORDER BY id DESC LIMIT 1',
+        [email.trim(), name.trim()]
       );
+      if (existingInterns.length > 0) {
+        await db.query('UPDATE interns SET user_id = ? WHERE id = ?', [newUserId, existingInterns[0].id]);
+      } else {
+        await db.query(
+          `INSERT INTO interns (user_id, name, email, school, major, dept, status) 
+           VALUES (?, ?, ?, 'Chưa cập nhật', 'Chưa cập nhật', 'Chưa phân bổ', 'Chưa hoàn thiện')`,
+          [newUserId, name.trim(), email.trim()]
+        );
+      }
     }
 
     res.status(201).json({
@@ -195,6 +203,14 @@ exports.updateUser = async (req, res) => {
         [name.trim(), email.trim(), username.trim(), standardRole, status || 'active', id]
       );
     }
+
+    // Đồng bộ thông tin sang bảng interns nếu user này là thực tập sinh
+    try {
+      await db.query(
+        'UPDATE interns SET name = ?, email = ? WHERE user_id = ? OR email = ?',
+        [name.trim(), email.trim(), id, email.trim()]
+      );
+    } catch (e) {}
 
     res.json({ success: true, message: 'Cập nhật tài khoản thành công!' });
   } catch (error) {

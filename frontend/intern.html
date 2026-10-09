@@ -121,10 +121,17 @@
               <h1 class="page-title" id="pageWelcomeTitle">Xin chào, <span id="welcomeUserName">Thực tập sinh</span></h1>
               <p class="page-desc">Theo dõi và hoàn thiện hồ sơ thực tập của bạn.</p>
             </div>
-            <button type="button" class="btn btn-outline-primary btn-sm px-3 py-2 d-flex align-items-center gap-2" onclick="openInternProfileModal()" style="border-radius: 10px; font-weight: 600;">
-              <i class="fa-solid fa-user-pen"></i>
-              <span>Xem & Sửa hồ sơ cá nhân</span>
-            </button>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2 d-flex align-items-center gap-2 position-relative" onclick="openEmailInboxModal()" style="border-radius: 10px; font-weight: 600;" title="Xem các email thông báo kết quả xét duyệt từ hệ thống">
+                <i class="fa-solid fa-envelope"></i>
+                <span>Hòm thư thông báo</span>
+                <span class="badge bg-danger rounded-pill" id="unreadEmailBadge" style="display:none; font-size: 11px;">0</span>
+              </button>
+              <button type="button" class="btn btn-outline-primary btn-sm px-3 py-2 d-flex align-items-center gap-2" onclick="openInternProfileModal()" style="border-radius: 10px; font-weight: 600;">
+                <i class="fa-solid fa-user-pen"></i>
+                <span>Xem & Sửa hồ sơ cá nhân</span>
+              </button>
+            </div>
           </div>
 
           <!-- Hàng 1: Thẻ trạng thái màu xanh + Thẻ tài liệu bắt buộc -->
@@ -1116,6 +1123,31 @@
     </div>
   </div>
 
+  <!-- Modal Nhập lý do từ chối hợp đồng (0% alert/confirm) -->
+  <div class="modal-overlay" id="contractRejectModal">
+    <div class="custom-modal-card" style="max-width: 520px;">
+      <div class="modal-header-row">
+        <div>
+          <h3 class="modal-title-main text-danger"><i class="bi bi-x-circle me-2"></i>Từ chối tiếp nhận hợp đồng</h3>
+          <p class="modal-subtitle-main">Vui lòng cung cấp lý do để phòng nhân sự xem xét và điều chỉnh phù hợp.</p>
+        </div>
+        <button type="button" class="btn-modal-close" onclick="closeContractRejectModal()" title="Đóng modal">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="mt-3">
+        <label for="contractRejectReasonInput" class="form-label fw-semibold" style="font-size: 13px;">Lý do từ chối <span class="text-danger">*</span></label>
+        <textarea id="contractRejectReasonInput" class="form-control" rows="3" placeholder="Ví dụ: Sai thông tin thời gian thực tập / Ngành học không đúng / Trùng lịch học tại trường..." style="font-size: 13px;"></textarea>
+      </div>
+      <div class="modal-footer-row mt-4">
+        <button type="button" class="btn btn-outline-secondary px-3" onclick="closeContractRejectModal()">Hủy bỏ</button>
+        <button type="button" class="btn btn-danger px-4 fw-semibold" onclick="submitContractRejection()" id="btnSubmitContractRejection">
+          <i class="bi bi-send-x me-1"></i>Xác nhận từ chối
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================================================================= -->
   <!-- 10. MODAL XÁC NHẬN GỬI HỒ SƠ ĐẾN PHÒNG NHÂN SỰ                    -->
   <!-- ================================================================= -->
@@ -1198,6 +1230,54 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- 12. MODAL HÒM THƯ THÔNG BÁO / EMAIL KẾT QUẢ XÉT DUYỆT (USER STORY 8) -->
+  <div class="modal-overlay" id="systemEmailModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); z-index: 1060; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="custom-modal-card" style="max-width: 720px; width: 92%; max-height: 88vh; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+      <!-- Header modal -->
+      <div class="modal-header-section d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+        <div>
+          <h4 class="modal-title-main fw-bold mb-1" style="font-size: 18px; color: #0f172a;">
+            <i class="fa-solid fa-envelope-open-text text-primary me-2"></i>Hòm thư thông báo kết quả xét duyệt
+          </h4>
+          <p class="modal-subtitle-main text-muted mb-0" style="font-size: 13px;">Theo dõi các email thông báo phê duyệt hồ sơ từ Phòng Đào tạo & Nhân sự CodeGym</p>
+        </div>
+        <button type="button" class="btn-close" onclick="closeEmailInboxModal()" aria-label="Đóng"></button>
+      </div>
+
+      <!-- Body modal -->
+      <div class="modal-body p-0" style="overflow-y: auto; flex: 1;">
+        <!-- Danh sách email -->
+        <div id="emailListContainer">
+          <div class="text-center py-5 text-muted">
+            <i class="fa-regular fa-envelope-open fa-2x mb-2 text-secondary"></i>
+            <p class="mb-0">Đang tải danh sách email thông báo...</p>
+          </div>
+        </div>
+
+        <!-- Chi tiết 1 email khi click vào xem -->
+        <div id="emailDetailContainer" style="display: none;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <button type="button" class="btn btn-sm btn-outline-secondary px-3 py-1" onclick="backToEmailList()" style="border-radius: 8px;">
+              <i class="fa-solid fa-arrow-left me-1"></i> Quay lại danh sách
+            </button>
+            <div id="emailDetailExternalLink"></div>
+          </div>
+          <div id="emailDetailContent" class="border rounded-3 p-3 bg-light" style="max-height: 55vh; overflow-y: auto;">
+            <!-- Render nội dung email tại đây -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer modal -->
+      <div class="modal-footer-row mt-3 pt-3 border-top d-flex justify-content-between align-items-center">
+        <span class="text-muted small" id="emailSyncStatusText">Đồng bộ tự động từ máy chủ CodeGym</span>
+        <button type="button" class="btn btn-secondary btn-sm px-4 py-2" onclick="closeEmailInboxModal()" style="border-radius: 8px; font-weight: 500;">
+          Đóng
+        </button>
+      </div>
     </div>
   </div>
 

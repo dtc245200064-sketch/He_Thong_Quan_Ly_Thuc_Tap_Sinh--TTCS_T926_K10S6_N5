@@ -6,11 +6,60 @@
  * ==============================================================================
  */
 
-// 1. STATE QUẢN LÝ DỮ LIỆU TÀI KHOẢN (KẾT NỐI TRỰC TIẾP MYSQL QUA API)
+// 1. STATE QUẢN LÝ DỮ LIỆU TÀI KHOẢN & PHÂN QUYỀN (KẾT NỐI TRỰC TIẾP MYSQL QUA API)
 let accounts = [];
+let AdminPermissions = null;
+let AdminCurrentUser = null;
+
+function hasAdminPermission(moduleKey, actionIndex) {
+  if (!AdminPermissions) return true;
+  if (!AdminPermissions[moduleKey]) return false;
+  return AdminPermissions[moduleKey][actionIndex] === true;
+}
+
+// Đồng bộ phiên làm việc và ma trận quyền thực tế từ MySQL qua API /api/auth/me
+async function syncAdminSessionFromDB() {
+  let meRes = null;
+  try {
+    if (typeof apiGetMe === 'function') {
+      meRes = await apiGetMe();
+    }
+  } catch (e) {}
+
+  if (!meRes || !meRes.success || !meRes.user) {
+    try {
+      if (typeof apiLogin === 'function') {
+        const loginRes = await apiLogin('admin@company.vn', '123456');
+        if (loginRes && loginRes.success && loginRes.token) {
+          localStorage.setItem('token', loginRes.token);
+          localStorage.setItem('user', JSON.stringify(loginRes.user));
+          localStorage.setItem('userRole', loginRes.user.role);
+          if (typeof apiGetMe === 'function') {
+            meRes = await apiGetMe();
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (meRes && meRes.success && meRes.user) {
+    AdminCurrentUser = meRes.user;
+    AdminPermissions = meRes.permissions;
+    localStorage.setItem('user', JSON.stringify(meRes.user));
+    localStorage.setItem('userRole', meRes.user.role);
+
+    const profileName = document.querySelector('.profile-name');
+    const profileRole = document.querySelector('.profile-role');
+    const profileAvatar = document.querySelector('.admin-avatar');
+    if (profileName && meRes.user.name) profileName.textContent = meRes.user.name;
+    if (profileRole && meRes.user.role) profileRole.textContent = meRes.user.role;
+    if (profileAvatar && meRes.user.avatar) profileAvatar.src = meRes.user.avatar;
+  }
+}
 
 // Tải danh sách tài khoản từ Cơ sở dữ liệu MySQL
 async function loadAccountsFromDB() {
+  await syncAdminSessionFromDB();
   try {
     if (typeof apiGetAdminUsers === 'function') {
       const res = await apiGetAdminUsers();
@@ -224,8 +273,8 @@ function renderAccountsTable() {
         <td class="text-right">
           <div class="action-links-group">
             <button type="button" class="action-link view" onclick="viewAccountDetail('${acc.id}')">Xem</button>
-            <button type="button" class="action-link edit" onclick="openEditAccountModal('${acc.id}')">Chỉnh sửa</button>
-            <button type="button" class="action-link ${lockActionClass}" onclick="toggleAccountStatus('${acc.id}')">${lockActionText}</button>
+            ${hasAdminPermission('acc_manage', 2) ? `<button type="button" class="action-link edit" onclick="openEditAccountModal('${acc.id}')">Chỉnh sửa</button>` : ''}
+            ${hasAdminPermission('acc_manage', 3) ? `<button type="button" class="action-link ${lockActionClass}" onclick="toggleAccountStatus('${acc.id}')">${lockActionText}</button>` : ''}
           </div>
         </td>
       </tr>
@@ -233,12 +282,21 @@ function renderAccountsTable() {
   });
 
   tbody.innerHTML = html;
+
+  const createBtns = document.querySelectorAll('[onclick="openCreateAccountModal()"]');
+  createBtns.forEach(btn => {
+    btn.style.display = hasAdminPermission('acc_manage', 1) ? '' : 'none';
+  });
 }
 
 // --------------------------------------------------------------------------
 // 5. CÁC THAO TÁC MODAL (TẠO TÀI KHOẢN, XEM, SỬA)
 // --------------------------------------------------------------------------
 function openCreateAccountModal() {
+  if (typeof hasAdminPermission === 'function' && !hasAdminPermission('acc_manage', 1)) {
+    showToast('Bạn không có quyền Tạo tài khoản mới! Quyền đã bị vô hiệu hóa trong CSDL.', 'error');
+    return;
+  }
   const modal = document.getElementById('createAccountModal');
   const form = document.getElementById('createAccountForm');
   if (form) form.reset();
@@ -372,6 +430,10 @@ function closeViewAccountModal() {
 
 // Chỉnh sửa tài khoản
 function openEditAccountModal(accId) {
+  if (typeof hasAdminPermission === 'function' && !hasAdminPermission('acc_manage', 2)) {
+    showToast('Bạn không có quyền Chỉnh sửa tài khoản! Quyền đã bị vô hiệu hóa trong CSDL.', 'error');
+    return;
+  }
   const acc = accounts.find(a => a.id == accId);
   if (!acc) return;
 
@@ -439,6 +501,10 @@ async function handleUpdateAccount(event) {
 
 // Khóa / Mở khóa tài khoản
 async function toggleAccountStatus(accId) {
+  if (typeof hasAdminPermission === 'function' && !hasAdminPermission('acc_manage', 3)) {
+    showToast('Bạn không có quyền Khóa / Mở khóa tài khoản! Quyền đã bị vô hiệu hóa trong CSDL.', 'error');
+    return;
+  }
   try {
     if (typeof apiToggleAdminUserStatus === 'function') {
       const res = await apiToggleAdminUserStatus(accId);
@@ -615,6 +681,10 @@ async function resetPermissions() {
 }
 
 async function savePermissions() {
+  if (typeof hasAdminPermission === 'function' && !hasAdminPermission('perm_system', 2)) {
+    showToast('Bạn không có quyền Cập nhật phân quyền hệ thống! Quyền đã bị vô hiệu hóa trong CSDL.', 'error');
+    return;
+  }
   const currentRole = document.getElementById('permissionRoleSelect')?.value || 'Admin';
   const permMap = {};
   const rows = document.querySelectorAll('#permissionTableBody tr');

@@ -37,6 +37,7 @@ app.use('/api/programs', programRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/contracts', contractRoutes);
+app.get('/api/system-emails', require('./controllers/intern.controller').getEmailHistory);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

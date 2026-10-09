@@ -22,6 +22,20 @@ function selectHRRole(button) {
   hideLoginError();
 }
 
+// 1.1. KHI BẤM NÚT "Mentor": KÍCH HOẠT VAI TRÒ MENTOR VÀ ĐIỀN THÔNG TIN MẪU
+function selectMentorRole(button) {
+  const buttons = document.querySelectorAll('.role-tabs .role-btn');
+  buttons.forEach(btn => btn.classList.remove('active'));
+  if (button) button.classList.add('active');
+
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+  if (usernameInput) usernameInput.value = 'mentor@company.vn';
+  if (passwordInput) passwordInput.value = '123456';
+
+  hideLoginError();
+}
+
 // 1.2. KHI BẤM NÚT "Thực tập sinh": KÍCH HOẠT VAI TRÒ THỰC TẬP SINH VÀ ĐIỀN THÔNG TIN MẪU
 function selectInternRole(button) {
   // Đặt trạng thái active duy nhất cho nút Thực tập sinh
@@ -259,6 +273,14 @@ async function handleLogin(event) {
           showLoginSuccessModal({
             name: displayName,
             role: 'HR Manager',
+            targetUrl: 'dashboard.html'
+          });
+          return;
+        } else if (role === 'Mentor' || role === 'MENTOR') {
+          localStorage.setItem('userRole', 'Mentor');
+          showLoginSuccessModal({
+            name: displayName,
+            role: 'Người hướng dẫn (Mentor)',
             targetUrl: 'dashboard.html'
           });
           return;

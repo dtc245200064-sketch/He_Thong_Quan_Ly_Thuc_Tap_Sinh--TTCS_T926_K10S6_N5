@@ -16,13 +16,13 @@ body {
 
 /* 1. MÀN HÌNH ĐĂNG NHẬP */
 #login-view {
-  background-color: #eaf1fb;
+  background: radial-gradient(circle at 15% 15%, #eff6ff 0%, #e2eeff 45%, #dbeafe 100%);
   min-height: 100vh;
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 24px;
+  padding: 30px 20px;
   box-sizing: border-box;
 }
 
@@ -68,12 +68,13 @@ body {
 .wrapper {
   background: #ffffff;
   width: 100%;
-  max-width: 1060px;
+  max-width: 1040px;
+  min-height: 600px;
   border-radius: 24px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.1), 0 1px 3px rgba(15, 23, 42, 0.05);
   display: flex;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 /* ==================== CỘT TRÁI (BANNER) ==================== */
@@ -172,100 +173,61 @@ body {
 /* ==================== CỘT PHẢI (LOGIN FORM) ==================== */
 .login-box {
   flex: 1;
-  max-width: 460px;
+  max-width: 480px;
   background: #ffffff;
-  padding: 40px 36px;
+  padding: 44px 42px 30px;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+}
+
+.login-box-inner {
+  margin: auto 0;
+  width: 100%;
 }
 
 /* Icon khóa phía trên */
 .lock-icon {
-  width: 54px;
-  height: 54px;
-  background: #e0edff;
-  border-radius: 50%;
+  width: 58px;
+  height: 58px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 14px;
+  margin: 0 auto 16px;
+  box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.15);
+  color: #2563eb;
 }
 
 .title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   color: #1e3a8a;
   text-align: center;
   letter-spacing: 0.5px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .subtitle {
-  font-size: 13px;
+  font-size: 13.5px;
   color: #64748b;
   text-align: center;
-  margin-bottom: 20px;
-}
-
-/* 4 Vai trò */
-.role-tabs {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  margin-bottom: 20px;
-}
-
-.role-btn {
-  padding: 8px 4px;
-  border: 1px solid #dbeafe;
-  background: #f8fafc;
-  color: #475569;
-  border-radius: 8px;
-  font-size: 11.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.2s;
-  text-align: center;
-}
-
-.role-btn:hover {
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-
-.role-btn.active {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
-  color: #ffffff;
-}
-
-/* Các vai trò đang trong quá trình phát triển */
-.role-btn.role-dev {
-  opacity: 0.8;
-  background: #f8fafc;
-  border: 1px dashed #cbd5e1;
-  color: #64748b;
-  cursor: pointer;
-}
-
-.role-btn.role-dev:hover {
-  background: #fef2f2;
-  border-color: #fca5a5;
-  color: #dc2626;
-  opacity: 1;
+  margin-bottom: 28px;
 }
 
 /* Ô nhập liệu */
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .form-group label {
   display: block;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   color: #334155;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .input-box {
@@ -276,56 +238,66 @@ body {
 
 .input-box .icon {
   position: absolute;
-  left: 12px;
+  left: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  opacity: 0.7;
 }
 
 .input-box .icon img {
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
   display: block;
 }
 
 .input-box input {
   width: 100%;
-  height: 44px;
-  padding: 0 40px 0 38px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  font-size: 13.5px;
+  height: 48px;
+  padding: 0 44px 0 44px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  font-size: 14px;
+  background: #f8fafc;
+  color: #0f172a;
   outline: none;
-  transition: 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.input-box input::placeholder {
+  color: #94a3b8;
+  font-size: 13.5px;
 }
 
 .input-box input:focus {
+  background: #ffffff;
   border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
 
 .toggle-eye {
   position: absolute;
-  right: 12px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
-  border-radius: 4px;
-  -webkit-user-select: none;
+  border-radius: 8px;
   user-select: none;
-  transition: opacity 0.2s ease;
+  transition: background 0.2s, opacity 0.2s;
 }
 
 .toggle-eye:hover {
-  opacity: 0.65;
+  background: #e2e8f0;
 }
 
 .toggle-eye img {
   width: 18px;
   height: 18px;
+  opacity: 0.7;
   display: block;
 }
 
@@ -334,120 +306,89 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12.5px;
-  margin-bottom: 18px;
+  font-size: 13px;
+  margin-top: 4px;
+  margin-bottom: 24px;
 }
 
 .remember {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   color: #475569;
   cursor: pointer;
-  -webkit-user-select: none;
+  font-weight: 500;
   user-select: none;
+}
+
+.remember input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+  cursor: pointer;
+  border-radius: 4px;
 }
 
 .forgot-link {
   color: #2563eb;
   text-decoration: none;
   font-weight: 600;
+  font-size: 13px;
+  transition: color 0.2s;
 }
 
 .forgot-link:hover {
+  color: #1d4ed8;
   text-decoration: underline;
 }
 
 /* Nút Đăng nhập */
 .btn-login {
   width: 100%;
-  height: 44px;
-  background: #1d4ed8;
+  height: 48px;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
   color: #ffffff;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 12px;
+  font-size: 14.5px;
   font-weight: 700;
+  letter-spacing: 0.8px;
   cursor: pointer;
-  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 6px 20px rgba(29, 78, 216, 0.3);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-login:hover {
-  background: #1e40af;
+  background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(29, 78, 216, 0.4);
 }
 
-/* Đường kẻ phân cách */
-.divider {
-  position: relative;
-  text-align: center;
-  margin: 18px 0;
-}
-
-.divider::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #e2e8f0;
-}
-
-.divider span {
-  position: relative;
-  background: #ffffff;
-  padding: 0 10px;
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-/* Nút Đăng ký tài khoản mới */
-.btn-register {
-  width: 100%;
-  height: 42px;
-  background: #ffffff;
-  border: 1.5px solid #2563eb;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #2563eb;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.btn-register:hover {
-  background: #eff6ff;
-  border-color: #1d4ed8;
-  color: #1d4ed8;
+.btn-login:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
 }
 
 /* Dòng bảo mật */
 .security-note {
-  margin-top: auto;
+  margin-top: 24px;
   padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 8px;
+  font-size: 12.5px;
   color: #64748b;
+  font-weight: 500;
 }
 
-/* Nút test mở modal */
-.btn-test-modal {
-  margin-top: 10px;
-  background: none;
-  border: 1px dashed #cbd5e1;
-  color: #64748b;
-  padding: 6px;
-  border-radius: 6px;
-  font-size: 11.5px;
-  cursor: pointer;
-}
-
-.btn-test-modal:hover {
-  border-color: #ef4444;
-  color: #ef4444;
+.security-note img {
+  opacity: 0.8;
 }
 
 /* ==================== MODAL ĐĂNG XUẤT ==================== */
@@ -672,13 +613,23 @@ body {
 
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 860px) {
+  #login-view {
+    padding: 16px;
+  }
   .wrapper {
     flex-direction: column;
+    max-width: 480px;
+    min-height: auto;
+    border-radius: 20px;
+  }
+  .banner {
+    padding: 32px 24px 0;
   }
   .banner-image img {
     height: 180px;
   }
   .login-box {
     max-width: 100%;
+    padding: 36px 28px 28px;
   }
 }

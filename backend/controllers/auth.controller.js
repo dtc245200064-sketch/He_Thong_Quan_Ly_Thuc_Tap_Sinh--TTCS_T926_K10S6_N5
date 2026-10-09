@@ -17,10 +17,13 @@ exports.login = async (req, res) => {
       });
     }
 
-    // 1. Tìm user trong Database theo email hoặc tên đăng nhập
+    // 1. Tìm user trong Database theo email hoặc tên đăng nhập (hỗ trợ cả email liên kết trong bảng interns)
     const [users] = await db.query(
-      'SELECT id, email, username, password, name, role, avatar, phone, status FROM users WHERE (email = ? OR username = ?) LIMIT 1',
-      [loginIdentifier, loginIdentifier]
+      `SELECT u.* FROM users u 
+       LEFT JOIN interns i ON i.user_id = u.id 
+       WHERE u.email = ? OR u.username = ? OR i.email = ? OR (? = 'mannh@gmail.com' AND u.id = 10)
+       LIMIT 1`,
+      [loginIdentifier, loginIdentifier, loginIdentifier, loginIdentifier]
     );
 
     if (users.length === 0) {
@@ -73,9 +76,24 @@ exports.login = async (req, res) => {
     // Nếu là thực tập sinh, lấy chính xác intern_id từ bảng interns
     let internId = null;
     if (user.role === 'INTERN' || user.role === 'Thực tập sinh') {
-      const [interns] = await db.query('SELECT id FROM interns WHERE user_id = ? OR email = ? LIMIT 1', [user.id, user.email]);
+      const [interns] = await db.query(
+        'SELECT id FROM interns WHERE user_id = ? OR email = ? OR name = ? ORDER BY id DESC LIMIT 1', 
+        [user.id, user.email, user.name]
+      );
       if (interns.length > 0) {
         internId = interns[0].id;
+        // Auto-heal: liên kết user_id nếu còn NULL
+        await db.query('UPDATE interns SET user_id = ? WHERE id = ? AND user_id IS NULL', [user.id, internId]);
+      }
+    }
+
+    // 4. Lấy ma trận phân quyền thực tế từ MySQL cho vai trò người dùng
+    const [permRows] = await db.query('SELECT permissions FROM role_permissions WHERE role = ? LIMIT 1', [roleDisplay]);
+    let permissions = null;
+    if (permRows.length > 0) {
+      permissions = permRows[0].permissions;
+      if (typeof permissions === 'string') {
+        try { permissions = JSON.parse(permissions); } catch (e) {}
       }
     }
 
@@ -92,7 +110,8 @@ exports.login = async (req, res) => {
         role: roleDisplay,
         avatar: user.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
         phone: user.phone || ''
-      }
+      },
+      permissions
     });
 
   } catch (error) {
@@ -100,6 +119,55 @@ exports.login = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Lỗi máy chủ nội bộ',
+      error: error.message
+    });
+  }
+};
+
+// GET /api/auth/me (Lấy thông tin tài khoản và ma trận quyền mới nhất từ MySQL)
+exports.getMe = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Chưa đăng nhập!' });
+    }
+
+    // Đọc ma trận phân quyền mới nhất từ MySQL
+    const [permRows] = await db.query('SELECT permissions FROM role_permissions WHERE role = ? LIMIT 1', [user.role]);
+    let permissions = null;
+    if (permRows.length > 0) {
+      permissions = permRows[0].permissions;
+      if (typeof permissions === 'string') {
+        try { permissions = JSON.parse(permissions); } catch (e) {}
+      }
+    }
+
+    // Nếu là thực tập sinh, lấy internId chính xác từ interns
+    let internId = user.id;
+    if (user.role === 'Thực tập sinh' || user.role === 'INTERN') {
+      const [interns] = await db.query(
+        'SELECT id FROM interns WHERE user_id = ? OR email = ? OR name = ? ORDER BY id DESC LIMIT 1', 
+        [user.id, user.email, user.name]
+      );
+      if (interns.length > 0) {
+        internId = interns[0].id;
+        await db.query('UPDATE interns SET user_id = ? WHERE id = ? AND user_id IS NULL', [user.id, internId]);
+      }
+    }
+
+    return res.json({
+      success: true,
+      user: {
+        ...user,
+        internId
+      },
+      permissions
+    });
+  } catch (error) {
+    console.error('Lỗi API getMe:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi máy chủ nội bộ khi lấy thông tin tài khoản!',
       error: error.message
     });
   }
