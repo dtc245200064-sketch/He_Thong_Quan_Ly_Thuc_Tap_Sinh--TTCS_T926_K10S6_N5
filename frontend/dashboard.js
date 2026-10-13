@@ -4724,10 +4724,17 @@ function getDepartments() {
     .map(m => m.department ? m.department.trim() : "")
     .filter(d => d && d !== "Chưa gán" && d !== "Chưa phân bổ");
 
-  // Đồng bộ thêm phòng ban từ internshipPrograms nếu có
-  const progDepts = (typeof internshipPrograms !== 'undefined' && Array.isArray(internshipPrograms))
-    ? internshipPrograms.map(p => p.dept ? p.dept.trim() : "").filter(d => d && d !== "Chưa phân bổ")
-    : [];
+  // Loại bỏ phòng ban 'Kỹ thuật phần mềm' nếu bị auto-sync nhầm từ chương trình thực tập (không có mentor phụ trách)
+  const initialLength = depts.length;
+  depts = depts.filter(d => {
+    if (!d || !d.name) return false;
+    const nameLower = d.name.trim().toLowerCase();
+    if (nameLower === "kỹ thuật phần mềm") {
+      const hasMentor = mentors.some(m => (m.department || "").trim().toLowerCase() === nameLower);
+      if (!hasMentor) return false;
+    }
+    return true;
+  });
 
   const existingMap = new Map();
   depts.forEach(d => {
@@ -4741,8 +4748,8 @@ function getDepartments() {
     deletedNames = JSON.parse(localStorage.getItem("hr_deleted_depts") || "[]");
   } catch (e) {}
 
-  let hasChanged = false;
-  const systemDepts = Array.from(new Set([...mentorDepts, ...progDepts]));
+  let hasChanged = (depts.length !== initialLength);
+  const systemDepts = Array.from(new Set(mentorDepts));
 
   systemDepts.forEach(deptName => {
     const key = deptName.toLowerCase();
@@ -4937,13 +4944,9 @@ function renderMentorStats() {
   const capacityAssigned = activeMentors.reduce((sum, m) => sum + ((m.assignedInternIds && m.assignedInternIds.length) || 0), 0);
   const capacityPercent = capacityTotal > 0 ? Math.round((capacityAssigned / capacityTotal) * 100) : 0;
 
-  // Tính số lượng phòng ban từ cấu hình phòng ban và từ mentor đã phân bổ
-  const allDeptNames = new Set([
-    ...depts.map(d => d.name ? d.name.trim() : "").filter(Boolean),
-    ...mentors.map(m => (m.department && m.department !== "Chưa gán") ? m.department.trim() : "").filter(Boolean)
-  ]);
-  const activeDeptCount = allDeptNames.size;
-  const totalDeptCount = depts.length > 0 ? depts.length : activeDeptCount;
+  // Tính số lượng phòng ban từ danh sách phòng ban
+  const activeDeptCount = depts.length;
+  const totalDeptCount = depts.length;
 
   const elActiveMentors = document.getElementById("statActiveMentors");
   const elInactiveMentors = document.getElementById("statInactiveMentors");
