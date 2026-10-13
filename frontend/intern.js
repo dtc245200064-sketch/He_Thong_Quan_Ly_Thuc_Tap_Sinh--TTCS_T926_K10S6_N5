@@ -1488,32 +1488,11 @@ const InternScheduleState = {
   viewMode: 'week', // 'week' | 'month'
   currentAnchorDate: new Date(),
   selectedDateStr: formatDateKey(new Date()),
-  scheduleCustomMap: {},
+  realSchedules: [],
   realTasks: [],
   realMeetings: [],
   isScheduleDataLoaded: false
 };
-
-// Đọc lịch tùy biến từ localStorage nếu có
-function loadCustomScheduleFromStorage() {
-  try {
-    const raw = localStorage.getItem('tts_custom_schedule');
-    if (raw) {
-      InternScheduleState.scheduleCustomMap = JSON.parse(raw);
-    }
-  } catch (e) {
-    console.warn('Lỗi đọc custom schedule:', e);
-  }
-}
-
-// Lưu lịch tùy biến vào localStorage
-function saveCustomScheduleToStorage() {
-  try {
-    localStorage.setItem('tts_custom_schedule', JSON.stringify(InternScheduleState.scheduleCustomMap));
-  } catch (e) {
-    console.warn('Lỗi ghi custom schedule:', e);
-  }
-}
 
 // Hàm lấy ngày Thứ Hai của tuần cho một ngày bất kỳ
 function getMondayOfWeek(date) {
@@ -1591,8 +1570,7 @@ function parseDateToKey(raw) {
     const trimmed = raw.trim();
     if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
     if (trimmed.includes('T')) {
-      const d = new Date(trimmed);
-      if (!isNaN(d.getTime())) return formatDateKey(d);
+      return trimmed.split('T')[0];
     }
     if (trimmed.includes('/')) {
       const parts = trimmed.split('/');
@@ -1609,14 +1587,15 @@ function parseDateToKey(raw) {
 }
 
 /**
- * Tải dữ liệu Lịch họp (meetings) và Nhiệm vụ (tasks) thực tế từ MySQL Database
+ * Tải dữ liệu Lịch thực tập (schedules), Lịch họp (meetings) và Nhiệm vụ (tasks) thực tế từ MySQL Database
  */
 async function loadRealScheduleDataFromMySQL() {
   const actualInternId = internProfileData.internId || internProfileData.id || getInternUserId() || 1;
   try {
-    const [tasksRes, meetingsRes] = await Promise.all([
+    const [tasksRes, meetingsRes, schedulesRes] = await Promise.all([
       typeof apiGetTasks === 'function' ? apiGetTasks({ intern_id: actualInternId }) : Promise.resolve({ success: false, data: [] }),
-      typeof apiGetMeetings === 'function' ? apiGetMeetings() : Promise.resolve({ success: false, data: [] })
+      typeof apiGetMeetings === 'function' ? apiGetMeetings() : Promise.resolve({ success: false, data: [] }),
+      typeof apiGetSchedules === 'function' ? apiGetSchedules({ intern_id: actualInternId }) : Promise.resolve({ success: false, data: [] })
     ]);
 
     if (tasksRes && tasksRes.success && Array.isArray(tasksRes.data)) {
@@ -1638,6 +1617,10 @@ async function loadRealScheduleDataFromMySQL() {
       });
     }
 
+    if (schedulesRes && schedulesRes.success && Array.isArray(schedulesRes.data)) {
+      InternScheduleState.realSchedules = schedulesRes.data;
+    }
+
     InternScheduleState.isScheduleDataLoaded = true;
 
     // Tự động cập nhật lại các giao diện phụ thuộc
@@ -1651,16 +1634,10 @@ async function loadRealScheduleDataFromMySQL() {
 }
 
 /**
- * Trả về dữ liệu lịch cho một ngày cụ thể (Dựa trên nhiệm vụ và lịch họp thực tế trong MySQL)
+ * Trả về dữ liệu lịch cho một ngày cụ thể (Dựa trên lịch thực tập, nhiệm vụ và lịch họp thực tế trong MySQL)
  */
 function getScheduleDataForDate(date) {
   const key = formatDateKey(date);
-
-  // 1. Kiểm tra nếu có dữ liệu lưu trữ tùy biến
-  if (InternScheduleState.scheduleCustomMap && InternScheduleState.scheduleCustomMap[key]) {
-    return InternScheduleState.scheduleCustomMap[key];
-  }
-
   const dayOfWeek = date.getDay(); // 0: Chủ Nhật, 1: Thứ 2...
   const dayName = getVietnameseDayName(date);
   const dayNumber = String(date.getDate()).padStart(2, '0');
@@ -1690,7 +1667,11 @@ function getScheduleDataForDate(date) {
   const deptName = internProfileData.dept || 'Chưa phân bổ phòng ban';
   const posName = internProfileData.position || deptName;
 
-  // Lọc lịch họp và nhiệm vụ khớp với ngày này từ dữ liệu MySQL
+  // Lọc lịch thực tập, lịch họp và nhiệm vụ khớp với ngày này từ dữ liệu MySQL
+  const matchingSchedules = (InternScheduleState.realSchedules || []).filter(s => {
+    return parseDateToKey(s.schedule_date) === key;
+  });
+
   const matchingMeetings = (InternScheduleState.realMeetings || []).filter(m => {
     return parseDateToKey(m.meeting_date) === key;
   });
@@ -1699,6 +1680,7 @@ function getScheduleDataForDate(date) {
     return parseDateToKey(t.deadline) === key;
   });
 
+  const hasSchedule = matchingSchedules.length > 0;
   const hasMeeting = matchingMeetings.length > 0;
   const hasTask = matchingTasks.length > 0;
 
@@ -1707,7 +1689,7 @@ function getScheduleDataForDate(date) {
   const eDate = parseScheduleDate(internProfileData.end_date || internProfileData.endFormatted);
   const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-  if (sDate && !hasMeeting && !hasTask) {
+  if (sDate && !hasSchedule && !hasMeeting && !hasTask) {
     const startDateOnly = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
     if (checkDate < startDateOnly) {
       const sFormatted = internProfileData.startFormatted || formatDateFull(sDate);
@@ -1720,15 +1702,17 @@ function getScheduleDataForDate(date) {
         location: '—',
         mentor: mentorName,
         isOff: true,
+        hasSchedule: false,
         hasMeeting: false,
         hasTask: false,
+        scheduleList: [],
         meetingList: [],
         taskList: []
       };
     }
   }
 
-  if (eDate && !hasMeeting && !hasTask) {
+  if (eDate && !hasSchedule && !hasMeeting && !hasTask) {
     const endDateOnly = new Date(eDate.getFullYear(), eDate.getMonth(), eDate.getDate());
     if (checkDate > endDateOnly) {
       const eFormatted = internProfileData.endFormatted || formatDateFull(eDate);
@@ -1741,8 +1725,10 @@ function getScheduleDataForDate(date) {
         location: '—',
         mentor: mentorName,
         isOff: true,
+        hasSchedule: false,
         hasMeeting: false,
         hasTask: false,
+        scheduleList: [],
         meetingList: [],
         taskList: []
       };
@@ -1751,7 +1737,7 @@ function getScheduleDataForDate(date) {
 
   // Cuối tuần: Thứ 7 & Chủ Nhật
   if (dayOfWeek === 0 || dayOfWeek === 6) {
-    if (!hasMeeting && !hasTask) {
+    if (!hasSchedule && !hasMeeting && !hasTask) {
       return {
         dateKey: key,
         dayName,
@@ -1761,23 +1747,31 @@ function getScheduleDataForDate(date) {
         location: 'Nghỉ ngơi',
         mentor: mentorName,
         isOff: true,
+        hasSchedule: false,
         hasMeeting: false,
         hasTask: false,
+        scheduleList: [],
         meetingList: [],
         taskList: []
       };
     }
   }
 
-  // Nếu có LỊCH HỌP hoặc NHIỆM VỤ thật từ MySQL Database
-  if (hasMeeting || hasTask) {
-    let displayTime = '';
+  // Nếu có LỊCH THỰC TẬP, LỊCH HỌP hoặc NHIỆM VỤ thật từ MySQL Database
+  if (hasSchedule || hasMeeting || hasTask) {
+    let displayTime = '08:30 – 17:30';
     let displayTask = '';
     let displayLocation = `Văn phòng CodeGym (${deptName})`;
     let displayMentor = mentorName;
     let meetingLink = '';
 
-    if (hasMeeting && !hasTask) {
+    if (hasSchedule) {
+      const s = matchingSchedules[0];
+      displayTime = `${s.start_time || '08:30'} – ${s.end_time || '17:30'}`;
+      displayTask = s.title;
+      displayLocation = s.location || `Văn phòng CodeGym (${deptName})`;
+      displayMentor = s.mentor_name || mentorName;
+    } else if (hasMeeting && !hasTask) {
       const m = matchingMeetings[0];
       displayTime = `${m.start_time} – ${m.end_time}`;
       displayTask = `[Lịch họp] ${m.title}`;
@@ -1791,7 +1785,7 @@ function getScheduleDataForDate(date) {
       displayLocation = `Văn phòng CodeGym (${deptName})`;
       displayMentor = t.mentor_name || mentorName;
     } else {
-      // Có cả 2: Họp và Deadline nhiệm vụ
+      // Kết hợp nhiều loại lịch
       const m = matchingMeetings[0];
       const t = matchingTasks[0];
       displayTime = `${m.start_time} – ${m.end_time} • Deadline: 17:00`;
@@ -1810,34 +1804,30 @@ function getScheduleDataForDate(date) {
       location: displayLocation,
       mentor: displayMentor,
       isOff: false,
+      hasSchedule,
       hasMeeting,
       hasTask,
       meetingLink,
+      scheduleList: matchingSchedules,
       meetingList: matchingMeetings,
       taskList: matchingTasks
     };
   }
 
-  // Thứ 2 đến Thứ 6 trong kỳ thực tập: Lộ trình chuyên môn tiêu chuẩn khi không có lịch riêng
-  const weekdayTasks = {
-    1: `Họp giao ban đầu tuần, nhận kế hoạch công việc và mục tiêu nhiệm vụ (${posName})`,
-    2: `Thực hiện nhiệm vụ chuyên môn theo phân công và tài liệu hướng dẫn (${posName})`,
-    3: `Triển khai công việc chuyên môn và phối hợp cùng nhóm dự án`,
-    4: `Báo cáo tiến độ và tiếp nhận hướng dẫn (Review / Mentoring) từ Mentor`,
-    5: `Tổng kết tiến độ tuần, hoàn thiện báo cáo công việc và kế hoạch tuần tiếp theo`
-  };
-
+  // Thứ 2 đến Thứ 6 trong kỳ thực tập khi không có lịch riêng
   return {
     dateKey: key,
     dayName,
     dayNumber,
     time: '08:30 – 17:30 (Nghỉ trưa 12:00 – 13:00)',
-    task: weekdayTasks[dayOfWeek] || `Thực hiện nhiệm vụ chuyên môn (${posName})`,
+    task: `Làm việc chuyên môn theo phân công phòng ${deptName} (Chưa có lịch riêng)`,
     location: `Văn phòng CodeGym (${deptName})`,
     mentor: mentorName,
     isOff: false,
+    hasSchedule: false,
     hasMeeting: false,
     hasTask: false,
+    scheduleList: [],
     meetingList: [],
     taskList: []
   };
@@ -1909,25 +1899,18 @@ function renderScheduleWeekView() {
     const isSelected = dateKey === InternScheduleState.selectedDateStr;
 
     let dayBadgesHtml = '';
-    if (dayData.hasMeeting && dayData.hasTask) {
-      dayBadgesHtml = `
-        <div class="d-flex flex-wrap gap-1 mb-1">
-          <span class="sched-type-badge sched-badge-meeting"><i class="bi bi-camera-video-fill"></i> Lịch họp</span>
-          <span class="sched-type-badge sched-badge-task"><i class="bi bi-check2-square"></i> Deadline</span>
-        </div>
-      `;
-    } else if (dayData.hasMeeting) {
-      dayBadgesHtml = `
-        <div class="mb-1">
-          <span class="sched-type-badge sched-badge-meeting"><i class="bi bi-camera-video-fill"></i> Lịch họp</span>
-        </div>
-      `;
-    } else if (dayData.hasTask) {
-      dayBadgesHtml = `
-        <div class="mb-1">
-          <span class="sched-type-badge sched-badge-task"><i class="bi bi-check2-square"></i> Deadline</span>
-        </div>
-      `;
+    const badges = [];
+    if (dayData.hasSchedule) {
+      badges.push('<span class="sched-type-badge sched-badge-schedule" style="background:#e0f2fe; color:#0369a1; border-radius:4px; padding:2px 6px; font-size:11px;"><i class="bi bi-calendar-check"></i> Lịch</span>');
+    }
+    if (dayData.hasMeeting) {
+      badges.push('<span class="sched-type-badge sched-badge-meeting"><i class="bi bi-camera-video-fill"></i> Họp</span>');
+    }
+    if (dayData.hasTask) {
+      badges.push('<span class="sched-type-badge sched-badge-task"><i class="bi bi-check2-square"></i> Deadline</span>');
+    }
+    if (badges.length > 0) {
+      dayBadgesHtml = `<div class="d-flex flex-wrap gap-1 mb-1">${badges.join('')}</div>`;
     }
 
     html += `
@@ -1972,8 +1955,25 @@ function renderScheduleDetail() {
   if (mentorEl) mentorEl.textContent = data.mentor || internProfileData.mentor || '—';
 
   if (taskEl) {
-    if (data.hasMeeting || data.hasTask) {
+    if (data.hasSchedule || data.hasMeeting || data.hasTask) {
       let contentHtml = '';
+      if (data.hasSchedule && data.scheduleList && data.scheduleList.length > 0) {
+        data.scheduleList.forEach(s => {
+          contentHtml += `
+            <div class="p-2 mb-2 rounded bg-light border border-info-subtle" style="font-weight: normal;">
+              <div class="fw-bold text-info-emphasis d-flex align-items-center gap-1 mb-1" style="font-size: 13.5px;">
+                <i class="bi bi-calendar-check text-info"></i> ${escapeHtml(s.title)}
+              </div>
+              <div class="small text-muted mb-1">
+                <i class="bi bi-clock me-1"></i>${s.start_time} – ${s.end_time} &nbsp;|&nbsp; 
+                <i class="bi bi-geo-alt me-1"></i>${escapeHtml(s.location || 'Văn phòng')}
+              </div>
+              ${s.content ? `<div class="small text-secondary mb-1">${escapeHtml(s.content)}</div>` : ''}
+              ${s.mentor_name ? `<div class="small text-secondary"><i class="bi bi-person me-1"></i>Mentor: ${escapeHtml(s.mentor_name)}</div>` : ''}
+            </div>
+          `;
+        });
+      }
       if (data.hasMeeting && data.meetingList && data.meetingList.length > 0) {
         data.meetingList.forEach(m => {
           contentHtml += `
@@ -2017,7 +2017,7 @@ function renderScheduleDetail() {
       }
       taskEl.innerHTML = contentHtml;
     } else {
-      taskEl.textContent = data.task;
+      taskEl.innerHTML = `<div class="text-secondary small fst-italic p-2 rounded bg-light border"><i class="bi bi-info-circle me-1"></i>${escapeHtml(data.task)}</div>`;
     }
   }
 }
@@ -2086,12 +2086,12 @@ function renderScheduleMonthView() {
 
     let badgeHtml = '';
     if (data && !data.isOff) {
-      if (data.hasMeeting) {
+      if (data.hasSchedule) {
+        badgeHtml = `<span class="month-cell-badge" style="background:#e0f2fe; color:#0369a1; border-radius: 4px; padding: 1px 4px;" title="Lịch: ${escapeHtml(data.scheduleList[0]?.title || '')}"><i class="bi bi-calendar-check me-1"></i>${escapeHtml((data.scheduleList[0]?.title || 'Lịch').slice(0, 14))}...</span>`;
+      } else if (data.hasMeeting) {
         badgeHtml = `<span class="month-cell-badge" style="background:#e0e7ff; color:#4338ca; border-radius: 4px; padding: 1px 4px;" title="Họp: ${escapeHtml(data.meetingList[0]?.title || '')}"><i class="bi bi-camera-video me-1"></i>${escapeHtml((data.meetingList[0]?.title || 'Lịch họp').slice(0, 14))}...</span>`;
       } else if (data.hasTask) {
         badgeHtml = `<span class="month-cell-badge" style="background:#fef3c7; color:#b45309; border-radius: 4px; padding: 1px 4px;" title="Task: ${escapeHtml(data.taskList[0]?.title || '')}"><i class="bi bi-check2 me-1"></i>${escapeHtml((data.taskList[0]?.title || 'Task').slice(0, 14))}...</span>`;
-      } else if (!isWeekend) {
-        badgeHtml = `<span class="month-cell-badge" title="${escapeHtml(data.task)}">${escapeHtml(data.task.slice(0, 14))}...</span>`;
       }
     }
 
@@ -3284,7 +3284,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 3. Khởi tạo module lịch thực tập & cập nhật toàn bộ giao diện
-  loadCustomScheduleFromStorage();
   loadRealScheduleDataFromMySQL();
   updateTopBarUI();
   updateScheduleSummaryCard();

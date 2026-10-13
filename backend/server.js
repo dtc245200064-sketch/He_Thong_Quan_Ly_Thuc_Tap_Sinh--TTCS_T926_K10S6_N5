@@ -15,6 +15,7 @@ const evaluationRoutes = require('./routes/evaluation.routes');
 const mentorRoutes = require('./routes/mentor.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const integrationRoutes = require('./routes/integration.routes');
+const scheduleRoutes = require('./routes/schedule.routes');
 const db = require('./config/db');
 
 const app = express();
@@ -49,6 +50,7 @@ app.use('/api/evaluations', evaluationRoutes);
 app.use('/api/mentors', mentorRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/schedules', scheduleRoutes);
 app.get('/api/system-emails', require('./controllers/intern.controller').getEmailHistory);
 
 // Health check endpoint

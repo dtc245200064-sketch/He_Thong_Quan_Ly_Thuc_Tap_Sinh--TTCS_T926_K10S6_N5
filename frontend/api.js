@@ -652,4 +652,48 @@ async function apiSimulateQRCheckIn(data) {
   return await res.json();
 }
 
+// 40. Lịch thực tập (Intern Schedules) - MySQL Database
+async function apiGetSchedules(params = {}) {
+  try {
+    const q = new URLSearchParams();
+    if (params.intern_id) q.append('intern_id', params.intern_id);
+    if (params.from) q.append('from', params.from);
+    if (params.to) q.append('to', params.to);
+    if (params.mentor_id) q.append('mentor_id', params.mentor_id);
+    const url = `${API_BASE_URL}/schedules${q.toString() ? '?' + q.toString() : ''}`;
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetSchedules:', e);
+    return { success: false, data: [] };
+  }
+}
+
+async function apiCreateSchedule(data) {
+  const res = await fetch(`${API_BASE_URL}/schedules`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function apiUpdateSchedule(id, data) {
+  const res = await fetch(`${API_BASE_URL}/schedules/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function apiDeleteSchedule(id) {
+  const res = await fetch(`${API_BASE_URL}/schedules/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  return await res.json();
+}
+
+
 
