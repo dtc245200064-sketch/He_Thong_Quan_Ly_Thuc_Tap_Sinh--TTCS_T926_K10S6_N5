@@ -325,4 +325,10 @@ INSERT INTO system_integrations (id, integration_type, name, endpoint_url, api_k
 (2, 'qr_card_attendance', 'Máy chấm công Quét mã QR & Thẻ từ Hikvision', 'https://access.codegym.vn/device/gate-01', 'att_device_sec_771144', 'connected', NOW(), 'Thời gian thực (Webhook)', '{"autoCheckIn": true, "toleranceMinutes": 15, "cameraActive": true}')
 ON DUPLICATE KEY UPDATE name=VALUES(name);
 
+INSERT INTO meetings (id, title, meeting_date, start_time, end_time, location, link, host_name, intern_ids, notes, email_sent) VALUES
+(1, 'Họp Review tiến độ công việc tuần với Mentor', CURRENT_DATE, '09:00', '10:30', 'Phòng họp P204 / Online Meet', 'https://meet.google.com/codegym-mentor-sync', 'Nguyễn Anh Tuấn', '[1]', 'Báo cáo kết quả công việc tuần và trao đổi các khó khăn kỹ thuật.', TRUE),
+(2, 'Phỏng vấn & Đánh giá định kỳ thực tập sinh', DATE_ADD(CURRENT_DATE, INTERVAL 3 DAY), '14:00', '15:00', 'Google Meet Online', 'https://meet.google.com/codegym-mid-eval', 'Nguyễn Anh Tuấn & HR', '[1]', 'Đánh giá kỹ năng và định hướng mục tiêu giai đoạn tiếp theo.', TRUE)
+ON DUPLICATE KEY UPDATE title=VALUES(title);
+
+
 

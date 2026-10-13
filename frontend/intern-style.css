@@ -1941,6 +1941,36 @@ body {
   width: fit-content;
 }
 
+/* Dynamic Schedule Event Badges */
+.sched-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2.5px 6px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.sched-badge-meeting {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.sched-badge-task {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.sched-badge-combo {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
+
 .day-task-title {
   font-size: 12.5px;
   font-weight: 500;

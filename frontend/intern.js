@@ -699,20 +699,59 @@ function updateAllPortalUI() {
   const elTaskMentor = document.getElementById('overviewUpcomingTaskMentor');
 
   if (isApproved) {
-    if (elWorkHours) elWorkHours.textContent = '08:30 - 17:30 (Thứ 2 - Thứ 6)';
-    if (elWorkLoc) elWorkLoc.textContent = `Văn phòng CodeGym${internProfileData.dept ? ' • ' + internProfileData.dept : ''}`;
+    // 1. Lấy dữ liệu lịch làm việc hôm nay
+    const todayData = getScheduleDataForDate(new Date());
+
+    if (elWorkHours) {
+      if (todayData.hasMeeting && todayData.meetingList && todayData.meetingList.length > 0) {
+        const m = todayData.meetingList[0];
+        elWorkHours.textContent = `${m.start_time} - ${m.end_time} (${m.title})`;
+      } else {
+        elWorkHours.textContent = todayData.time || '08:30 - 17:30 (Thứ 2 - Thứ 6)';
+      }
+    }
+
+    if (elWorkLoc) {
+      elWorkLoc.textContent = todayData.location || `Văn phòng CodeGym${internProfileData.dept ? ' • ' + internProfileData.dept : ''}`;
+    }
+
     if (elAttStatus) {
       elAttStatus.textContent = (AttendanceState && AttendanceState.todayCheckIn)
         ? `Đã check-in (${AttendanceState.todayCheckIn})`
         : 'Chưa check-in';
     }
-    if (elTaskTitle) elTaskTitle.textContent = `Thực tập ${internProfileData.position || internProfileData.dept || 'Chuyên môn'}`;
-    if (elTaskSchedule) {
-      elTaskSchedule.textContent = (internProfileData.startFormatted && internProfileData.endFormatted)
-        ? `${internProfileData.startFormatted} - ${internProfileData.endFormatted}`
-        : (internProfileData.time || 'Chưa xếp thời gian');
+
+    // 2. Tìm nhiệm vụ sắp tới (ưu tiên task chưa hoàn thành từ MySQL)
+    const pendingTasks = (InternScheduleState.realTasks || []).filter(t => t.status !== 'done' && t.status !== 'canceled');
+    if (pendingTasks.length > 0) {
+      const nextTask = pendingTasks[0];
+      const deadlineStr = nextTask.deadline ? formatDateFull(new Date(nextTask.deadline)) : 'Chưa có hạn';
+      if (elTaskTitle) elTaskTitle.textContent = nextTask.title;
+      if (elTaskSchedule) elTaskSchedule.textContent = `Hạn chót: ${deadlineStr} • Tiến độ: ${nextTask.progress || 0}%`;
+      if (elTaskMentor) elTaskMentor.textContent = nextTask.mentor_name || internProfileData.mentor || 'Mentor';
+    } else {
+      // Nếu không có task pending, kiểm tra meeting sắp tới
+      const upcomingMeetings = (InternScheduleState.realMeetings || []).filter(m => {
+        const mKey = parseDateToKey(m.meeting_date);
+        const todayKey = formatDateKey(new Date());
+        return mKey && mKey >= todayKey;
+      });
+      if (upcomingMeetings.length > 0) {
+        const nextM = upcomingMeetings[0];
+        const mDateStr = nextM.meeting_date ? formatDateFull(new Date(nextM.meeting_date)) : 'Hôm nay';
+        if (elTaskTitle) elTaskTitle.textContent = `[Lịch họp] ${nextM.title}`;
+        if (elTaskSchedule) elTaskSchedule.textContent = `${nextM.start_time} - ${nextM.end_time}, ${mDateStr}`;
+        if (elTaskMentor) elTaskMentor.textContent = nextM.host_name || internProfileData.mentor || 'Mentor';
+      } else {
+        if (elTaskTitle) elTaskTitle.textContent = `Thực tập ${internProfileData.position || internProfileData.dept || 'Chuyên môn'}`;
+        if (elTaskSchedule) {
+          elTaskSchedule.textContent = (internProfileData.startFormatted && internProfileData.endFormatted)
+            ? `${internProfileData.startFormatted} - ${internProfileData.endFormatted}`
+            : (internProfileData.time || 'Chưa xếp thời gian');
+        }
+        if (elTaskMentor) elTaskMentor.textContent = internProfileData.mentor || 'Chưa phân công';
+      }
     }
-    if (elTaskMentor) elTaskMentor.textContent = internProfileData.mentor || 'Chưa phân công';
   } else {
     if (elWorkHours) elWorkHours.textContent = '—';
     if (elWorkLoc) elWorkLoc.textContent = '—';
@@ -1449,7 +1488,10 @@ const InternScheduleState = {
   viewMode: 'week', // 'week' | 'month'
   currentAnchorDate: new Date(),
   selectedDateStr: formatDateKey(new Date()),
-  scheduleCustomMap: {}
+  scheduleCustomMap: {},
+  realTasks: [],
+  realMeetings: [],
+  isScheduleDataLoaded: false
 };
 
 // Đọc lịch tùy biến từ localStorage nếu có
@@ -1541,7 +1583,75 @@ function parseScheduleDate(val) {
 }
 
 /**
- * Trả về dữ liệu lịch cho một ngày cụ thể (Dựa trên trạng thái và kỳ thực tập thực tế trong MySQL)
+ * Chuyển đổi linh hoạt mọi định dạng ngày thành YYYY-MM-DD (Date Key)
+ */
+function parseDateToKey(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+    if (trimmed.includes('T')) {
+      const d = new Date(trimmed);
+      if (!isNaN(d.getTime())) return formatDateKey(d);
+    }
+    if (trimmed.includes('/')) {
+      const parts = trimmed.split('/');
+      if (parts.length === 3) {
+        return `${parts[2]}-${String(parts[1]).padStart(2, '0')}-${String(parts[0]).padStart(2, '0')}`;
+      }
+    }
+  }
+  if (raw instanceof Date && !isNaN(raw.getTime())) {
+    return formatDateKey(raw);
+  }
+  const parsed = new Date(raw);
+  return isNaN(parsed.getTime()) ? null : formatDateKey(parsed);
+}
+
+/**
+ * Tải dữ liệu Lịch họp (meetings) và Nhiệm vụ (tasks) thực tế từ MySQL Database
+ */
+async function loadRealScheduleDataFromMySQL() {
+  const actualInternId = internProfileData.internId || internProfileData.id || getInternUserId() || 1;
+  try {
+    const [tasksRes, meetingsRes] = await Promise.all([
+      typeof apiGetTasks === 'function' ? apiGetTasks({ intern_id: actualInternId }) : Promise.resolve({ success: false, data: [] }),
+      typeof apiGetMeetings === 'function' ? apiGetMeetings() : Promise.resolve({ success: false, data: [] })
+    ]);
+
+    if (tasksRes && tasksRes.success && Array.isArray(tasksRes.data)) {
+      InternScheduleState.realTasks = tasksRes.data;
+    }
+
+    if (meetingsRes && meetingsRes.success && Array.isArray(meetingsRes.data)) {
+      InternScheduleState.realMeetings = meetingsRes.data.filter(m => {
+        if (!m.intern_ids) return true;
+        let ids = [];
+        try {
+          if (Array.isArray(m.intern_ids)) ids = m.intern_ids;
+          else if (typeof m.intern_ids === 'string') ids = JSON.parse(m.intern_ids);
+        } catch (e) {
+          ids = [];
+        }
+        if (!Array.isArray(ids) || ids.length === 0) return true;
+        return ids.map(String).includes(String(actualInternId));
+      });
+    }
+
+    InternScheduleState.isScheduleDataLoaded = true;
+
+    // Tự động cập nhật lại các giao diện phụ thuộc
+    updateAllPortalUI();
+    if (InternState.currentTab === 'schedule') {
+      renderSchedule();
+    }
+  } catch (err) {
+    console.warn('Lỗi tải dữ liệu lịch từ MySQL:', err);
+  }
+}
+
+/**
+ * Trả về dữ liệu lịch cho một ngày cụ thể (Dựa trên nhiệm vụ và lịch họp thực tế trong MySQL)
  */
 function getScheduleDataForDate(date) {
   const key = formatDateKey(date);
@@ -1568,7 +1678,11 @@ function getScheduleDataForDate(date) {
       task: 'Chưa có kế hoạch làm việc (Chờ HR xét duyệt hồ sơ và phân công chương trình)',
       location: '—',
       mentor: internProfileData.mentor || '—',
-      isOff: true
+      isOff: true,
+      hasMeeting: false,
+      hasTask: false,
+      meetingList: [],
+      taskList: []
     };
   }
 
@@ -1576,14 +1690,24 @@ function getScheduleDataForDate(date) {
   const deptName = internProfileData.dept || 'Chưa phân bổ phòng ban';
   const posName = internProfileData.position || deptName;
 
+  // Lọc lịch họp và nhiệm vụ khớp với ngày này từ dữ liệu MySQL
+  const matchingMeetings = (InternScheduleState.realMeetings || []).filter(m => {
+    return parseDateToKey(m.meeting_date) === key;
+  });
+
+  const matchingTasks = (InternScheduleState.realTasks || []).filter(t => {
+    return parseDateToKey(t.deadline) === key;
+  });
+
+  const hasMeeting = matchingMeetings.length > 0;
+  const hasTask = matchingTasks.length > 0;
+
   // Kiểm tra thời gian bắt đầu và kết thúc kỳ thực tập từ MySQL
   const sDate = parseScheduleDate(internProfileData.start_date || internProfileData.startFormatted);
   const eDate = parseScheduleDate(internProfileData.end_date || internProfileData.endFormatted);
-
-  // Chuẩn hóa ngày kiểm tra về 00:00:00
   const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-  if (sDate) {
+  if (sDate && !hasMeeting && !hasTask) {
     const startDateOnly = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
     if (checkDate < startDateOnly) {
       const sFormatted = internProfileData.startFormatted || formatDateFull(sDate);
@@ -1595,12 +1719,16 @@ function getScheduleDataForDate(date) {
         task: `Kỳ thực tập của bạn sẽ bắt đầu vào ngày ${sFormatted}`,
         location: '—',
         mentor: mentorName,
-        isOff: true
+        isOff: true,
+        hasMeeting: false,
+        hasTask: false,
+        meetingList: [],
+        taskList: []
       };
     }
   }
 
-  if (eDate) {
+  if (eDate && !hasMeeting && !hasTask) {
     const endDateOnly = new Date(eDate.getFullYear(), eDate.getMonth(), eDate.getDate());
     if (checkDate > endDateOnly) {
       const eFormatted = internProfileData.endFormatted || formatDateFull(eDate);
@@ -1612,26 +1740,85 @@ function getScheduleDataForDate(date) {
         task: `Kỳ thực tập đã kết thúc vào ngày ${eFormatted}`,
         location: '—',
         mentor: mentorName,
-        isOff: true
+        isOff: true,
+        hasMeeting: false,
+        hasTask: false,
+        meetingList: [],
+        taskList: []
       };
     }
   }
 
   // Cuối tuần: Thứ 7 & Chủ Nhật
   if (dayOfWeek === 0 || dayOfWeek === 6) {
+    if (!hasMeeting && !hasTask) {
+      return {
+        dateKey: key,
+        dayName,
+        dayNumber,
+        time: 'Nghỉ cuối tuần',
+        task: 'Nghỉ ngơi theo quy định chung của công ty',
+        location: 'Nghỉ ngơi',
+        mentor: mentorName,
+        isOff: true,
+        hasMeeting: false,
+        hasTask: false,
+        meetingList: [],
+        taskList: []
+      };
+    }
+  }
+
+  // Nếu có LỊCH HỌP hoặc NHIỆM VỤ thật từ MySQL Database
+  if (hasMeeting || hasTask) {
+    let displayTime = '';
+    let displayTask = '';
+    let displayLocation = `Văn phòng CodeGym (${deptName})`;
+    let displayMentor = mentorName;
+    let meetingLink = '';
+
+    if (hasMeeting && !hasTask) {
+      const m = matchingMeetings[0];
+      displayTime = `${m.start_time} – ${m.end_time}`;
+      displayTask = `[Lịch họp] ${m.title}`;
+      displayLocation = m.location || 'Online Meet';
+      displayMentor = m.host_name || mentorName;
+      meetingLink = m.link || '';
+    } else if (hasTask && !hasMeeting) {
+      const t = matchingTasks[0];
+      displayTime = '08:30 – 17:30 (Hạn: 17:00)';
+      displayTask = `[Nhiệm vụ] ${t.title}`;
+      displayLocation = `Văn phòng CodeGym (${deptName})`;
+      displayMentor = t.mentor_name || mentorName;
+    } else {
+      // Có cả 2: Họp và Deadline nhiệm vụ
+      const m = matchingMeetings[0];
+      const t = matchingTasks[0];
+      displayTime = `${m.start_time} – ${m.end_time} • Deadline: 17:00`;
+      displayTask = `[Họp] ${m.title} & [Deadline] ${t.title}`;
+      displayLocation = m.location || `Văn phòng CodeGym (${deptName})`;
+      displayMentor = m.host_name || t.mentor_name || mentorName;
+      meetingLink = m.link || '';
+    }
+
     return {
       dateKey: key,
       dayName,
       dayNumber,
-      time: 'Nghỉ cuối tuần',
-      task: 'Nghỉ ngơi theo quy định chung của công ty',
-      location: 'Nghỉ ngơi',
-      mentor: mentorName,
-      isOff: true
+      time: displayTime,
+      task: displayTask,
+      location: displayLocation,
+      mentor: displayMentor,
+      isOff: false,
+      hasMeeting,
+      hasTask,
+      meetingLink,
+      meetingList: matchingMeetings,
+      taskList: matchingTasks
     };
   }
 
-  // Thứ 2 đến Thứ 6 trong kỳ thực tập
+  // Thứ 2 đến Thứ 6 trong kỳ thực tập: Lộ trình chuyên môn tiêu chuẩn khi không có lịch riêng
   const weekdayTasks = {
     1: `Họp giao ban đầu tuần, nhận kế hoạch công việc và mục tiêu nhiệm vụ (${posName})`,
     2: `Thực hiện nhiệm vụ chuyên môn theo phân công và tài liệu hướng dẫn (${posName})`,
@@ -1648,7 +1835,11 @@ function getScheduleDataForDate(date) {
     task: weekdayTasks[dayOfWeek] || `Thực hiện nhiệm vụ chuyên môn (${posName})`,
     location: `Văn phòng CodeGym (${deptName})`,
     mentor: mentorName,
-    isOff: false
+    isOff: false,
+    hasMeeting: false,
+    hasTask: false,
+    meetingList: [],
+    taskList: []
   };
 }
 
@@ -1717,6 +1908,28 @@ function renderScheduleWeekView() {
     const dayData = getScheduleDataForDate(dayDate);
     const isSelected = dateKey === InternScheduleState.selectedDateStr;
 
+    let dayBadgesHtml = '';
+    if (dayData.hasMeeting && dayData.hasTask) {
+      dayBadgesHtml = `
+        <div class="d-flex flex-wrap gap-1 mb-1">
+          <span class="sched-type-badge sched-badge-meeting"><i class="bi bi-camera-video-fill"></i> Lịch họp</span>
+          <span class="sched-type-badge sched-badge-task"><i class="bi bi-check2-square"></i> Deadline</span>
+        </div>
+      `;
+    } else if (dayData.hasMeeting) {
+      dayBadgesHtml = `
+        <div class="mb-1">
+          <span class="sched-type-badge sched-badge-meeting"><i class="bi bi-camera-video-fill"></i> Lịch họp</span>
+        </div>
+      `;
+    } else if (dayData.hasTask) {
+      dayBadgesHtml = `
+        <div class="mb-1">
+          <span class="sched-type-badge sched-badge-task"><i class="bi bi-check2-square"></i> Deadline</span>
+        </div>
+      `;
+    }
+
     html += `
       <div class="schedule-day-card ${isSelected ? 'selected' : ''}" 
            id="sched-card-${dateKey}" 
@@ -1725,10 +1938,11 @@ function renderScheduleWeekView() {
           <div class="day-name">${dayData.dayName}</div>
           <div class="day-number">${dayData.dayNumber}</div>
         </div>
+        ${dayBadgesHtml}
         <div class="day-time-badge">${dayData.time}</div>
-        <div class="day-task-title" title="${dayData.task}">${dayData.task}</div>
-        <div class="day-location-info" title="${dayData.location}">
-          ${dayData.location}
+        <div class="day-task-title" title="${escapeHtml(dayData.task)}">${escapeHtml(dayData.task)}</div>
+        <div class="day-location-info" title="${escapeHtml(dayData.location)}">
+          ${escapeHtml(dayData.location)}
         </div>
       </div>
     `;
@@ -1754,9 +1968,58 @@ function renderScheduleDetail() {
 
   if (titleEl) titleEl.textContent = `${data.dayName}, ${formatDateFull(dateObj)}`;
   if (timeEl) timeEl.textContent = data.time;
-  if (taskEl) taskEl.textContent = data.task;
   if (locEl) locEl.textContent = data.location;
   if (mentorEl) mentorEl.textContent = data.mentor || internProfileData.mentor || '—';
+
+  if (taskEl) {
+    if (data.hasMeeting || data.hasTask) {
+      let contentHtml = '';
+      if (data.hasMeeting && data.meetingList && data.meetingList.length > 0) {
+        data.meetingList.forEach(m => {
+          contentHtml += `
+            <div class="p-2 mb-2 rounded bg-light border border-primary-subtle" style="font-weight: normal;">
+              <div class="fw-bold text-primary d-flex align-items-center gap-1 mb-1" style="font-size: 13.5px;">
+                <i class="bi bi-camera-video-fill"></i> ${escapeHtml(m.title)}
+              </div>
+              <div class="small text-muted mb-1">
+                <i class="bi bi-clock me-1"></i>${m.start_time} – ${m.end_time} &nbsp;|&nbsp; 
+                <i class="bi bi-geo-alt me-1"></i>${escapeHtml(m.location || 'Online')}
+              </div>
+              ${m.notes ? `<div class="small text-secondary mb-2 fst-italic">"${escapeHtml(m.notes)}"</div>` : ''}
+              ${m.link ? `<a href="${m.link}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary w-100 d-inline-flex align-items-center justify-content-center gap-1"><i class="bi bi-camera-video me-1"></i> Tham gia Google Meet</a>` : ''}
+            </div>
+          `;
+        });
+      }
+      if (data.hasTask && data.taskList && data.taskList.length > 0) {
+        data.taskList.forEach(t => {
+          const prioLabel = t.priority === 'urgent' ? 'Khẩn cấp' : (t.priority === 'high' ? 'Ưu tiên cao' : (t.priority === 'low' ? 'Thấp' : 'Trung bình'));
+          const prioClass = t.priority === 'high' || t.priority === 'urgent' ? 'bg-danger text-white' : 'bg-warning-subtle text-warning-emphasis border border-warning';
+          contentHtml += `
+            <div class="p-2 mb-2 rounded bg-light border border-warning-subtle" style="font-weight: normal;">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <span class="fw-bold text-dark d-flex align-items-center gap-1" style="font-size: 13.5px;">
+                  <i class="bi bi-check2-square text-warning"></i> ${escapeHtml(t.title)}
+                </span>
+                <span class="badge ${prioClass}" style="font-size: 10px;">${prioLabel}</span>
+              </div>
+              ${t.description ? `<div class="small text-secondary mb-2">${escapeHtml(t.description)}</div>` : ''}
+              <div class="small d-flex justify-content-between align-items-center text-muted mb-1">
+                <span>Tiến độ thực hiện:</span>
+                <span class="fw-bold text-dark">${t.progress || 0}%</span>
+              </div>
+              <div class="progress" style="height: 6px;">
+                <div class="progress-bar ${t.progress >= 100 ? 'bg-success' : 'bg-primary'}" style="width: ${t.progress || 0}%;"></div>
+              </div>
+            </div>
+          `;
+        });
+      }
+      taskEl.innerHTML = contentHtml;
+    } else {
+      taskEl.textContent = data.task;
+    }
+  }
 }
 
 /**
@@ -1819,12 +2082,23 @@ function renderScheduleMonthView() {
     const dateKey = formatDateKey(cellDate);
     const isSelected = dateKey === InternScheduleState.selectedDateStr;
     const isWeekend = cellDate.getDay() === 0 || cellDate.getDay() === 6;
-    const data = !isWeekend ? getScheduleDataForDate(cellDate) : null;
+    const data = getScheduleDataForDate(cellDate);
+
+    let badgeHtml = '';
+    if (data && !data.isOff) {
+      if (data.hasMeeting) {
+        badgeHtml = `<span class="month-cell-badge" style="background:#e0e7ff; color:#4338ca; border-radius: 4px; padding: 1px 4px;" title="Họp: ${escapeHtml(data.meetingList[0]?.title || '')}"><i class="bi bi-camera-video me-1"></i>${escapeHtml((data.meetingList[0]?.title || 'Lịch họp').slice(0, 14))}...</span>`;
+      } else if (data.hasTask) {
+        badgeHtml = `<span class="month-cell-badge" style="background:#fef3c7; color:#b45309; border-radius: 4px; padding: 1px 4px;" title="Task: ${escapeHtml(data.taskList[0]?.title || '')}"><i class="bi bi-check2 me-1"></i>${escapeHtml((data.taskList[0]?.title || 'Task').slice(0, 14))}...</span>`;
+      } else if (!isWeekend) {
+        badgeHtml = `<span class="month-cell-badge" title="${escapeHtml(data.task)}">${escapeHtml(data.task.slice(0, 14))}...</span>`;
+      }
+    }
 
     html += `
       <div class="month-day-cell ${isSelected ? 'selected' : ''}" onclick="selectScheduleDay('${dateKey}', true)">
         <span class="month-cell-num ${isWeekend ? 'text-muted' : ''}">${day}</span>
-        ${data ? `<span class="month-cell-badge" title="${data.task}">${data.task.slice(0, 16)}...</span>` : ''}
+        ${badgeHtml}
       </div>
     `;
   }
@@ -1964,6 +2238,10 @@ function renderSchedule() {
   if (existingEmpty) existingEmpty.classList.add('d-none');
   if (scheduleContentRow) scheduleContentRow.classList.remove('d-none');
   if (periodNav) periodNav.classList.remove('d-none');
+
+  if (!InternScheduleState.isScheduleDataLoaded) {
+    loadRealScheduleDataFromMySQL();
+  }
 
   if (InternScheduleState.viewMode === 'week') {
     renderScheduleWeekView();
@@ -2968,6 +3246,8 @@ document.addEventListener('DOMContentLoaded', () => {
         apiGetInterns({ search: u.email }).then(res => {
           if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
             const found = res.data[0];
+            internProfileData.id = found.id || internProfileData.id;
+            internProfileData.internId = found.id || internProfileData.internId;
             internProfileData.name = found.name || internProfileData.name || '';
             internProfileData.phone = found.phone || internProfileData.phone || '';
             internProfileData.school = found.school || '';
@@ -2990,6 +3270,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('user', JSON.stringify(updated));
             updateTopBarUI();
             updateScheduleSummaryCard();
+            loadRealScheduleDataFromMySQL();
             updateAllPortalUI();
             if (InternState.currentTab === 'schedule') {
               renderSchedule();
@@ -3004,6 +3285,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 3. Khởi tạo module lịch thực tập & cập nhật toàn bộ giao diện
   loadCustomScheduleFromStorage();
+  loadRealScheduleDataFromMySQL();
   updateTopBarUI();
   updateScheduleSummaryCard();
   renderSchedule();
