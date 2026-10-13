@@ -697,7 +697,7 @@
         <!-- 3 Thẻ thống kê nguồn lực hướng dẫn (Chuẩn Screenshot 1) -->
         <div class="mentor-stats-grid mb-4">
           <!-- Thẻ 1: Mentor đang hoạt động -->
-          <div class="mentor-stat-card">
+          <div class="mentor-stat-card" style="cursor: pointer;" onclick="switchMentorSubTab('mentors')" title="Xem danh sách Mentor">
             <div class="mentor-stat-info">
               <span class="mentor-stat-caption">MENTOR ĐANG HOẠT ĐỘNG</span>
               <div class="mentor-stat-number" id="statActiveMentors">0</div>
@@ -709,7 +709,7 @@
           </div>
 
           <!-- Thẻ 2: Phòng ban hoạt động -->
-          <div class="mentor-stat-card">
+          <div class="mentor-stat-card" style="cursor: pointer;" onclick="switchMentorSubTab('departments')" title="Xem cơ cấu phòng ban">
             <div class="mentor-stat-info">
               <span class="mentor-stat-caption">PHÒNG BAN HOẠT ĐỘNG</span>
               <div class="mentor-stat-number" id="statActiveDepts">0</div>

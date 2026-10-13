@@ -4689,13 +4689,83 @@ function saveMentors(mentors) {
   } catch (e) {}
 }
 
+function generateDeptCode(deptName) {
+  if (!deptName) return "PB";
+  let clean = deptName.replace(/^(phòng|ban)\s+/i, '').trim();
+  const words = clean.split(/[\s,&-]+/).filter(Boolean);
+  if (words.length >= 2) {
+    return words.map(w => w[0].toUpperCase()).join('').substring(0, 5);
+  }
+  return clean.substring(0, 4).toUpperCase();
+}
+
+function hashDeptCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
 function getDepartments() {
+  let depts = [];
   try {
     const raw = localStorage.getItem(getDeptsStorageKey());
-    return raw ? JSON.parse(raw) : [];
+    if (raw) depts = JSON.parse(raw);
   } catch (e) {
-    return [];
+    depts = [];
   }
+  if (!Array.isArray(depts)) depts = [];
+
+  // Tự động đồng bộ các phòng ban thực tế từ Mentor trong hệ thống
+  const mentors = getMentors();
+  const mentorDepts = mentors
+    .map(m => m.department ? m.department.trim() : "")
+    .filter(d => d && d !== "Chưa gán" && d !== "Chưa phân bổ");
+
+  // Đồng bộ thêm phòng ban từ internshipPrograms nếu có
+  const progDepts = (typeof internshipPrograms !== 'undefined' && Array.isArray(internshipPrograms))
+    ? internshipPrograms.map(p => p.dept ? p.dept.trim() : "").filter(d => d && d !== "Chưa phân bổ")
+    : [];
+
+  const existingMap = new Map();
+  depts.forEach(d => {
+    if (d && d.name) {
+      existingMap.set(d.name.trim().toLowerCase(), d);
+    }
+  });
+
+  let deletedNames = [];
+  try {
+    deletedNames = JSON.parse(localStorage.getItem("hr_deleted_depts") || "[]");
+  } catch (e) {}
+
+  let hasChanged = false;
+  const systemDepts = Array.from(new Set([...mentorDepts, ...progDepts]));
+
+  systemDepts.forEach(deptName => {
+    const key = deptName.toLowerCase();
+    const hasActiveMentor = mentors.some(m => (m.department || "").trim().toLowerCase() === key);
+    // Nếu chưa có trong danh sách phòng ban và (chưa bị người dùng chủ động xóa hoặc đang có mentor phụ trách)
+    if (!existingMap.has(key) && (!deletedNames.includes(key) || hasActiveMentor)) {
+      const newDept = {
+        id: "dept_" + hashDeptCode(deptName),
+        code: generateDeptCode(deptName),
+        name: deptName,
+        desc: `Phòng ban tiếp nhận và quản lý thực tập sinh (${deptName})`
+      };
+      depts.push(newDept);
+      existingMap.set(key, newDept);
+      hasChanged = true;
+    }
+  });
+
+  if (hasChanged) {
+    saveDepartments(depts);
+  }
+
+  return depts;
 }
 
 function saveDepartments(depts) {
@@ -5840,9 +5910,12 @@ function renderDeptTable() {
   }
 
   tbody.innerHTML = filtered.map(d => {
-    const deptMentors = mentors.filter(m => (m.department || "").toLowerCase() === (d.name || "").toLowerCase());
+    const deptMentors = mentors.filter(m => (m.department || "").trim().toLowerCase() === (d.name || "").trim().toLowerCase());
     const mentorCount = deptMentors.length;
-    const internCount = deptMentors.reduce((sum, m) => sum + ((m.assignedInternIds && m.assignedInternIds.length) || 0), 0);
+    let internCount = deptMentors.reduce((sum, m) => sum + ((m.assignedInternIds && m.assignedInternIds.length) || 0), 0);
+    if (internCount === 0 && Array.isArray(internList)) {
+      internCount = internList.filter(i => (i.dept || "").trim().toLowerCase() === (d.name || "").trim().toLowerCase()).length;
+    }
 
     return `
       <tr>
@@ -5933,6 +6006,13 @@ function handleSaveDept(event) {
     return;
   }
 
+  // Khôi phục phòng ban nếu trước đó bị đưa vào danh sách xóa
+  try {
+    let deletedNames = JSON.parse(localStorage.getItem("hr_deleted_depts") || "[]");
+    deletedNames = deletedNames.filter(n => n !== name.toLowerCase());
+    localStorage.setItem("hr_deleted_depts", JSON.stringify(deletedNames));
+  } catch (e) {}
+
   let depts = getDepartments();
   if (id) {
     const idx = depts.findIndex(d => d.id === id);
@@ -5943,7 +6023,7 @@ function handleSaveDept(event) {
   } else {
     depts.push({
       id: "dept_" + Date.now(),
-      code: code || name.substring(0, 3).toUpperCase(),
+      code: code || generateDeptCode(name),
       name,
       desc
     });
@@ -5958,14 +6038,35 @@ function handleSaveDept(event) {
 }
 
 function deleteDept(deptId) {
-  if (!confirm("Bạn có chắc chắn muốn xóa phòng ban này không?")) return;
   let depts = getDepartments();
+  const target = depts.find(d => d.id === deptId);
+  if (!target) return;
+
+  // Kiểm tra xem phòng ban có đang có mentor phụ trách không
+  const mentors = getMentors();
+  const hasMentor = mentors.some(m => (m.department || "").trim().toLowerCase() === (target.name || "").trim().toLowerCase());
+  if (hasMentor) {
+    showToast(`Không thể xóa phòng ban "${target.name}" vì đang có Mentor trực thuộc! Vui lòng thay đổi phòng ban của Mentor trước.`, "warning");
+    return;
+  }
+
+  if (!confirm(`Bạn có chắc chắn muốn xóa phòng ban "${target.name}" không?`)) return;
+
   depts = depts.filter(d => d.id !== deptId);
   saveDepartments(depts);
+
+  try {
+    let deletedNames = JSON.parse(localStorage.getItem("hr_deleted_depts") || "[]");
+    if (!deletedNames.includes(target.name.toLowerCase())) {
+      deletedNames.push(target.name.toLowerCase());
+      localStorage.setItem("hr_deleted_depts", JSON.stringify(deletedNames));
+    }
+  } catch (e) {}
+
   updateDeptDropdowns();
   renderMentorStats();
   renderDeptTable();
-  showToast("Đã xóa phòng ban!", "info");
+  showToast(`Đã xóa phòng ban "${target.name}"!`, "info");
 }
 
 // Gắn toàn bộ hàm của module Mentor & Phòng ban vào window
