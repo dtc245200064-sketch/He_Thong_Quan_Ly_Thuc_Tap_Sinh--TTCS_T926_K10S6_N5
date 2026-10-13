@@ -1,6 +1,5 @@
-// ==========================================================================
-// QUẢN LÝ XÁC THỰC VÀ CHUYỂN ĐỔI GIAO DIỆN (THUẦN FRONTEND JAVASCRIPT)
-// Tuyệt đối không dùng API / Backend. Xử lý trực tiếp qua DOM & localStorage.
+// QUẢN LÝ XÁC THỰC VÀ CHUYỂN ĐỔI GIAO DIỆN
+// Quản lý phiên đăng nhập JWT. 100% dữ liệu nghiệp vụ đồng bộ qua REST API và MySQL Database.
 // ==========================================================================
 
 function setActiveRoleTabStyle(activeBtn) {

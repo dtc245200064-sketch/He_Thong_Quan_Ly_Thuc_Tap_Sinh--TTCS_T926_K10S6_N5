@@ -721,5 +721,72 @@ async function apiDeleteSchedule(id) {
   return await res.json();
 }
 
+// 41. Quản lý Phòng ban (Departments) - MySQL Database
+async function apiGetDepartments() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/departments`, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetDepartments:', e);
+    return { success: false, data: [] };
+  }
+}
+
+async function apiCreateDepartment(deptData) {
+  const res = await fetch(`${API_BASE_URL}/departments`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(deptData)
+  });
+  return await res.json();
+}
+
+async function apiUpdateDepartment(id, deptData) {
+  const res = await fetch(`${API_BASE_URL}/departments/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(deptData)
+  });
+  return await res.json();
+}
+
+async function apiDeleteDepartment(id) {
+  const res = await fetch(`${API_BASE_URL}/departments/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  return await res.json();
+}
+
+// 42. Cập nhật & Xóa Chương trình thực tập - MySQL Database
+async function apiUpdateProgram(id, programData) {
+  const res = await fetch(`${API_BASE_URL}/programs/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(programData)
+  });
+  return await res.json();
+}
+
+async function apiDeleteProgram(id) {
+  const res = await fetch(`${API_BASE_URL}/programs/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  return await res.json();
+}
+
+// 43. Lấy lịch sử email hệ thống từ MySQL Database: GET /api/system-emails
+async function apiGetSystemEmails(recipientEmail = '') {
+  try {
+    const url = `${API_BASE_URL}/system-emails${recipientEmail ? '?recipient_email=' + encodeURIComponent(recipientEmail) : ''}`;
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetSystemEmails:', e);
+    return { success: false, data: [] };
+  }
+}
+
 
 

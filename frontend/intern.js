@@ -639,7 +639,7 @@ function updateAllPortalUI() {
   updateDossierSubmitCardUI();
 
   // 5. Cập nhật mốc xử lý hồ sơ tại Tab Tổng quan (Đồng bộ tuyệt đối với MySQL DB)
-  const isDbSubmitted = isApproved || isRejected || isPending || localStorage.getItem('tts_dossier_submitted') === 'true';
+  const isDbSubmitted = isApproved || isRejected || isPending;
 
   const milestoneRegister = document.getElementById('overviewMilestoneRegisterDate');
   if (milestoneRegister) {
@@ -877,7 +877,7 @@ function updateDossierSubmitCardUI() {
   const isApproved = realStatus === 'Đang thực tập' || realStatus === 'approved' || realStatus === 'Đã duyệt';
   const isRejected = realStatus === 'Đã từ chối' || realStatus === 'rejected';
   const isPending = realStatus === 'Chờ xét duyệt' || realStatus === 'pending';
-  const isSubmitted = isApproved || isRejected || isPending || localStorage.getItem('tts_dossier_submitted') === 'true';
+  const isSubmitted = isApproved || isRejected || isPending;
 
   if (isApproved) {
     btnSubmit.className = 'btn-submit-dossier submitted bg-success text-white border-0';
@@ -920,7 +920,7 @@ function handleDossierSubmitClick() {
   const isApproved = realStatus === 'Đang thực tập' || realStatus === 'approved' || realStatus === 'Đã duyệt';
   const isRejected = realStatus === 'Đã từ chối' || realStatus === 'rejected';
   const isPending = realStatus === 'Chờ xét duyệt' || realStatus === 'pending';
-  const isSubmitted = isApproved || isRejected || isPending || localStorage.getItem('tts_dossier_submitted') === 'true';
+  const isSubmitted = isApproved || isRejected || isPending;
 
   if (isApproved) {
     showInternToast('Hồ sơ của bạn đã được Phòng Nhân sự phê duyệt thành công!', 'success');
@@ -962,8 +962,6 @@ function closeConfirmSendDossierModal() {
 
 async function confirmSubmitDossierToHR() {
   closeConfirmSendDossierModal();
-  localStorage.setItem('tts_dossier_submitted', 'true');
-  localStorage.setItem('tts_dossier_submitted_at', new Date().toISOString());
 
   InternState.status = 'Chờ xét duyệt';
   updateAllPortalUI();
@@ -1084,23 +1082,15 @@ function openFilePreviewModal(type) {
 // ==============================================================================
 
 function getDocsStorageKey() {
-  try {
-    const u = JSON.parse(localStorage.getItem('user') || '{}');
-    const uid = u.internId || u.id || 'guest';
-    return `intern_docs_state_${uid}`;
-  } catch (e) {
-    return 'intern_docs_state_guest';
-  }
+  return 'intern_docs_memory';
 }
 
 function saveDocsState() {
-  try {
-    localStorage.setItem(getDocsStorageKey(), JSON.stringify(InternState.docs));
-  } catch (e) {}
+  // Đồng bộ trạng thái 100% qua MySQL Database, không sử dụng localStorage
 }
 
 function loadDocsState() {
-  // Reset trạng thái mặc định rỗng trước khi nạp
+  // Khởi tạo trạng thái tài liệu mặc định (sẽ được syncDocsFromDB nạp từ MySQL)
   InternState.docs = {
     cv: {
       uploaded: false,
@@ -1117,12 +1107,6 @@ function loadDocsState() {
       type: 'doc'
     }
   };
-  try {
-    const saved = localStorage.getItem(getDocsStorageKey());
-    if (saved) {
-      InternState.docs = JSON.parse(saved);
-    }
-  } catch (e) {}
 }
 
 function formatFileSize(bytes) {
@@ -3522,32 +3506,6 @@ async function loadSystemEmails() {
     }
   }
 
-  // 2. Fallback / Kết hợp localStorage nếu có
-  try {
-    const localRaw = localStorage.getItem('codegym_system_emails') || '[]';
-    const localList = JSON.parse(localRaw);
-    if (Array.isArray(localList) && localList.length > 0) {
-      const filtered = internEmail 
-        ? localList.filter(m => (m.to || '').toLowerCase() === internEmail.toLowerCase() || !m.to)
-        : localList;
-      
-      filtered.forEach(item => {
-        if (!emails.some(e => (e.subject === item.subject && e.recipient_email === item.to))) {
-          emails.push({
-            id: item.id || Date.now(),
-            recipient_email: item.to || internEmail,
-            recipient_name: item.name || '',
-            subject: item.subject,
-            email_type: item.type || 'approved',
-            content: item.content,
-            preview_url: item.previewUrl || null,
-            sent_at: item.time || new Date().toISOString()
-          });
-        }
-      });
-    }
-  } catch (e) {}
-
   currentLoadedEmails = emails;
   renderEmailList(emails);
   updateEmailBadge(emails.length);
@@ -4321,28 +4279,17 @@ function renderReportsList() {
 // MODULE 3: THÔNG BÁO (STT 36 - HOẠT ĐỘNG THẬT TRÊN CSDL MYSQL)
 // ------------------------------------------------------------------------------
 function getNotificationsStorageKey() {
-  return `intern_portal_notifications_${getInternUserId()}`;
+  return 'intern_portal_notifications_memory';
 }
 
 let internPortalNotifsCache = [];
 
 function getPortalNotifications() {
-  if (internPortalNotifsCache && internPortalNotifsCache.length > 0) {
-    return internPortalNotifsCache;
-  }
-  try {
-    const raw = localStorage.getItem(getNotificationsStorageKey());
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
-  }
+  return internPortalNotifsCache || [];
 }
 
 function savePortalNotifications(notifs) {
-  internPortalNotifsCache = notifs;
-  try {
-    localStorage.setItem(getNotificationsStorageKey(), JSON.stringify(notifs));
-  } catch (e) {}
+  internPortalNotifsCache = Array.isArray(notifs) ? notifs : [];
 }
 
 let currentNotifFilter = 'all';
@@ -4365,12 +4312,9 @@ async function initNotificationsTab() {
         isRead: Boolean(n.is_read),
         link: n.link || ''
       }));
-      try {
-        localStorage.setItem(getNotificationsStorageKey(), JSON.stringify(internPortalNotifsCache));
-      } catch (e) {}
     }
   } catch (e) {
-    console.warn('Không thể tải thông báo từ server, dùng cache:', e);
+    console.warn('Không thể tải thông báo từ server:', e);
   }
   filterNotifications(currentNotifFilter || 'all');
 }

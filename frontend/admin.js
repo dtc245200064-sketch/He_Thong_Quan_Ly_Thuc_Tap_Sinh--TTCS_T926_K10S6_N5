@@ -74,17 +74,7 @@ async function loadAccountsFromDB() {
     console.warn('Không thể kết nối API Backend, đang sử dụng dữ liệu cục bộ:', err.message);
   }
 
-  // Dự phòng khi chưa bật Backend
-  const savedData = localStorage.getItem('tts_admin_accounts');
-  if (savedData) {
-    try {
-      accounts = JSON.parse(savedData);
-    } catch (e) {
-      accounts = [];
-    }
-  } else {
-    accounts = [];
-  }
+  accounts = [];
   renderAccountsTable();
   updateDashboardStats();
 }
@@ -93,9 +83,9 @@ function initAccountsState() {
   loadAccountsFromDB();
 }
 
-// Lưu dự phòng vào localStorage
+// Đồng bộ trực tiếp qua MySQL Database API
 function saveAccountsToStorage() {
-  localStorage.setItem('tts_admin_accounts', JSON.stringify(accounts));
+  // Không dùng localStorage, tất cả thao tác được gửi lên MySQL API
 }
 
 // --------------------------------------------------------------------------

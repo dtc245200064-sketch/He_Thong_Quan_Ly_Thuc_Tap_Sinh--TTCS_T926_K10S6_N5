@@ -804,9 +804,6 @@ function approveCandidate(candidate) {
       status: "Đang thực tập"
     };
     internList.unshift(newIntern);
-    try {
-      localStorage.setItem("codegym_saved_interns", JSON.stringify(internList));
-    } catch (e) {}
   }
 
   // Cập nhật lại giao diện các tab
@@ -814,26 +811,10 @@ function approveCandidate(candidate) {
   filterReviewData();
   filterData();
 
-  // Gọi API cập nhật trạng thái duyệt vào MySQL
+  // Gọi API cập nhật trạng thái duyệt vào MySQL (Đồng thời tự động gửi email & lưu system_emails)
   if (typeof apiUpdateDocumentStatus === 'function') {
     apiUpdateDocumentStatus(candidate.id, 'approved', 'Đã duyệt hồ sơ').catch(e => console.warn(e));
   }
-
-  // Ghi nhận log email hệ thống gửi thông báo (User Story 8)
-  try {
-    const raw = localStorage.getItem('codegym_system_emails') || '[]';
-    const emailLogs = JSON.parse(raw);
-    emailLogs.unshift({
-      id: Date.now(),
-      to: candidate.email,
-      name: candidate.name,
-      subject: 'Thông báo kết quả xét duyệt hồ sơ thực tập CodeGym',
-      type: 'approved',
-      content: `Chúc mừng bạn ${candidate.name}, hồ sơ thực tập của bạn đã được phòng nhân sự duyệt thành công!`,
-      time: new Date().toLocaleString('vi-VN')
-    });
-    localStorage.setItem('codegym_system_emails', JSON.stringify(emailLogs));
-  } catch (e) {}
 
   showToast(`Đã duyệt hồ sơ của ứng viên "${candidate.name}" và hệ thống đã gửi email thông báo kết quả đến ${candidate.email}!`, "success");
 }
@@ -883,26 +864,10 @@ function handleRejectSubmit(e) {
     renderOverview();
     filterReviewData();
 
-    // Gọi API cập nhật trạng thái từ chối vào MySQL
+    // Gọi API cập nhật trạng thái từ chối vào MySQL (Đồng thời tự động gửi email & lưu system_emails)
     if (typeof apiUpdateDocumentStatus === 'function') {
       apiUpdateDocumentStatus(candidate.id, 'rejected', note || reason).catch(e => console.warn(e));
     }
-
-    // Ghi nhận log email hệ thống gửi thông báo (User Story 8)
-    try {
-      const raw = localStorage.getItem('codegym_system_emails') || '[]';
-      const emailLogs = JSON.parse(raw);
-      emailLogs.unshift({
-        id: Date.now(),
-        to: candidate.email,
-        name: candidate.name,
-        subject: 'Thông báo kết quả xét duyệt hồ sơ thực tập CodeGym',
-        type: 'rejected',
-        content: `Cảm ơn bạn đã nộp hồ sơ. Rất tiếc công ty chưa thể tiếp nhận bạn trong đợt này. Lý do: ${note || reason}`,
-        time: new Date().toLocaleString('vi-VN')
-      });
-      localStorage.setItem('codegym_system_emails', JSON.stringify(emailLogs));
-    } catch (e) {}
 
     showToast(`Đã ghi nhận từ chối và hệ thống đã gửi email thông báo kết quả đến ${candidate.email}.`, "warning");
   }
@@ -1292,9 +1257,6 @@ function handleAddSubmit(e) {
   };
 
   internList.unshift(newIntern);
-  try {
-    localStorage.setItem("codegym_saved_interns", JSON.stringify(internList));
-  } catch (e) {}
   closeModal("addModal");
   filterData();
   renderOverview();
@@ -2037,10 +1999,6 @@ async function handleEditSubmit(e) {
       }
     }
 
-    try {
-      localStorage.setItem("codegym_saved_interns", JSON.stringify(internList));
-    } catch (e) {}
-
     closeModal("editModal");
     filterData();
     renderOverview();
@@ -2099,7 +2057,6 @@ async function executeDeleteIntern() {
 
     internList = internList.filter((item) => item.id !== id);
     try {
-      localStorage.setItem("codegym_saved_interns", JSON.stringify(internList));
       let mentors = getMentors();
       let changed = false;
       mentors.forEach(m => {
@@ -2339,17 +2296,6 @@ document.addEventListener("DOMContentLoaded", () => {
     todayDisplay.textContent = `${d}/${m}/${y}`;
   }
 
-  // Đồng bộ danh sách thực tập sinh đã lưu ở frontend
-  try {
-    const savedInterns = localStorage.getItem("codegym_saved_interns");
-    if (savedInterns) {
-      const parsed = JSON.parse(savedInterns);
-      if (Array.isArray(parsed) && parsed.length > 0 && internList.length === 0) {
-        internList = parsed;
-      }
-    }
-  } catch (e) {}
-
   // Khởi tạo các bảng dữ liệu
   renderOverview();
   filterReviewData();
@@ -2360,6 +2306,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Nạp dữ liệu mới nhất từ MySQL Database
   loadInternsFromDB();
+  loadDepartmentsFromDB();
 
   // Nạp danh sách Mentor hệ thống từ MySQL Database
   loadSystemMentors();
@@ -2644,59 +2591,50 @@ function calculateDynamicProgress(startDateStr, endDateStr) {
   return Math.round(((now - start) / (end - start)) * 100);
 }
 
-// Khởi tạo và đồng bộ chương trình thực tập (Kết nối MySQL & dự phòng LocalStorage)
+// Khởi tạo và đồng bộ chương trình thực tập (100% từ MySQL Database)
 function initPrograms() {
-  try {
-    localStorage.removeItem("codegym_hr_custom_programs");
-    const old = localStorage.getItem("codegym_hr_programs");
-    if (old) {
-      try {
-        const parsed = JSON.parse(old);
-        if (Array.isArray(parsed)) {
-          internshipPrograms = parsed.filter(p => p && p.isUserCreated === true && !p.id.includes("prog_ktpm"));
-        } else {
-          internshipPrograms = [];
-        }
-      } catch (err) {
-        internshipPrograms = [];
-      }
-    } else {
-      internshipPrograms = [];
-    }
-  } catch (e) {
-    internshipPrograms = [];
-  }
+  internshipPrograms = [];
 
   // Tự động tải danh sách chương trình từ MySQL Database
   if (typeof apiGetPrograms === 'function') {
     apiGetPrograms().then(res => {
       if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-        internshipPrograms = res.data.map(p => ({
-          id: 'prog_' + p.id,
-          dbId: p.id,
-          name: p.name,
-          dept: p.dept,
-          positions: `Thực tập sinh ${p.dept}`,
-          mentor: p.mentor_default || 'Chưa phân công',
-          startDate: p.start_date ? p.start_date.split('T')[0] : '2026-07-01',
-          endDate: p.end_date ? p.end_date.split('T')[0] : '2026-09-30',
-          startDateFormatted: p.start_date ? new Date(p.start_date).toLocaleDateString('vi-VN') : '01/07/2026',
-          endDateFormatted: p.end_date ? new Date(p.end_date).toLocaleDateString('vi-VN') : '30/09/2026',
-          capacity: p.max_interns || 10,
-          status: p.status || 'active',
-          progress: 50,
-          desc: p.description || '',
-          schedule: getProgramSchedule('prog_' + p.id),
-          isUserCreated: true
-        }));
+        internshipPrograms = res.data.map(p => {
+          let sch = [];
+          if (p.schedule) {
+            if (Array.isArray(p.schedule)) sch = p.schedule;
+            else if (typeof p.schedule === 'string') {
+              try { sch = JSON.parse(p.schedule); } catch (e) { sch = []; }
+            }
+          }
+          return {
+            id: 'prog_' + p.id,
+            dbId: p.id,
+            name: p.name,
+            dept: p.dept,
+            positions: `Thực tập sinh ${p.dept}`,
+            mentor: p.mentor_default || 'Chưa phân công',
+            startDate: p.start_date ? p.start_date.split('T')[0] : '2026-07-01',
+            endDate: p.end_date ? p.end_date.split('T')[0] : '2026-09-30',
+            startDateFormatted: p.start_date ? new Date(p.start_date).toLocaleDateString('vi-VN') : '01/07/2026',
+            endDateFormatted: p.end_date ? new Date(p.end_date).toLocaleDateString('vi-VN') : '30/09/2026',
+            capacity: p.max_interns || 10,
+            status: p.status || 'active',
+            progress: 50,
+            desc: p.description || '',
+            schedule: sch,
+            isUserCreated: true
+          };
+        });
         if (!selectedProgramId && internshipPrograms.length > 0) {
           selectedProgramId = internshipPrograms[0].id;
         }
-        localStorage.setItem("codegym_hr_programs", JSON.stringify(internshipPrograms));
         renderPrograms();
         populateAttendanceProgramFilter();
       }
-    }).catch(() => {});
+    }).catch(err => {
+      console.warn('Lỗi tải chương trình từ MySQL API:', err);
+    });
   }
 
   if (internshipPrograms.length > 0) {
@@ -3085,21 +3023,25 @@ function removeModalStage(idx) {
 
 function getProgramSchedule(progId) {
   if (!progId) return [];
-  try {
-    const raw = localStorage.getItem("codegym_hr_schedule_" + progId);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch (e) {}
+  const prog = internshipPrograms.find(p => String(p.id) === String(progId) || String(p.dbId) === String(progId));
+  if (prog && Array.isArray(prog.schedule)) {
+    return prog.schedule;
+  }
   return [];
 }
 
 function saveProgramSchedule(progId, scheduleList) {
   if (!progId) return;
-  try {
-    localStorage.setItem("codegym_hr_schedule_" + progId, JSON.stringify(scheduleList));
-  } catch (e) {}
+  const dbId = String(progId).startsWith('prog_') ? progId.replace('prog_', '') : progId;
+  const prog = internshipPrograms.find(p => String(p.id) === String(progId) || String(p.dbId) === String(dbId));
+  if (prog) {
+    prog.schedule = scheduleList;
+  }
+  if (typeof apiUpdateProgram === 'function') {
+    apiUpdateProgram(dbId, { schedule: scheduleList }).catch(err => {
+      console.warn('Lỗi lưu lịch trình chương trình vào MySQL:', err);
+    });
+  }
 }
 
 function formatScheduleDateTime(dtStr) {
@@ -3285,28 +3227,16 @@ function handleSaveScheduleActivity(e) {
   }
   prog.schedule.push(newActivity);
 
-  // Lưu lịch trình theo từng chương trình vào localStorage
+  // Lưu lịch trình trực tiếp vào MySQL Database
   saveProgramSchedule(progId, prog.schedule);
 
-  // Đồng bộ lại internshipPrograms
-  try {
-    localStorage.setItem("codegym_hr_programs", JSON.stringify(internshipPrograms));
-  } catch (err) {}
-
-  // Gửi thông báo nếu người dùng tích chọn
-  if (sendNotify) {
-    try {
-      const notifs = JSON.parse(localStorage.getItem('codegym_notifications') || '[]');
-      notifs.unshift({
-        id: Date.now(),
-        title: `Lịch trình mới: ${name}`,
-        message: `Hoạt động "${name}" đã được xếp lịch cho đối tượng "${target}".`,
-        time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-        type: 'schedule',
-        read: false
-      });
-      localStorage.setItem('codegym_notifications', JSON.stringify(notifs));
-    } catch (err) {}
+  // Gửi thông báo đến hệ thống nếu người dùng tích chọn (Lưu vào MySQL)
+  if (sendNotify && typeof apiCreateInAppNotification === 'function') {
+    apiCreateInAppNotification({
+      title: `Lịch trình mới: ${name}`,
+      message: `Hoạt động "${name}" đã được xếp lịch cho đối tượng "${target}".`,
+      type: 'schedule'
+    }).catch(err => console.warn('Lỗi tạo thông báo lịch trình:', err));
   }
 
   closeModal("addScheduleModal");
@@ -3325,9 +3255,6 @@ function removeScheduleActivity(actId) {
   if (idx !== -1) {
     currentProg.schedule.splice(idx, 1);
     saveProgramSchedule(currentProg.id, currentProg.schedule);
-    try {
-      localStorage.setItem("codegym_hr_programs", JSON.stringify(internshipPrograms));
-    } catch (err) {}
     renderPrograms();
     showToast("Đã xóa hoạt động khỏi lịch trình.", "info");
   }
@@ -3586,6 +3513,18 @@ function handleProgramFormSubmit(e) {
       internshipPrograms[idx] = progData;
       showToast(`Đã cập nhật chương trình "${name}" thành công!`, "success");
     }
+    const dbId = progData.dbId || (String(id).startsWith('prog_') ? id.replace('prog_', '') : id);
+    if (typeof apiUpdateProgram === 'function') {
+      apiUpdateProgram(dbId, {
+        name,
+        dept,
+        mentor_default: mentor,
+        start_date: startDate,
+        end_date: endDate,
+        max_interns: capacity,
+        description: desc
+      }).catch(err => console.warn('Lỗi cập nhật chương trình vào MySQL:', err));
+    }
   } else {
     internshipPrograms.unshift(progData);
     selectedProgramId = progData.id;
@@ -3607,10 +3546,6 @@ function handleProgramFormSubmit(e) {
     }
   }
 
-  try {
-    localStorage.setItem("codegym_hr_programs", JSON.stringify(internshipPrograms));
-  } catch (err) {}
-
   closeModal("programModal");
   renderPrograms();
 }
@@ -3620,12 +3555,13 @@ function handleDeleteProgram() {
   const prog = internshipPrograms.find(p => p.id === selectedProgramId);
   const name = prog ? prog.name : "chương trình này";
 
+  if (prog && typeof apiDeleteProgram === 'function') {
+    const dbId = prog.dbId || (String(prog.id).startsWith('prog_') ? prog.id.replace('prog_', '') : prog.id);
+    apiDeleteProgram(dbId).catch(err => console.warn('Lỗi xóa chương trình MySQL:', err));
+  }
+
   internshipPrograms = internshipPrograms.filter(p => p.id !== selectedProgramId);
   selectedProgramId = internshipPrograms.length > 0 ? internshipPrograms[0].id : null;
-
-  try {
-    localStorage.setItem("codegym_hr_programs", JSON.stringify(internshipPrograms));
-  } catch (err) {}
 
   renderPrograms();
   showToast(`Đã xóa chương trình "${name}" thành công!`, "warning");
@@ -4451,10 +4387,15 @@ function handleCreateLeaveSubmit(e) {
 
   leaveRequests.unshift(newLeave);
 
-  try {
-    localStorage.setItem("codegym_hr_leaves", JSON.stringify(leaveRequests));
-  } catch (err) {
-    console.error("Lỗi lưu đơn nghỉ phép:", err);
+  if (typeof apiCreateLeave === 'function') {
+    apiCreateLeave({
+      intern_id: intern.id,
+      start_date: startDate,
+      end_date: endDate,
+      reason: reasonInput.value.trim()
+    }).then(() => {
+      loadAttendanceFromDB();
+    }).catch(err => console.warn('Lỗi lưu đơn nghỉ phép MySQL:', err));
   }
 
   closeModal("createLeaveModal");
@@ -4647,13 +4588,9 @@ window.exportAttendanceReport = exportAttendanceReport;
 // ==========================================================================
 // 15. PHÂN HỆ MENTOR & PHÒNG BAN (FRONTEND CONTROLLER)
 // ==========================================================================
-// Đảm bảo dữ liệu phân hệ Mentor & Phòng ban khởi tạo sạch, để trống hoàn toàn theo yêu cầu
-const MENTOR_DATA_VERSION = "v_empty_fresh_reset_2026_clean";
-if (localStorage.getItem("hr_mentor_schema_ver") !== MENTOR_DATA_VERSION) {
-  localStorage.removeItem("hr_mentors_list");
-  localStorage.removeItem("hr_departments_list");
-  localStorage.setItem("hr_mentor_schema_ver", MENTOR_DATA_VERSION);
-}
+// Quản lý bộ nhớ đệm cho phân hệ Mentor & Phòng ban (100% từ MySQL Database)
+let cachedMentorsList = [];
+let cachedDepartmentsList = [];
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return "";
@@ -4666,27 +4603,12 @@ function escapeHtml(str) {
 }
 window.escapeHtml = escapeHtml;
 
-function getMentorsStorageKey() {
-  return "hr_mentors_list";
-}
-
-function getDeptsStorageKey() {
-  return "hr_departments_list";
-}
-
 function getMentors() {
-  try {
-    const raw = localStorage.getItem(getMentorsStorageKey());
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
-  }
+  return cachedMentorsList;
 }
 
 function saveMentors(mentors) {
-  try {
-    localStorage.setItem(getMentorsStorageKey(), JSON.stringify(mentors));
-  } catch (e) {}
+  cachedMentorsList = Array.isArray(mentors) ? mentors : [];
 }
 
 function generateDeptCode(deptName) {
@@ -4708,77 +4630,34 @@ function hashDeptCode(str) {
   return Math.abs(hash);
 }
 
+async function loadDepartmentsFromDB() {
+  if (typeof apiGetDepartments === 'function') {
+    try {
+      const res = await apiGetDepartments();
+      if (res && res.success && Array.isArray(res.data)) {
+        cachedDepartmentsList = res.data.map(d => ({
+          id: d.id,
+          code: d.code,
+          name: d.name,
+          desc: d.description || `Phòng ban tiếp nhận và quản lý thực tập sinh (${d.name})`
+        }));
+      }
+    } catch (e) {
+      console.warn('Lỗi tải phòng ban từ MySQL API:', e);
+    }
+  }
+  updateDeptDropdowns();
+  renderMentorStats();
+  renderDeptTable();
+  return cachedDepartmentsList;
+}
+
 function getDepartments() {
-  let depts = [];
-  try {
-    const raw = localStorage.getItem(getDeptsStorageKey());
-    if (raw) depts = JSON.parse(raw);
-  } catch (e) {
-    depts = [];
-  }
-  if (!Array.isArray(depts)) depts = [];
-
-  // Tự động đồng bộ các phòng ban thực tế từ Mentor trong hệ thống
-  const mentors = getMentors();
-  const mentorDepts = mentors
-    .map(m => m.department ? m.department.trim() : "")
-    .filter(d => d && d !== "Chưa gán" && d !== "Chưa phân bổ");
-
-  // Loại bỏ phòng ban 'Kỹ thuật phần mềm' nếu bị auto-sync nhầm từ chương trình thực tập (không có mentor phụ trách)
-  const initialLength = depts.length;
-  depts = depts.filter(d => {
-    if (!d || !d.name) return false;
-    const nameLower = d.name.trim().toLowerCase();
-    if (nameLower === "kỹ thuật phần mềm") {
-      const hasMentor = mentors.some(m => (m.department || "").trim().toLowerCase() === nameLower);
-      if (!hasMentor) return false;
-    }
-    return true;
-  });
-
-  const existingMap = new Map();
-  depts.forEach(d => {
-    if (d && d.name) {
-      existingMap.set(d.name.trim().toLowerCase(), d);
-    }
-  });
-
-  let deletedNames = [];
-  try {
-    deletedNames = JSON.parse(localStorage.getItem("hr_deleted_depts") || "[]");
-  } catch (e) {}
-
-  let hasChanged = (depts.length !== initialLength);
-  const systemDepts = Array.from(new Set(mentorDepts));
-
-  systemDepts.forEach(deptName => {
-    const key = deptName.toLowerCase();
-    const hasActiveMentor = mentors.some(m => (m.department || "").trim().toLowerCase() === key);
-    // Nếu chưa có trong danh sách phòng ban và (chưa bị người dùng chủ động xóa hoặc đang có mentor phụ trách)
-    if (!existingMap.has(key) && (!deletedNames.includes(key) || hasActiveMentor)) {
-      const newDept = {
-        id: "dept_" + hashDeptCode(deptName),
-        code: generateDeptCode(deptName),
-        name: deptName,
-        desc: `Phòng ban tiếp nhận và quản lý thực tập sinh (${deptName})`
-      };
-      depts.push(newDept);
-      existingMap.set(key, newDept);
-      hasChanged = true;
-    }
-  });
-
-  if (hasChanged) {
-    saveDepartments(depts);
-  }
-
-  return depts;
+  return cachedDepartmentsList;
 }
 
 function saveDepartments(depts) {
-  try {
-    localStorage.setItem(getDeptsStorageKey(), JSON.stringify(depts));
-  } catch (e) {}
+  cachedDepartmentsList = Array.isArray(depts) ? depts : [];
 }
 
 let currentMentorSubTab = "mentors";
@@ -4808,7 +4687,7 @@ function updateMentorHeaderButton() {
 }
 
 async function initMentorsTab() {
-  updateDeptDropdowns();
+  await loadDepartmentsFromDB();
   if (typeof apiGetMentors === 'function') {
     try {
       const res = await apiGetMentors();
@@ -5471,36 +5350,6 @@ function getEligibleInterns() {
     });
   }
 
-  // 3. Nguồn từ localStorage cache (nếu đã lưu từ trước)
-  try {
-    const rawCache = localStorage.getItem("codegym_saved_interns");
-    if (rawCache) {
-      const parsed = JSON.parse(rawCache);
-      if (Array.isArray(parsed)) {
-        parsed.forEach(i => {
-          if (i && (i.id || i.name)) {
-            const idKey = String(i.id || i.email || i.name);
-            if (!map.has(idKey)) {
-              map.set(idKey, {
-                id: i.id || idKey,
-                name: i.name,
-                email: i.email || "",
-                school: i.school || "ĐH Bách Khoa HN",
-                major: i.major || "CNTT",
-                program: i.program || i.position || "TTS Kỹ thuật phần mềm",
-                dept: i.dept || "Kỹ thuật phần mềm",
-                mentor: i.mentor || "Chưa gán",
-                mentor_id: i.mentor_id || null,
-                status: i.status || "Đang thực tập",
-                dossierStatus: "Đầy đủ"
-              });
-            }
-          }
-        });
-      }
-    }
-  } catch (e) {}
-
   return Array.from(map.values());
 }
 window.getEligibleInterns = getEligibleInterns;
@@ -5838,10 +5687,6 @@ async function confirmAssignInterns() {
     }
   }
 
-  try {
-    localStorage.setItem("codegym_saved_interns", JSON.stringify(internList));
-  } catch (e) {}
-
   // Cập nhật applications nếu có
   if (Array.isArray(applications)) {
     applications.forEach(a => {
@@ -5997,7 +5842,7 @@ function openEditDeptModal(deptId) {
   openModal("deptModal");
 }
 
-function handleSaveDept(event) {
+async function handleSaveDept(event) {
   if (event) event.preventDefault();
   const id = document.getElementById("deptEditId")?.value;
   const code = (document.getElementById("deptFormCode")?.value || "").trim().toUpperCase();
@@ -6009,40 +5854,45 @@ function handleSaveDept(event) {
     return;
   }
 
-  // Khôi phục phòng ban nếu trước đó bị đưa vào danh sách xóa
   try {
-    let deletedNames = JSON.parse(localStorage.getItem("hr_deleted_depts") || "[]");
-    deletedNames = deletedNames.filter(n => n !== name.toLowerCase());
-    localStorage.setItem("hr_deleted_depts", JSON.stringify(deletedNames));
-  } catch (e) {}
-
-  let depts = getDepartments();
-  if (id) {
-    const idx = depts.findIndex(d => d.id === id);
-    if (idx !== -1) {
-      depts[idx] = { ...depts[idx], code: code || name.substring(0, 3).toUpperCase(), name, desc };
+    let res;
+    if (id) {
+      res = await apiUpdateDepartment(id, {
+        code: code || generateDeptCode(name),
+        name,
+        description: desc
+      });
+      if (res && res.success) {
+        showToast("Cập nhật phòng ban thành công!", "success");
+      } else {
+        showToast(res?.message || "Lỗi cập nhật phòng ban", "warning");
+        return;
+      }
+    } else {
+      res = await apiCreateDepartment({
+        code: code || generateDeptCode(name),
+        name,
+        description: desc
+      });
+      if (res && res.success) {
+        showToast("Thêm phòng ban mới thành công!", "success");
+      } else {
+        showToast(res?.message || "Lỗi thêm phòng ban mới", "warning");
+        return;
+      }
     }
-    showToast("Cập nhật phòng ban thành công!", "success");
-  } else {
-    depts.push({
-      id: "dept_" + Date.now(),
-      code: code || generateDeptCode(name),
-      name,
-      desc
-    });
-    showToast("Thêm phòng ban mới thành công!", "success");
-  }
 
-  saveDepartments(depts);
-  closeModal("deptModal");
-  updateDeptDropdowns();
-  renderMentorStats();
-  renderDeptTable();
+    closeModal("deptModal");
+    await loadDepartmentsFromDB();
+  } catch (err) {
+    console.error("Lỗi lưu phòng ban:", err);
+    showToast("Không thể kết nối đến máy chủ", "error");
+  }
 }
 
-function deleteDept(deptId) {
-  let depts = getDepartments();
-  const target = depts.find(d => d.id === deptId);
+async function deleteDept(deptId) {
+  const depts = getDepartments();
+  const target = depts.find(d => String(d.id) === String(deptId));
   if (!target) return;
 
   // Kiểm tra xem phòng ban có đang có mentor phụ trách không
@@ -6055,21 +5905,18 @@ function deleteDept(deptId) {
 
   if (!confirm(`Bạn có chắc chắn muốn xóa phòng ban "${target.name}" không?`)) return;
 
-  depts = depts.filter(d => d.id !== deptId);
-  saveDepartments(depts);
-
   try {
-    let deletedNames = JSON.parse(localStorage.getItem("hr_deleted_depts") || "[]");
-    if (!deletedNames.includes(target.name.toLowerCase())) {
-      deletedNames.push(target.name.toLowerCase());
-      localStorage.setItem("hr_deleted_depts", JSON.stringify(deletedNames));
+    const res = await apiDeleteDepartment(deptId);
+    if (res && res.success) {
+      showToast(`Đã xóa phòng ban "${target.name}"!`, "info");
+      await loadDepartmentsFromDB();
+    } else {
+      showToast(res?.message || "Lỗi xóa phòng ban", "warning");
     }
-  } catch (e) {}
-
-  updateDeptDropdowns();
-  renderMentorStats();
-  renderDeptTable();
-  showToast(`Đã xóa phòng ban "${target.name}"!`, "info");
+  } catch (err) {
+    console.error("Lỗi xóa phòng ban:", err);
+    showToast("Không thể kết nối đến máy chủ", "error");
+  }
 }
 
 // Gắn toàn bộ hàm của module Mentor & Phòng ban vào window
