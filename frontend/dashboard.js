@@ -2523,6 +2523,7 @@ async function loadInternsFromDB() {
           school: i.school,
           dept: i.dept,
           mentor: i.mentor,
+          mentor_id: i.mentor_id || null,
           startDate: i.start_date,
           endDate: i.end_date,
           start_date: i.start_date,
@@ -2558,6 +2559,7 @@ async function loadInternsFromDB() {
           gpa: i.gpa ? `${i.gpa} / 4.0` : '',
           dept: i.dept,
           mentor: i.mentor,
+          mentor_id: i.mentor_id || null,
           position: i.position || `Thực tập sinh ${i.major || ''}`,
           appliedDate: i.appliedDate || '',
           startDate: i.start_date,
@@ -4750,6 +4752,7 @@ async function initMentorsTab() {
           }
           return {
             id: m.id,
+            user_id: m.user_id || null,
             name: m.name,
             role: m.position || m.role || 'Mentor',
             email: m.email,
@@ -5018,8 +5021,87 @@ function renderMentorTable() {
   }).join("");
 }
 
+// --- QUẢN LÝ TÀI KHOẢN MENTOR KHẢ DỤNG ---
+let cachedAvailableMentorUsers = [];
+
+async function loadAvailableMentorUsers(currentMentorId = '') {
+  const selectAdd = document.getElementById("mentorAddUserId");
+  const alertAdd = document.getElementById("noMentorAccountAlert");
+  const selectEdit = document.getElementById("mentorEditUserId");
+
+  let users = [];
+  try {
+    if (typeof apiGetAvailableMentorUsers === 'function') {
+      const res = await apiGetAvailableMentorUsers(currentMentorId);
+      if (res && res.success && Array.isArray(res.data)) {
+        users = res.data;
+      }
+    }
+  } catch (err) {
+    console.warn("Lỗi tải danh sách tài khoản Mentor khả dụng:", err);
+  }
+
+  cachedAvailableMentorUsers = users;
+
+  // Cập nhật dropdown ở modal thêm mới
+  if (selectAdd) {
+    selectAdd.innerHTML = '<option value="">-- Chọn tài khoản Mentor do Admin tạo --</option>';
+    if (users.length === 0) {
+      if (alertAdd) alertAdd.style.display = "block";
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.disabled = true;
+      opt.textContent = "Không có tài khoản Mentor khả dụng";
+      selectAdd.appendChild(opt);
+    } else {
+      if (alertAdd) alertAdd.style.display = "none";
+      users.forEach(u => {
+        const opt = document.createElement("option");
+        opt.value = u.id;
+        opt.textContent = `${u.full_name || u.name || u.email} (${u.email})`;
+        selectAdd.appendChild(opt);
+      });
+    }
+  }
+
+  // Cập nhật dropdown ở modal chỉnh sửa nếu có
+  if (selectEdit) {
+    selectEdit.innerHTML = '<option value="">-- Chưa liên kết tài khoản --</option>';
+    users.forEach(u => {
+      const opt = document.createElement("option");
+      opt.value = u.id;
+      opt.textContent = `${u.full_name || u.name || u.email} (${u.email})`;
+      selectEdit.appendChild(opt);
+    });
+  }
+
+  return users;
+}
+window.loadAvailableMentorUsers = loadAvailableMentorUsers;
+
+function handleSelectMentorAccount(userId) {
+  if (!userId) return;
+  const user = cachedAvailableMentorUsers.find(u => String(u.id) === String(userId));
+  if (!user) return;
+
+  const nameInp = document.getElementById("mentorAddName");
+  const emailInp = document.getElementById("mentorAddEmail");
+  const phoneInp = document.getElementById("mentorAddPhone");
+
+  if (nameInp && (!nameInp.value || nameInp.value.trim() === '')) {
+    nameInp.value = user.full_name || user.name || '';
+  }
+  if (emailInp) {
+    emailInp.value = user.email || '';
+  }
+  if (phoneInp && (!phoneInp.value || phoneInp.value.trim() === '')) {
+    phoneInp.value = user.phone || '';
+  }
+}
+window.handleSelectMentorAccount = handleSelectMentorAccount;
+
 // --- MODAL: THÊM MENTOR ---
-function openAddMentorModal() {
+async function openAddMentorModal() {
   updateDeptDropdowns();
 
   const form = document.querySelector("#addMentorModal form");
@@ -5032,7 +5114,9 @@ function openAddMentorModal() {
   const deptInp = document.getElementById("mentorAddDept");
   const maxInp = document.getElementById("mentorAddMax");
   const avatarInp = document.getElementById("mentorAddAvatar");
+  const userSelect = document.getElementById("mentorAddUserId");
 
+  if (userSelect) userSelect.value = "";
   if (nameInp) nameInp.value = "";
   if (roleInp) roleInp.value = "";
   if (emailInp) emailInp.value = "";
@@ -5041,11 +5125,14 @@ function openAddMentorModal() {
   if (maxInp) maxInp.value = "5";
   if (avatarInp) avatarInp.value = "";
 
+  await loadAvailableMentorUsers();
+
   openModal("addMentorModal");
 }
 
 async function handleAddMentorSubmit(event) {
   if (event) event.preventDefault();
+  const userId = document.getElementById("mentorAddUserId")?.value;
   const name = (document.getElementById("mentorAddName")?.value || "").trim();
   const role = (document.getElementById("mentorAddRole")?.value || "").trim();
   const email = (document.getElementById("mentorAddEmail")?.value || "").trim();
@@ -5053,6 +5140,15 @@ async function handleAddMentorSubmit(event) {
   const dept = (document.getElementById("mentorAddDept")?.value || "").trim();
   const max = parseInt(document.getElementById("mentorAddMax")?.value || "5", 10);
   const avatar = (document.getElementById("mentorAddAvatar")?.value || "").trim();
+
+  if (!userId) {
+    if (cachedAvailableMentorUsers.length === 0) {
+      showToast("Chưa có tài khoản Mentor. Vui lòng liên hệ Admin để cấp tài khoản.", "warning");
+    } else {
+      showToast("Vui lòng chọn Tài khoản hệ thống cho Mentor!", "warning");
+    }
+    return;
+  }
 
   if (!name || !role || !email) {
     showToast("Vui lòng điền họ tên, chức danh và email của Mentor!", "warning");
@@ -5063,6 +5159,7 @@ async function handleAddMentorSubmit(event) {
   if (typeof apiCreateMentor === 'function') {
     try {
       const res = await apiCreateMentor({
+        user_id: Number(userId),
         name,
         email,
         phone,
@@ -5072,6 +5169,9 @@ async function handleAddMentorSubmit(event) {
       });
       if (res && res.mentorId) {
         dbId = res.mentorId;
+      } else if (res && !res.success && res.message) {
+        showToast(res.message, "error");
+        return;
       }
     } catch (e) {
       console.warn('Lỗi gọi apiCreateMentor:', e);
@@ -5081,6 +5181,7 @@ async function handleAddMentorSubmit(event) {
   const mentors = getMentors();
   const newMentor = {
     id: dbId,
+    user_id: Number(userId),
     name,
     role,
     email,
@@ -5116,9 +5217,9 @@ async function handleAddMentorSubmit(event) {
 }
 
 // --- MODAL: CHỈNH SỬA MENTOR ---
-function openEditMentorModal(mentorId) {
+async function openEditMentorModal(mentorId) {
   const mentors = getMentors();
-  const mentor = mentors.find(m => m.id === mentorId);
+  const mentor = mentors.find(m => String(m.id) === String(mentorId));
   if (!mentor) return;
 
   updateDeptDropdowns();
@@ -5131,6 +5232,7 @@ function openEditMentorModal(mentorId) {
   const maxInp = document.getElementById("mentorEditMax");
   const statusInp = document.getElementById("mentorEditStatus");
   const avatarInp = document.getElementById("mentorEditAvatar");
+  const userSelect = document.getElementById("mentorEditUserId");
 
   if (idInp) idInp.value = mentor.id;
   if (nameInp) nameInp.value = mentor.name || "";
@@ -5151,6 +5253,11 @@ function openEditMentorModal(mentorId) {
   if (statusInp) statusInp.value = mentor.status || "Đang hoạt động";
   if (avatarInp) avatarInp.value = mentor.avatar || "";
 
+  await loadAvailableMentorUsers(mentor.id);
+  if (userSelect) {
+    userSelect.value = mentor.user_id ? String(mentor.user_id) : "";
+  }
+
   openModal("editMentorModal");
 }
 
@@ -5164,6 +5271,7 @@ async function handleEditMentorSubmit(event) {
     return;
   }
 
+  const userId = document.getElementById("mentorEditUserId")?.value;
   const name = (document.getElementById("mentorEditName")?.value || "").trim();
   const role = (document.getElementById("mentorEditRole")?.value || "").trim();
   const email = (document.getElementById("mentorEditEmail")?.value || "").trim();
@@ -5176,6 +5284,7 @@ async function handleEditMentorSubmit(event) {
   try {
     if (typeof apiUpdateMentor === 'function' && !String(id).startsWith('m_')) {
       await apiUpdateMentor(id, {
+        user_id: userId ? Number(userId) : null,
         name,
         email,
         phone,
@@ -5191,6 +5300,7 @@ async function handleEditMentorSubmit(event) {
 
   mentors[idx] = {
     ...mentors[idx],
+    user_id: userId ? Number(userId) : null,
     name,
     role,
     email,
@@ -5261,6 +5371,7 @@ function getEligibleInterns() {
           program: i.program || i.position || "TTS Kỹ thuật phần mềm",
           dept: i.dept || "Kỹ thuật phần mềm",
           mentor: i.mentor || "Chưa gán",
+          mentor_id: i.mentor_id || null,
           status: i.status || "Đang thực tập",
           dossierStatus: "Đầy đủ"
         });
@@ -5283,6 +5394,7 @@ function getEligibleInterns() {
             program: a.program || a.position || "TTS Kỹ thuật phần mềm",
             dept: a.dept || "Kỹ thuật phần mềm",
             mentor: a.mentor || "Chưa gán",
+            mentor_id: a.mentor_id || null,
             status: a.status,
             dossierStatus: "Đầy đủ"
           });
@@ -5310,6 +5422,7 @@ function getEligibleInterns() {
                 program: i.program || i.position || "TTS Kỹ thuật phần mềm",
                 dept: i.dept || "Kỹ thuật phần mềm",
                 mentor: i.mentor || "Chưa gán",
+                mentor_id: i.mentor_id || null,
                 status: i.status || "Đang thực tập",
                 dossierStatus: "Đầy đủ"
               });
@@ -5337,10 +5450,10 @@ function openAssignInternModal(mentorId) {
   // Lấy danh sách ID TTS đang được gán cho mentor này
   selectedAssignInternIds = new Set((mentor.assignedInternIds || []).map(String));
 
-  // Đồng bộ thêm nếu có TTS trong hệ thống đang mang tên mentor này
+  // Đồng bộ thêm nếu có TTS trong hệ thống đang mang ID hoặc tên mentor này
   const eligible = getEligibleInterns();
   eligible.forEach(i => {
-    if (i.mentor === mentor.name) {
+    if ((i.mentor_id && String(i.mentor_id) === String(mentor.id)) || i.mentor === mentor.name) {
       selectedAssignInternIds.add(String(i.id));
     }
   });
@@ -5633,6 +5746,7 @@ async function confirmAssignInterns() {
     const iId = String(intern.id);
     if (assignedArr.includes(iId)) {
       intern.mentor = mentor.name;
+      intern.mentor_id = mentor.id;
       if (mentor.department && mentor.department !== "Chưa gán") {
         intern.dept = mentor.department;
       }
@@ -5643,11 +5757,12 @@ async function confirmAssignInterns() {
       } catch (err) {
         console.warn("Lỗi sync assign mentor:", err);
       }
-    } else if (intern.mentor === mentor.name || prevAssignedArr.includes(iId)) {
+    } else if (intern.mentor === mentor.name || (intern.mentor_id && String(intern.mentor_id) === String(mentor.id)) || prevAssignedArr.includes(iId)) {
       intern.mentor = "Chưa gán";
+      intern.mentor_id = null;
       try {
         if (typeof apiAssignMentor === 'function' && !iId.startsWith('app_') && !iId.startsWith('mock_')) {
-          await apiAssignMentor({ intern_id: intern.id, mentor_name: "Chưa gán" });
+          await apiAssignMentor({ intern_id: intern.id, mentor_name: "Chưa gán", mentor_id: null });
         }
       } catch (err) {
         console.warn("Lỗi sync unassign mentor:", err);
@@ -5665,11 +5780,13 @@ async function confirmAssignInterns() {
       const aId = String(a.id);
       if (assignedArr.includes(aId)) {
         a.mentor = mentor.name;
+        a.mentor_id = mentor.id;
         if (mentor.department && mentor.department !== "Chưa gán") {
           a.dept = mentor.department;
         }
-      } else if (a.mentor === mentor.name || prevAssignedArr.includes(aId)) {
+      } else if (a.mentor === mentor.name || (a.mentor_id && String(a.mentor_id) === String(mentor.id)) || prevAssignedArr.includes(aId)) {
         a.mentor = "Chưa gán";
+        a.mentor_id = null;
       }
     });
   }

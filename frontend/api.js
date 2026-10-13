@@ -494,6 +494,17 @@ async function apiSaveEvaluation(data) {
 }
 
 // 31. Mentors: GET /api/mentors & POST /api/mentors & PUT /api/mentors/:id & POST /api/mentors/assign (STT 29, 30, 31)
+async function apiGetAvailableMentorUsers(currentMentorId = '') {
+  try {
+    const q = currentMentorId ? `?current_mentor_id=${encodeURIComponent(currentMentorId)}` : '';
+    const res = await fetch(`${API_BASE_URL}/mentors/available-users${q}`, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetAvailableMentorUsers:', e);
+    return { success: false, data: [] };
+  }
+}
+
 async function apiGetMentors() {
   try {
     const res = await fetch(`${API_BASE_URL}/mentors`, { headers: getAuthHeaders() });

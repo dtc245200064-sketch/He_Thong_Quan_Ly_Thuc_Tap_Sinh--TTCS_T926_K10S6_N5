@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS interns (
     major VARCHAR(100) NOT NULL,
     dept VARCHAR(100) NOT NULL,
     mentor VARCHAR(100) DEFAULT NULL,
+    mentor_id INT NULL DEFAULT NULL,
     position VARCHAR(100) DEFAULT NULL,
     start_date DATE DEFAULT NULL,
     end_date DATE DEFAULT NULL,

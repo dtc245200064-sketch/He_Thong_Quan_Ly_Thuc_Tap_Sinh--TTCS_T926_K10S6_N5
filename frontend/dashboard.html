@@ -2041,6 +2041,23 @@
       </div>
       <form onsubmit="handleAddMentorSubmit(event)">
         <div class="modal-body">
+          <!-- Bổ sung: Tài khoản hệ thống (User vai trò Mentor do Admin tạo) -->
+          <div class="form-group mb-3">
+            <label for="mentorAddUserId" class="form-label fw-semibold form-label-custom">
+              Tài khoản hệ thống <span class="text-danger">*</span>
+            </label>
+            <select id="mentorAddUserId" class="form-control" title="Chọn tài khoản Mentor" aria-label="Chọn tài khoản Mentor" onchange="handleSelectMentorAccount(this.value)" required>
+              <option value="">-- Chọn tài khoản Mentor do Admin tạo --</option>
+            </select>
+            <div id="noMentorAccountAlert" class="alert alert-warning mt-2" style="display: none; padding: 10px 14px; font-size: 13.5px; border-radius: 8px; border: 1px solid #fde68a; background: #fffbeb; color: #92400e;">
+              <i class="fa-solid fa-triangle-exclamation me-1"></i>
+              <span>Chưa có tài khoản Mentor. Vui lòng liên hệ Admin để cấp tài khoản.</span>
+            </div>
+            <small class="text-muted" style="font-size: 12px; display: block; margin-top: 4px;">
+              <i class="fa-solid fa-circle-info me-1"></i>Chỉ hiển thị các tài khoản vai trò Mentor đang hoạt động và chưa liên kết với hồ sơ Mentor khác.
+            </small>
+          </div>
+
           <div class="form-row-2 mb-3">
             <div class="form-group">
               <label for="mentorAddName" class="form-label fw-semibold form-label-custom">Họ và tên <span class="text-danger">*</span></label>
@@ -2191,6 +2208,13 @@
         <input type="hidden" id="mentorEditId">
         <input type="hidden" id="mentorEditStatus" value="Đang hoạt động">
         <div class="modal-body">
+          <div class="form-group mb-3">
+            <label for="mentorEditUserId" class="form-label fw-semibold form-label-custom">Tài khoản hệ thống</label>
+            <select id="mentorEditUserId" class="form-control" title="Chọn tài khoản Mentor" aria-label="Chọn tài khoản Mentor">
+              <option value="">-- Chưa liên kết tài khoản --</option>
+            </select>
+          </div>
+
           <div class="form-row-2 mb-3">
             <div class="form-group">
               <label for="mentorEditName" class="form-label fw-semibold form-label-custom">Họ và tên <span class="text-danger">*</span></label>

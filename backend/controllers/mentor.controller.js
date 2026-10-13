@@ -1,5 +1,35 @@
 const db = require('../config/db');
 
+// GET /api/mentors/available-users: Lấy danh sách tài khoản User vai trò Mentor đang hoạt động & chưa liên kết hồ sơ
+exports.getAvailableMentorUsers = async (req, res) => {
+  try {
+    const { current_mentor_id } = req.query;
+    let query = `
+      SELECT u.id, u.name, u.email, u.phone, u.username, u.role, u.status, u.avatar
+      FROM users u 
+      WHERE (u.role = 'Mentor' OR u.role = 'MENTOR')
+        AND u.status = 'active'
+    `;
+    const params = [];
+    if (current_mentor_id) {
+      query += ` AND (u.id NOT IN (SELECT user_id FROM mentors WHERE user_id IS NOT NULL AND id != ?) OR u.id = (SELECT user_id FROM mentors WHERE id = ?))`;
+      params.push(current_mentor_id, current_mentor_id);
+    } else {
+      query += ` AND u.id NOT IN (SELECT user_id FROM mentors WHERE user_id IS NOT NULL)`;
+    }
+    query += ` ORDER BY u.name ASC`;
+
+    const [rows] = await db.query(query, params);
+    return res.status(200).json({
+      success: true,
+      data: rows
+    });
+  } catch (error) {
+    console.error('Lỗi lấy tài khoản mentor khả dụng:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi server khi lấy tài khoản mentor khả dụng', error: error.message });
+  }
+};
+
 // GET /api/mentors: Lấy danh sách mentor kèm số lượng TTS đang quản lý (STT 31)
 exports.getMentors = async (req, res) => {
   try {
@@ -16,7 +46,7 @@ exports.getMentors = async (req, res) => {
              COALESCE(GROUP_CONCAT(i.id SEPARATOR ','), '') as intern_ids,
              COALESCE(GROUP_CONCAT(i.name SEPARATOR ', '), '') as intern_names
       FROM mentors m
-      LEFT JOIN interns i ON i.mentor = m.name OR i.mentor LIKE CONCAT('%', m.name, '%')
+      LEFT JOIN interns i ON (i.mentor_id = m.id OR (i.mentor_id IS NULL AND (i.mentor = m.name OR i.mentor LIKE CONCAT('%', m.name, '%'))))
       ${whereClause}
       GROUP BY m.id
       ORDER BY m.id ASC
@@ -36,35 +66,61 @@ exports.getMentors = async (req, res) => {
 // POST /api/mentors: HR thêm mới mentor (STT 29)
 exports.createMentor = async (req, res) => {
   try {
-    const { name, email, phone, dept, position, max_interns } = req.body;
+    const { user_id, name, email, phone, dept, position, max_interns } = req.body;
 
-    if (!name || !email || !dept) {
-      return res.status(400).json({ success: false, message: 'Vui lòng điền họ tên, email và phòng ban của mentor!' });
+    let selectedUserId = user_id ? Number(user_id) : null;
+    let mentorName = (name || '').trim();
+    let mentorEmail = (email || '').trim();
+    let mentorPhone = (phone || '').trim();
+
+    if (selectedUserId) {
+      const [uRows] = await db.query(
+        "SELECT id, name, email, phone, role, status FROM users WHERE id = ? AND (role = 'Mentor' OR role = 'MENTOR') AND status = 'active'",
+        [selectedUserId]
+      );
+      if (uRows.length === 0) {
+        return res.status(400).json({ success: false, message: 'Tài khoản hệ thống không hợp lệ hoặc đã bị khóa!' });
+      }
+
+      const [dupRows] = await db.query("SELECT id, name FROM mentors WHERE user_id = ?", [selectedUserId]);
+      if (dupRows.length > 0) {
+        return res.status(400).json({ success: false, message: `Tài khoản này đã được liên kết với hồ sơ Mentor "${dupRows[0].name}"!` });
+      }
+
+      if (!mentorName) mentorName = uRows[0].name;
+      if (!mentorEmail) mentorEmail = uRows[0].email;
+      if (!mentorPhone && uRows[0].phone) mentorPhone = uRows[0].phone;
+    } else if (mentorEmail) {
+      const [uRows] = await db.query(
+        "SELECT id FROM users WHERE email = ? AND (role = 'Mentor' OR role = 'MENTOR') AND status = 'active'",
+        [mentorEmail]
+      );
+      if (uRows.length > 0) {
+        selectedUserId = uRows[0].id;
+      }
+    }
+
+    if (!mentorName || !mentorEmail || !dept) {
+      return res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ họ tên, email và phòng ban của mentor!' });
     }
 
     // Kiểm tra trùng email
-    const [existing] = await db.query('SELECT id FROM mentors WHERE email = ?', [email]);
+    const [existing] = await db.query('SELECT id FROM mentors WHERE email = ?', [mentorEmail]);
     if (existing.length > 0) {
-      return res.status(400).json({ success: false, message: 'Email mentor này đã tồn tại trong hệ thống!' });
-    }
-
-    // Tự động kiểm tra/tạo tài khoản user vai trò Mentor
-    let userId = null;
-    const [userRows] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
-    if (userRows.length > 0) {
-      userId = userRows[0].id;
+      return res.status(400).json({ success: false, message: 'Email mentor này đã tồn tại trong danh sách hồ sơ Mentor!' });
     }
 
     const [result] = await db.query(
       `INSERT INTO mentors (user_id, name, email, phone, dept, position, max_interns, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'active')`,
-      [userId, name, email, phone || '', dept, position || 'Senior Mentor', Number(max_interns) || 5]
+      [selectedUserId, mentorName, mentorEmail, mentorPhone, dept, position || 'Senior Mentor', Number(max_interns) || 5]
     );
 
     return res.status(201).json({
       success: true,
       message: 'Thêm mới mentor thành công!',
-      mentorId: result.insertId
+      mentorId: result.insertId,
+      userId: selectedUserId
     });
   } catch (error) {
     console.error('Lỗi thêm mentor:', error);
@@ -76,15 +132,26 @@ exports.createMentor = async (req, res) => {
 exports.updateMentor = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, dept, position, max_interns, status } = req.body;
+    const { user_id, name, email, phone, dept, position, max_interns, status } = req.body;
 
     const mentorStatus = (status === 'Tạm ngưng' || status === 'inactive') ? 'inactive' : 'active';
+    let selectedUserId = user_id ? Number(user_id) : null;
+
+    if (selectedUserId) {
+      const [dup] = await db.query('SELECT id, name FROM mentors WHERE user_id = ? AND id != ?', [selectedUserId, id]);
+      if (dup.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Tài khoản này đã được liên kết với hồ sơ Mentor khác ("${dup[0].name}")!`
+        });
+      }
+    }
 
     await db.query(
       `UPDATE mentors 
-       SET name = ?, email = ?, phone = ?, dept = ?, position = ?, max_interns = ?, status = ? 
+       SET user_id = COALESCE(?, user_id), name = ?, email = ?, phone = ?, dept = ?, position = ?, max_interns = ?, status = ? 
        WHERE id = ?`,
-      [name, email, phone || '', dept, position || 'Senior Mentor', Number(max_interns) || 5, mentorStatus, id]
+      [selectedUserId, name, email, phone || '', dept, position || 'Senior Mentor', Number(max_interns) || 5, mentorStatus, id]
     );
 
     return res.status(200).json({ success: true, message: 'Cập nhật thông tin mentor thành công!' });
@@ -106,26 +173,41 @@ exports.deleteMentor = async (req, res) => {
   }
 };
 
-// POST /api/mentors/assign: HR gán mentor cho thực tập sinh (STT 30)
+// POST /api/mentors/assign: HR gán mentor cho thực tập sinh (STT 30) - Lưu đúng ID hồ sơ Mentor
 exports.assignMentor = async (req, res) => {
   try {
     const { intern_id, mentor_name, mentor_id } = req.body;
 
-    if (!intern_id || (!mentor_name && !mentor_id)) {
-      return res.status(400).json({ success: false, message: 'Vui lòng chọn thực tập sinh và mentor cần gán!' });
+    if (!intern_id) {
+      return res.status(400).json({ success: false, message: 'Vui lòng chọn thực tập sinh cần gán!' });
     }
 
-    let resolvedMentorName = mentor_name;
-    if (!resolvedMentorName && mentor_id) {
-      const [mRows] = await db.query('SELECT name FROM mentors WHERE id = ?', [mentor_id]);
+    let resolvedMentorName = (mentor_name || '').trim();
+    let resolvedMentorId = mentor_id ? Number(mentor_id) : null;
+
+    if (resolvedMentorName === 'Chưa gán' || resolvedMentorName === 'Chưa phân công' || (!resolvedMentorId && !resolvedMentorName)) {
+      await db.query('UPDATE interns SET mentor = ?, mentor_id = NULL WHERE id = ?', ['Chưa gán', intern_id]);
+      return res.status(200).json({
+        success: true,
+        message: 'Đã hủy phân công mentor cho thực tập sinh!'
+      });
+    }
+
+    if (resolvedMentorId && !resolvedMentorName) {
+      const [mRows] = await db.query('SELECT name FROM mentors WHERE id = ?', [resolvedMentorId]);
       if (mRows.length > 0) resolvedMentorName = mRows[0].name;
+    } else if (resolvedMentorName && !resolvedMentorId) {
+      const [mRows] = await db.query('SELECT id FROM mentors WHERE name = ? OR name LIKE ? LIMIT 1', [resolvedMentorName, `%${resolvedMentorName}%`]);
+      if (mRows.length > 0) resolvedMentorId = mRows[0].id;
     }
 
-    await db.query('UPDATE interns SET mentor = ? WHERE id = ?', [resolvedMentorName, intern_id]);
+    await db.query('UPDATE interns SET mentor = ?, mentor_id = ? WHERE id = ?', [resolvedMentorName, resolvedMentorId, intern_id]);
 
     return res.status(200).json({
       success: true,
-      message: `Đã phân công mentor ${resolvedMentorName} cho thực tập sinh thành công!`
+      message: `Đã phân công mentor ${resolvedMentorName} (ID: ${resolvedMentorId}) cho thực tập sinh thành công!`,
+      mentor_id: resolvedMentorId,
+      mentor_name: resolvedMentorName
     });
   } catch (error) {
     console.error('Lỗi gán mentor:', error);

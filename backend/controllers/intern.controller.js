@@ -12,7 +12,7 @@ exports.getInterns = async (req, res) => {
 
     let query = `
       SELECT 
-        id, user_id, name, email, phone, school, major, dept, mentor, position,
+        id, user_id, name, email, phone, school, major, dept, mentor, mentor_id, position,
         start_date, end_date, gpa, status, reject_reason, reject_note,
         skills, bio, projects, birth_date, course, faculty,
         (SELECT COUNT(*) FROM documents WHERE documents.intern_id = interns.id) AS document_count,
