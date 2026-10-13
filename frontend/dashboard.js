@@ -3390,11 +3390,15 @@ function populateMentorDropdowns() {
 }
 
 function getAvailableMentors() {
+  const fromSavedMentors = getMentors().map(m => m.name);
+  if (fromSavedMentors && fromSavedMentors.length > 0) {
+    return [...new Set(fromSavedMentors)].filter(Boolean);
+  }
   if (systemMentors && systemMentors.length > 0) {
     return systemMentors.map(m => m.name);
   }
   const fromInterns = Array.isArray(internList) ? internList.map(i => i.mentor) : [];
-  const defaults = ["Nguyễn Anh Tuấn"];
+  const defaults = ["Nguyễn Anh Tuấn", "Trần Minh Hoàng", "Lê Thị Thu Lan", "Phạm Quốc Cường"];
   const all = [...fromInterns, ...defaults];
   return [...new Set(all)].filter(Boolean).filter(m => m !== 'Chưa phân công' && m !== '—');
 }
@@ -4729,7 +4733,40 @@ function updateMentorHeaderButton() {
   }
 }
 
-function initMentorsTab() {
+async function initMentorsTab() {
+  updateDeptDropdowns();
+  if (typeof apiGetMentors === 'function') {
+    try {
+      const res = await apiGetMentors();
+      if (res && res.success && Array.isArray(res.data)) {
+        const mapped = res.data.map(m => {
+          let assignedIds = [];
+          if (m.intern_ids) {
+            assignedIds = m.intern_ids.split(',').map(s => s.trim()).filter(Boolean);
+          } else if (Array.isArray(m.assignedInternIds)) {
+            assignedIds = m.assignedInternIds;
+          } else if (m.intern_names) {
+            assignedIds = m.intern_names.split(',').map(s => s.trim()).filter(Boolean);
+          }
+          return {
+            id: m.id,
+            name: m.name,
+            role: m.position || m.role || 'Mentor',
+            email: m.email,
+            phone: m.phone || '',
+            department: m.dept || m.department || 'Chưa gán',
+            maxInterns: Number(m.max_interns || m.maxInterns) || 5,
+            status: (m.status === 'active' || m.status === 'Đang hoạt động') ? 'Đang hoạt động' : 'Tạm ngưng',
+            avatar: m.avatar || '',
+            assignedInternIds: assignedIds
+          };
+        });
+        saveMentors(mapped);
+      }
+    } catch (e) {
+      console.warn('Lỗi đồng bộ mentors từ MySQL API:', e);
+    }
+  }
   updateDeptDropdowns();
   renderMentorStats();
   switchMentorSubTab(currentMentorSubTab || "mentors");
@@ -5007,7 +5044,7 @@ function openAddMentorModal() {
   openModal("addMentorModal");
 }
 
-function handleAddMentorSubmit(event) {
+async function handleAddMentorSubmit(event) {
   if (event) event.preventDefault();
   const name = (document.getElementById("mentorAddName")?.value || "").trim();
   const role = (document.getElementById("mentorAddRole")?.value || "").trim();
@@ -5022,9 +5059,28 @@ function handleAddMentorSubmit(event) {
     return;
   }
 
+  let dbId = "mentor_" + Date.now();
+  if (typeof apiCreateMentor === 'function') {
+    try {
+      const res = await apiCreateMentor({
+        name,
+        email,
+        phone,
+        dept: dept || "Phòng Phát triển Phần mềm",
+        position: role,
+        max_interns: isNaN(max) ? 5 : max
+      });
+      if (res && res.mentorId) {
+        dbId = res.mentorId;
+      }
+    } catch (e) {
+      console.warn('Lỗi gọi apiCreateMentor:', e);
+    }
+  }
+
   const mentors = getMentors();
   const newMentor = {
-    id: "mentor_" + Date.now(),
+    id: dbId,
     name,
     role,
     email,
@@ -5098,7 +5154,7 @@ function openEditMentorModal(mentorId) {
   openModal("editMentorModal");
 }
 
-function handleEditMentorSubmit(event) {
+async function handleEditMentorSubmit(event) {
   if (event) event.preventDefault();
   const id = document.getElementById("mentorEditId")?.value;
   let mentors = getMentors();
@@ -5116,23 +5172,40 @@ function handleEditMentorSubmit(event) {
   const max = parseInt(document.getElementById("mentorEditMax")?.value || "5", 10);
   const status = document.getElementById("mentorEditStatus")?.value || mentors[idx].status || "Đang hoạt động";
   const avatar = (document.getElementById("mentorEditAvatar")?.value || "").trim();
-    mentors[idx] = {
-      ...mentors[idx],
-      name,
-      role,
-      email,
-      phone,
-      department: dept,
-      maxInterns: isNaN(max) ? 5 : max,
-      status,
-      avatar
-    };
-    saveMentors(mentors);
-    closeModal("editMentorModal");
-    updateDeptDropdowns();
-    renderMentorStats();
-    renderMentorTable();
-    showToast("Lưu thay đổi thông tin Mentor thành công!", "success");
+
+  try {
+    if (typeof apiUpdateMentor === 'function' && !String(id).startsWith('m_')) {
+      await apiUpdateMentor(id, {
+        name,
+        email,
+        phone,
+        dept,
+        position: role || 'Senior Mentor',
+        max_interns: isNaN(max) ? 5 : max,
+        status: status === 'Đang hoạt động' ? 'active' : 'inactive'
+      });
+    }
+  } catch (err) {
+    console.warn("Lỗi đồng bộ MySQL update mentor:", err);
+  }
+
+  mentors[idx] = {
+    ...mentors[idx],
+    name,
+    role,
+    email,
+    phone,
+    department: dept,
+    maxInterns: isNaN(max) ? 5 : max,
+    status,
+    avatar
+  };
+  saveMentors(mentors);
+  closeModal("editMentorModal");
+  updateDeptDropdowns();
+  renderMentorStats();
+  renderMentorTable();
+  showToast("Lưu thay đổi thông tin Mentor thành công!", "success");
 }
 
 // --- MODAL: XÓA MENTOR ---
@@ -5148,10 +5221,18 @@ function openDeleteMentorModal(mentorId) {
   openModal("deleteMentorModal");
 }
 
-function confirmDeleteMentor() {
+async function confirmDeleteMentor() {
   if (!currentDeleteMentorId) return;
+  try {
+    if (typeof apiDeleteMentor === 'function' && !String(currentDeleteMentorId).startsWith('m_')) {
+      await apiDeleteMentor(currentDeleteMentorId);
+    }
+  } catch (err) {
+    console.warn("Lỗi đồng bộ MySQL delete mentor:", err);
+  }
+
   let mentors = getMentors();
-  mentors = mentors.filter(m => m.id !== currentDeleteMentorId);
+  mentors = mentors.filter(m => String(m.id) !== String(currentDeleteMentorId));
   saveMentors(mentors);
   currentDeleteMentorId = null;
   closeModal("deleteMentorModal");
@@ -5513,7 +5594,7 @@ function updateAssignCountDisplay() {
 }
 window.updateAssignCountDisplay = updateAssignCountDisplay;
 
-function confirmAssignInterns() {
+async function confirmAssignInterns() {
   if (!currentAssignMentorId) return;
   let mentors = getMentors();
   const mentor = mentors.find(m => String(m.id) === String(currentAssignMentorId));
@@ -5523,6 +5604,7 @@ function confirmAssignInterns() {
   }
 
   const assignedArr = Array.from(selectedAssignInternIds).map(String);
+  const prevAssignedArr = Array.isArray(mentor.assignedInternIds) ? mentor.assignedInternIds.map(String) : [];
   mentor.assignedInternIds = assignedArr;
 
   // Nếu TTS này trước đó đang được gán cho một Mentor khác, tự động gỡ khỏi Mentor cũ
@@ -5546,18 +5628,32 @@ function confirmAssignInterns() {
     }
   });
 
-  // Cập nhật mentor cho các TTS
-  internList.forEach(intern => {
+  // Cập nhật mentor cho các TTS và gọi API đồng bộ MySQL
+  for (const intern of internList) {
     const iId = String(intern.id);
     if (assignedArr.includes(iId)) {
       intern.mentor = mentor.name;
       if (mentor.department && mentor.department !== "Chưa gán") {
         intern.dept = mentor.department;
       }
-    } else if (intern.mentor === mentor.name) {
+      try {
+        if (typeof apiAssignMentor === 'function' && !iId.startsWith('app_') && !iId.startsWith('mock_')) {
+          await apiAssignMentor({ intern_id: intern.id, mentor_name: mentor.name, mentor_id: mentor.id });
+        }
+      } catch (err) {
+        console.warn("Lỗi sync assign mentor:", err);
+      }
+    } else if (intern.mentor === mentor.name || prevAssignedArr.includes(iId)) {
       intern.mentor = "Chưa gán";
+      try {
+        if (typeof apiAssignMentor === 'function' && !iId.startsWith('app_') && !iId.startsWith('mock_')) {
+          await apiAssignMentor({ intern_id: intern.id, mentor_name: "Chưa gán" });
+        }
+      } catch (err) {
+        console.warn("Lỗi sync unassign mentor:", err);
+      }
     }
-  });
+  }
 
   try {
     localStorage.setItem("codegym_saved_interns", JSON.stringify(internList));
@@ -5572,7 +5668,7 @@ function confirmAssignInterns() {
         if (mentor.department && mentor.department !== "Chưa gán") {
           a.dept = mentor.department;
         }
-      } else if (a.mentor === mentor.name) {
+      } else if (a.mentor === mentor.name || prevAssignedArr.includes(aId)) {
         a.mentor = "Chưa gán";
       }
     });

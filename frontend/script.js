@@ -254,7 +254,7 @@ async function handleLogin(event) {
     return;
   }
 
-  // 1. Thử gọi API Backend thực tế
+  // 1. Gọi API Backend xác thực tài khoản trực tiếp qua MySQL Database
   try {
     if (typeof apiLogin === 'function') {
       const response = await apiLogin(username, password);
@@ -309,90 +309,12 @@ async function handleLogin(event) {
       }
     }
   } catch (apiError) {
-    console.warn('Backend API chưa sẵn sàng hoặc mất kết nối, chuyển sang chế độ dự phòng:', apiError);
-  }
-
-  // 2. Chế độ dự phòng offline (Local Mock Fallback)
-  const lowerUser = username.toLowerCase();
-  if (lowerUser === 'hr@company.vn' || lowerUser.includes('hr')) {
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userRole', 'HR');
-    localStorage.setItem('user', JSON.stringify({
-      id: 2,
-      name: "Nguyễn Thị Hoa",
-      email: "hr@company.vn",
-      role: "HR Manager",
-      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
-    }));
-    showLoginSuccessModal({
-      name: "Nguyễn Thị Hoa",
-      role: "HR Manager",
-      targetUrl: 'dashboard.html'
-    });
+    console.error('Lỗi kết nối Backend API:', apiError);
+    showLoginError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại dịch vụ Backend & MySQL!');
     return;
   }
 
-  if (lowerUser === 'mentor@company.vn' || lowerUser.includes('mentor')) {
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userRole', 'Mentor');
-    localStorage.setItem('user', JSON.stringify({
-      id: 4,
-      mentor_id: 1,
-      name: "Nguyễn Anh Tuấn",
-      email: "mentor@company.vn",
-      role: "Mentor",
-      dept: "Phòng Phát triển Phần mềm",
-      position: "Tech Lead",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120"
-    }));
-    showLoginSuccessModal({
-      name: "Nguyễn Anh Tuấn",
-      role: "Người hướng dẫn (Mentor)",
-      targetUrl: 'mentor.html'
-    });
-    return;
-  }
-
-  if (lowerUser === 'intern@student.vn' || lowerUser.includes('intern') || lowerUser.includes('student')) {
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userRole', 'INTERN');
-    localStorage.setItem('user', JSON.stringify({
-      id: 5,
-      name: "Trần Minh Khoa",
-      email: "khoatran@student.vn",
-      role: "Thực tập sinh",
-      studentId: "20210088",
-      university: "Đại học Bách Khoa Hà Nội",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
-    }));
-    showLoginSuccessModal({
-      name: "Trần Minh Khoa",
-      role: "Thực tập sinh",
-      targetUrl: 'intern.html'
-    });
-    return;
-  }
-
-  if (lowerUser === 'admin@company.vn' || lowerUser.includes('admin')) {
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userRole', 'ADMIN');
-    localStorage.setItem('user', JSON.stringify({
-      id: 1,
-      name: "Lê Văn Admin",
-      email: "admin@company.vn",
-      role: "Admin",
-      avatar: "image/GiangVien.png"
-    }));
-    showLoginSuccessModal({
-      name: "Lê Văn Admin",
-      role: "Quản trị viên",
-      targetUrl: 'admin.html'
-    });
-    return;
-  }
-
-  const errorText = 'Email hoặc mật khẩu không chính xác!';
-  showLoginError(errorText);
+  showLoginError('Email hoặc mật khẩu không chính xác!');
 }
 
 // 6. HÀM HIỂN THỊ GIAO DIỆN HR DASHBOARD (ẨN LOGIN VIEW, HIỆN HR VIEW)

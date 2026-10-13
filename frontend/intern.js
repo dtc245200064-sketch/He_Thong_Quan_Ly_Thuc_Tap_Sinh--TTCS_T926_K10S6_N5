@@ -3740,7 +3740,10 @@ function saveProgressTasks(tasks) {
 async function initProgressTab() {
   if (typeof apiGetTasks === 'function') {
     try {
-      const res = await apiGetTasks();
+      const uStr = localStorage.getItem('user');
+      const u = uStr ? JSON.parse(uStr) : {};
+      const actualInternId = u.internId || u.id;
+      const res = await apiGetTasks(actualInternId ? { intern_id: actualInternId } : {});
       if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
         const mapped = res.data.map(t => ({
           id: String(t.id),
@@ -4022,7 +4025,10 @@ function saveWeeklyReports(reports) {
 async function initReportsTab() {
   if (typeof apiGetWeeklyReports === 'function') {
     try {
-      const res = await apiGetWeeklyReports();
+      const uStr = localStorage.getItem('user');
+      const u = uStr ? JSON.parse(uStr) : {};
+      const actualInternId = u.internId || u.id;
+      const res = await apiGetWeeklyReports(actualInternId ? { intern_id: actualInternId } : {});
       if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
         const mapped = res.data.map(r => ({
           id: String(r.id),
@@ -4351,7 +4357,12 @@ let currentNotifFilter = 'all';
 
 async function initNotificationsTab() {
   try {
-    const res = await apiGetInAppNotifications({ role: 'Thực tập sinh' });
+    const uStr = localStorage.getItem('user');
+    const u = uStr ? JSON.parse(uStr) : {};
+    const userId = u.id || null;
+    const params = { role: 'Thực tập sinh' };
+    if (userId) params.user_id = userId;
+    const res = await apiGetInAppNotifications(params);
     if (res && res.success && Array.isArray(res.data)) {
       internPortalNotifsCache = res.data.map(n => ({
         id: n.id,
@@ -4455,7 +4466,11 @@ async function markAllNotificationsAsRead() {
 
   if (typeof apiMarkAllNotificationsRead === 'function') {
     try {
-      await apiMarkAllNotificationsRead({ role: 'Thực tập sinh' });
+      const uStr = localStorage.getItem('user');
+      const u = uStr ? JSON.parse(uStr) : {};
+      const payload = { role: 'Thực tập sinh' };
+      if (u && u.id) payload.user_id = u.id;
+      await apiMarkAllNotificationsRead(payload);
     } catch (e) {
       console.warn('Lỗi cập nhật CSDL đọc hết thông báo:', e);
     }

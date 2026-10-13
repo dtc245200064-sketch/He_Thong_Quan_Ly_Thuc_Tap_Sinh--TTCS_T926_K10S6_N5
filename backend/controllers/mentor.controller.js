@@ -3,17 +3,25 @@ const db = require('../config/db');
 // GET /api/mentors: Lấy danh sách mentor kèm số lượng TTS đang quản lý (STT 31)
 exports.getMentors = async (req, res) => {
   try {
+    const { status } = req.query;
+    let whereClause = '';
+    const params = [];
+    if (status) {
+      whereClause = 'WHERE m.status = ?';
+      params.push(status);
+    }
     const query = `
       SELECT m.*, 
              COUNT(i.id) as current_interns,
+             COALESCE(GROUP_CONCAT(i.id SEPARATOR ','), '') as intern_ids,
              COALESCE(GROUP_CONCAT(i.name SEPARATOR ', '), '') as intern_names
       FROM mentors m
       LEFT JOIN interns i ON i.mentor = m.name OR i.mentor LIKE CONCAT('%', m.name, '%')
-      WHERE m.status = 'active'
+      ${whereClause}
       GROUP BY m.id
       ORDER BY m.id ASC
     `;
-    const [rows] = await db.query(query);
+    const [rows] = await db.query(query, params);
 
     return res.status(200).json({
       success: true,
@@ -68,13 +76,15 @@ exports.createMentor = async (req, res) => {
 exports.updateMentor = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, dept, position, max_interns } = req.body;
+    const { name, email, phone, dept, position, max_interns, status } = req.body;
+
+    const mentorStatus = (status === 'Tạm ngưng' || status === 'inactive') ? 'inactive' : 'active';
 
     await db.query(
       `UPDATE mentors 
-       SET name = ?, email = ?, phone = ?, dept = ?, position = ?, max_interns = ? 
+       SET name = ?, email = ?, phone = ?, dept = ?, position = ?, max_interns = ?, status = ? 
        WHERE id = ?`,
-      [name, email, phone || '', dept, position || 'Senior Mentor', Number(max_interns) || 5, id]
+      [name, email, phone || '', dept, position || 'Senior Mentor', Number(max_interns) || 5, mentorStatus, id]
     );
 
     return res.status(200).json({ success: true, message: 'Cập nhật thông tin mentor thành công!' });
