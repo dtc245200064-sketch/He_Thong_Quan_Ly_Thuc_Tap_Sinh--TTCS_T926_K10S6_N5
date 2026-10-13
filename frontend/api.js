@@ -356,7 +356,7 @@ async function apiConfirmContract(id, status, reason = '') {
   return await res.json();
 }
 
-// 26. Lấy lịch sử email hệ thống đã gửi (User Story 8): GET /api/interns/emails/history
+// 26. Lấy lịch sử email hệ thống đã gửi: GET /api/interns/emails/history
 async function apiGetSystemEmails(email = '') {
   try {
     const query = email ? `?email=${encodeURIComponent(email)}` : '';
@@ -368,6 +368,277 @@ async function apiGetSystemEmails(email = '') {
     console.warn('Lỗi gọi apiGetSystemEmails:', e);
     return { success: false, data: [] };
   }
+}
+
+// ==============================================================================
+// CÁC HÀM API CHO SPRINT 3 (CÔNG VIỆC, BÁO CÁO, ĐÁNH GIÁ, MENTOR, THỐNG KÊ & TÍCH HỢP)
+// ==============================================================================
+
+// 27. Tasks: GET /api/tasks & POST /api/tasks & PUT /api/tasks/:id/progress
+async function apiGetTasks(params = {}) {
+  try {
+    const q = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE_URL}/tasks${q ? '?' + q : ''}`, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetTasks:', e);
+    return { success: false, data: [] };
+  }
+}
+
+async function apiCreateTask(data) {
+  const res = await fetch(`${API_BASE_URL}/tasks`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function apiUpdateTaskProgress(id, data) {
+  const res = await fetch(`${API_BASE_URL}/tasks/${id}/progress`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function apiDeleteTask(id) {
+  const res = await fetch(`${API_BASE_URL}/tasks/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  return await res.json();
+}
+
+// 28. Weekly Reports: GET /api/reports/weekly & POST /api/reports/weekly & PUT /api/reports/weekly/:id/feedback
+async function apiGetWeeklyReports(params = {}) {
+  try {
+    const q = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE_URL}/reports/weekly${q ? '?' + q : ''}`, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetWeeklyReports:', e);
+    return { success: false, data: [] };
+  }
+}
+
+async function apiSubmitWeeklyReport(data) {
+  const res = await fetch(`${API_BASE_URL}/reports/weekly`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function apiFeedbackWeeklyReport(id, data) {
+  const res = await fetch(`${API_BASE_URL}/reports/weekly/${id}/feedback`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+// 29. Statistics: Thống kê trường/ngành & tỷ lệ hoàn thành (STT 32, 33)
+async function apiGetStatisticsDemographics() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/reports/statistics/demographics`, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetStatisticsDemographics:', e);
+    return { success: false, data: {} };
+  }
+}
+
+async function apiGetStatisticsCompletion() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/reports/statistics/completion`, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetStatisticsCompletion:', e);
+    return { success: false, data: {} };
+  }
+}
+
+// 30. Evaluations: GET /api/evaluations & POST /api/evaluations (STT 19, 20)
+async function apiGetAllEvaluations() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/evaluations`, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetAllEvaluations:', e);
+    return { success: false, data: [] };
+  }
+}
+
+async function apiGetEvaluationByIntern(internId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/evaluations/intern/${internId}`, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetEvaluationByIntern:', e);
+    return { success: false, data: null };
+  }
+}
+
+async function apiSaveEvaluation(data) {
+  const res = await fetch(`${API_BASE_URL}/evaluations`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+// 31. Mentors: GET /api/mentors & POST /api/mentors & PUT /api/mentors/:id & POST /api/mentors/assign (STT 29, 30, 31)
+async function apiGetMentors() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/mentors`, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetMentors:', e);
+    return { success: false, data: [] };
+  }
+}
+
+async function apiCreateMentor(data) {
+  const res = await fetch(`${API_BASE_URL}/mentors`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function apiUpdateMentor(id, data) {
+  const res = await fetch(`${API_BASE_URL}/mentors/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function apiDeleteMentor(id) {
+  const res = await fetch(`${API_BASE_URL}/mentors/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  return await res.json();
+}
+
+async function apiAssignMentor(data) {
+  const res = await fetch(`${API_BASE_URL}/mentors/assign`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+// 32. In-App Notifications & Meetings: GET & PUT & POST (STT 35, 36)
+async function apiGetInAppNotifications(params = {}) {
+  try {
+    const q = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE_URL}/notifications${q ? '?' + q : ''}`, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetInAppNotifications:', e);
+    return { success: false, data: [] };
+  }
+}
+
+async function apiMarkNotificationRead(id) {
+  const res = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
+    method: 'PUT',
+    headers: getAuthHeaders()
+  });
+  return await res.json();
+}
+
+async function apiMarkAllNotificationsRead(data = {}) {
+  const res = await fetch(`${API_BASE_URL}/notifications/read-all`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function apiDeleteNotification(id) {
+  const res = await fetch(`${API_BASE_URL}/notifications/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  return await res.json();
+}
+
+async function apiCreateInAppNotification(data) {
+  const res = await fetch(`${API_BASE_URL}/notifications`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function apiCreateMeeting(data) {
+  const res = await fetch(`${API_BASE_URL}/notifications/meetings`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function apiGetMeetings() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/notifications/meetings`, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetMeetings:', e);
+    return { success: false, data: [] };
+  }
+}
+
+// 33. Integrations: GET & PUT & SYNC & CHECK-IN (STT 37, 38)
+async function apiGetIntegrations() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/integrations`, { headers: getAuthHeaders() });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiGetIntegrations:', e);
+    return { success: false, data: [] };
+  }
+}
+
+async function apiUpdateIntegration(type, data) {
+  const res = await fetch(`${API_BASE_URL}/integrations/${type}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function apiSyncHRM() {
+  const res = await fetch(`${API_BASE_URL}/integrations/hrm/sync`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  });
+  return await res.json();
+}
+
+async function apiSimulateQRCheckIn(data) {
+  const res = await fetch(`${API_BASE_URL}/integrations/qr-attendance/checkin`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
 }
 
 

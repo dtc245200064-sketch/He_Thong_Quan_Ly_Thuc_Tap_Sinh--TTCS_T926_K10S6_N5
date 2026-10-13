@@ -92,6 +92,24 @@
           <i class="fa-regular fa-calendar-days"></i>
           <span>Chương trình thực tập</span>
         </a>
+
+        <!-- Mentor & Phòng ban -->
+        <a href="javascript:void(0)" class="menu-item" id="navMentors" onclick="switchTab('mentors')">
+          <i class="fa-solid fa-briefcase"></i>
+          <span>Mentor & Phòng ban</span>
+        </a>
+
+        <!-- Báo cáo & Thống kê -->
+        <a href="javascript:void(0)" class="menu-item" id="navReports" onclick="switchTab('reports')">
+          <i class="fa-solid fa-chart-column"></i>
+          <span>Báo cáo & Thống kê</span>
+        </a>
+
+        <!-- Công việc & Đánh giá (Sprint 3) -->
+        <a href="javascript:void(0)" class="menu-item" id="navTasks" onclick="switchTab('tasks')">
+          <i class="fa-solid fa-list-check"></i>
+          <span>Công việc & Đánh giá</span>
+        </a>
       </nav>
 
       <!-- Thông tin cá nhân cuối sidebar -->
@@ -534,11 +552,470 @@
 
             <!-- Box 2: Lịch trình dự kiến -->
             <div class="program-schedule-card">
-              <h3 class="program-schedule-title">Lịch trình dự kiến</h3>
+              <div class="program-schedule-header">
+                <div>
+                  <h3 class="program-schedule-title">Lịch trình dự kiến</h3>
+                  <div class="program-schedule-subtitle" id="programScheduleSubtitle">0 hoạt động</div>
+                </div>
+                <button type="button" class="btn-add-schedule-trigger" onclick="openAddScheduleModal()">
+                  <i class="fa-solid fa-plus me-1"></i>
+                  <span>Thêm</span>
+                </button>
+              </div>
               <div class="program-schedule-timeline" id="programScheduleTimeline">
                 <!-- Render lịch trình từ dashboard.js -->
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 6. TAB MENTOR & PHÒNG BAN ==================== -->
+      <section id="mentorsTab" class="tab-pane">
+        <header class="content-header">
+          <div>
+            <h1 class="page-title">Mentor & Phòng ban</h1>
+            <p class="page-subtitle">Quản lý nguồn lực hướng dẫn và cơ cấu tiếp nhận thực tập sinh</p>
+          </div>
+          <button type="button" class="btn-primary" id="btnHeaderMentorAction" onclick="handleMentorHeaderAction()">
+            <i class="fa-solid fa-plus"></i>
+            <span id="btnHeaderMentorActionText">Thêm Mentor</span>
+          </button>
+        </header>
+
+        <!-- 3 Thẻ thống kê nguồn lực hướng dẫn (Chuẩn Screenshot 1) -->
+        <div class="mentor-stats-grid mb-4">
+          <!-- Thẻ 1: Mentor đang hoạt động -->
+          <div class="mentor-stat-card">
+            <div class="mentor-stat-info">
+              <span class="mentor-stat-caption">MENTOR ĐANG HOẠT ĐỘNG</span>
+              <div class="mentor-stat-number" id="statActiveMentors">0</div>
+              <span class="mentor-stat-sub"><span id="statInactiveMentors">0</span> đang tạm ngưng</span>
+            </div>
+            <div class="mentor-stat-icon-wrap icon-wrap-blue">
+              <i class="fa-solid fa-user-group"></i>
+            </div>
+          </div>
+
+          <!-- Thẻ 2: Phòng ban hoạt động -->
+          <div class="mentor-stat-card">
+            <div class="mentor-stat-info">
+              <span class="mentor-stat-caption">PHÒNG BAN HOẠT ĐỘNG</span>
+              <div class="mentor-stat-number" id="statActiveDepts">0</div>
+              <span class="mentor-stat-sub"><span id="statTotalDepts">0</span> phòng ban được thiết lập</span>
+            </div>
+            <div class="mentor-stat-icon-wrap icon-wrap-cyan">
+              <i class="fa-solid fa-building"></i>
+            </div>
+          </div>
+
+          <!-- Thẻ 3: Mức sử dụng năng lực -->
+          <div class="mentor-stat-card">
+            <div class="mentor-stat-info">
+              <span class="mentor-stat-caption">MỨC SỬ DỤNG NĂNG LỰC</span>
+              <div class="mentor-stat-number" id="statCapacityPercent">0%</div>
+              <span class="mentor-stat-sub"><span id="statCapacityAssigned">0</span>/<span id="statCapacityTotal">0</span> vị trí hướng dẫn</span>
+            </div>
+            <div class="mentor-stat-icon-wrap icon-wrap-green">
+              <i class="fa-solid fa-arrow-trend-up"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Khung chính danh sách & phòng ban -->
+        <div class="overview-card p-4">
+          <!-- Sub-Tabs: Danh sách Mentor & Phòng ban -->
+          <div class="mentor-sub-nav">
+            <button type="button" class="mentor-nav-tab active" id="btnSubTabMentors" onclick="switchMentorSubTab('mentors')">
+              <span>Danh sách Mentor</span>
+              <span class="mentor-tab-pill" id="badgeMentorCount">0</span>
+            </button>
+            <button type="button" class="mentor-nav-tab" id="btnSubTabDepts" onclick="switchMentorSubTab('departments')">
+              <span>Phòng ban</span>
+              <span class="mentor-tab-pill" id="badgeDeptCount">0</span>
+            </button>
+          </div>
+
+          <!-- SUB-VIEW 1: DANH SÁCH MENTOR -->
+          <div id="mentorSubTabView">
+            <!-- Bộ lọc & Tìm kiếm (Chuẩn Screenshot) -->
+            <div class="mentor-compact-filter-row">
+              <div class="mentor-filter-dept-wrap">
+                <i class="fa-solid fa-magnifying-glass mentor-dept-search-icon"></i>
+                <select id="filterMentorDept" class="mentor-compact-select dept-select" title="Lọc theo phòng ban" aria-label="Lọc theo phòng ban" onchange="renderMentorTable()">
+                  <option value="">Tất cả phòng ban</option>
+                </select>
+              </div>
+              <div class="mentor-filter-search-wrap">
+                <input type="text" id="searchMentorKeyword" class="mentor-compact-search-input" placeholder="Tìm theo tên, email, chức danh..." oninput="renderMentorTable()">
+              </div>
+              <div class="mentor-filter-status-wrap">
+                <select id="filterMentorStatus" class="mentor-compact-select status-select" title="Lọc theo trạng thái hoạt động" aria-label="Lọc theo trạng thái hoạt động" onchange="renderMentorTable()">
+                  <option value="">Tất cả trạng thái</option>
+                  <option value="Đang hoạt động">Đang hoạt động</option>
+                  <option value="Tạm ngưng">Tạm ngưng</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Bảng danh sách Mentor -->
+            <div class="mentor-table-wrapper table-responsive">
+              <table class="table modern-table" id="mentorMainTable">
+                <thead>
+                  <tr>
+                    <th style="width: 30%; text-align: left;">MENTOR</th>
+                    <th style="width: 18%; text-align: left;">PHÒNG BAN</th>
+                    <th style="width: 24%; text-align: left;">TẢI HƯỚNG DẪN</th>
+                    <th style="width: 18%; text-align: left;">TRẠNG THÁI</th>
+                    <th style="width: 10%; text-align: right;">THAO TÁC</th>
+                  </tr>
+                </thead>
+                <tbody id="mentorTableBody">
+                  <!-- Render động bằng renderMentorTable() -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Empty State Mentor (Mặc định để trống) -->
+            <div id="mentorEmptyState" class="empty-state-wrap text-center py-5 d-none" style="display: none;">
+              <div class="empty-icon-circle empty-icon-blue mb-3">
+                <i class="fa-solid fa-user-tie"></i>
+              </div>
+              <h4 class="fw-bold text-dark mb-1 empty-state-title">Chưa có Mentor nào trong hệ thống</h4>
+              <p class="text-muted mb-3 empty-state-subtext">Dữ liệu hiện đang để trống. Nhấn nút <strong>"+ Thêm Mentor"</strong> để bắt đầu thiết lập nguồn lực hướng dẫn.</p>
+              <button type="button" class="btn-primary" onclick="openAddMentorModal()">
+                <i class="fa-solid fa-plus me-1"></i> Thêm Mentor
+              </button>
+            </div>
+          </div>
+
+          <!-- SUB-VIEW 2: PHÒNG BAN -->
+          <div id="deptSubTabView" class="d-none" style="display: none;">
+            <div class="dept-header-bar">
+              <div>
+                <h4 class="dept-header-title">Cơ cấu phòng ban tiếp nhận</h4>
+                <p class="dept-header-sub">Quản lý các phòng ban tiếp nhận và phân bổ năng lực hướng dẫn</p>
+              </div>
+              <button type="button" class="btn-add-dept-compact" onclick="openAddDeptModal()">
+                <i class="fa-solid fa-plus me-1"></i> Thêm phòng ban
+              </button>
+            </div>
+
+            <div class="dept-search-box-compact">
+              <i class="fa-solid fa-magnifying-glass dept-search-icon-compact"></i>
+              <input type="text" id="searchDeptKeyword" class="dept-search-input-compact" placeholder="Tìm theo tên phòng ban, mã phòng ban, mô tả..." oninput="renderDeptTable()">
+            </div>
+
+            <div class="mentor-table-wrapper table-responsive">
+              <table class="table modern-table" id="deptMainTable">
+                <thead>
+                  <tr>
+                    <th style="width: 16%; text-align: left;">MÃ PHÒNG BAN</th>
+                    <th style="width: 36%; text-align: left;">TÊN PHÒNG BAN</th>
+                    <th style="width: 20%; text-align: left;">NGUỒN LỰC MENTOR</th>
+                    <th style="width: 18%; text-align: left;">TTS TIẾP NHẬN</th>
+                    <th style="width: 10%; text-align: right;">THAO TÁC</th>
+                  </tr>
+                </thead>
+                <tbody id="deptTableBody">
+                  <!-- Render động bằng renderDeptTable() -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Empty State Phòng ban (Mặc định để trống) -->
+            <div id="deptEmptyState" class="empty-state-wrap text-center py-5 d-none" style="display: none;">
+              <div class="empty-icon-circle empty-icon-cyan mb-3">
+                <i class="fa-solid fa-building"></i>
+              </div>
+              <h4 class="fw-bold text-dark mb-1 empty-state-title">Chưa có phòng ban nào được thiết lập</h4>
+              <p class="text-muted mb-3 empty-state-subtext">Dữ liệu hiện đang để trống. Nhấn nút <strong>"+ Thêm phòng ban"</strong> để tạo phòng ban đầu tiên.</p>
+              <button type="button" class="btn-primary" onclick="openAddDeptModal()">
+                <i class="fa-solid fa-plus me-1"></i> Thêm phòng ban
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 7. TAB BÁO CÁO & THỐNG KÊ ==================== -->
+      <section id="reportsTab" class="tab-pane">
+        <!-- Header chính -->
+        <header class="content-header reports-header">
+          <div>
+            <h1 class="page-title">Báo cáo & Thống kê</h1>
+            <p class="page-subtitle">Phân tích dữ liệu thực tập theo nguồn trường và chất lượng chương trình</p>
+          </div>
+          <div class="report-header-actions">
+            <button type="button" class="btn-report-export-excel" id="btnExportReportExcel" onclick="exportReportExcel()">
+              <i class="fa-regular fa-file-excel text-success me-1"></i> Xuất Excel
+            </button>
+            <button type="button" class="btn-report-export-pdf" id="btnExportReportPdf" onclick="exportReportPDF()">
+              <i class="fa-regular fa-file-pdf me-1"></i> Xuất PDF
+            </button>
+          </div>
+        </header>
+
+        <!-- Khung 1: Bộ lọc báo cáo -->
+        <div class="report-filter-card">
+          <div class="report-filter-header">
+            <h3 class="report-filter-title">Bộ lọc báo cáo</h3>
+            <p class="report-filter-subtitle">Lọc số liệu thống kê và danh sách kết quả cuối kỳ.</p>
+          </div>
+          <div class="report-filter-grid">
+            <div class="filter-col">
+              <select id="reportFilterProgram" class="report-select" aria-label="Tất cả chương trình">
+                <option value="">Tất cả chương trình</option>
+              </select>
+            </div>
+            <div class="filter-col">
+              <select id="reportFilterDept" class="report-select" aria-label="Tất cả phòng ban">
+                <option value="">Tất cả phòng ban</option>
+              </select>
+            </div>
+            <div class="filter-col">
+              <select id="reportFilterUniv" class="report-select" aria-label="Tất cả trường đại học">
+                <option value="">Tất cả trường đại học</option>
+              </select>
+            </div>
+            <div class="filter-col date-col">
+              <label class="report-filter-label" for="reportFilterStartDate">Bắt đầu từ</label>
+              <input type="date" id="reportFilterStartDate" class="report-date-input" placeholder="dd/mm/yyyy" title="Bắt đầu từ">
+            </div>
+            <div class="filter-col date-col">
+              <label class="report-filter-label" for="reportFilterEndDate">Kết thúc đến</label>
+              <input type="date" id="reportFilterEndDate" class="report-date-input" placeholder="dd/mm/yyyy" title="Kết thúc đến">
+            </div>
+          </div>
+          <div class="report-filter-actions">
+            <button type="button" class="btn-report-reset" onclick="resetReportFilters()">Đặt lại</button>
+            <button type="button" class="btn-report-apply" onclick="applyReportFilters()">Áp dụng</button>
+          </div>
+        </div>
+
+        <!-- Khung 2: 4 Thẻ số liệu tổng quan -->
+        <div class="report-top-stats-grid">
+          <div class="report-stat-card">
+            <div class="report-stat-label">Tổng đã tiếp nhận</div>
+            <div class="report-stat-val-row">
+              <span class="report-stat-number blue" id="reportStatAccepted">0</span>
+              <span class="report-stat-unit">người</span>
+            </div>
+          </div>
+          <div class="report-stat-card">
+            <div class="report-stat-label">Tỷ lệ hoàn thành</div>
+            <div class="report-stat-val-row">
+              <span class="report-stat-number green" id="reportStatCompletionRate">0%</span>
+            </div>
+          </div>
+          <div class="report-stat-card">
+            <div class="report-stat-label">Đã có đánh giá cuối kỳ</div>
+            <div class="report-stat-val-row">
+              <span class="report-stat-number teal" id="reportStatEvaluated">0</span>
+              <span class="report-stat-unit">người</span>
+            </div>
+          </div>
+          <div class="report-stat-card">
+            <div class="report-stat-label">Điểm đánh giá trung bình</div>
+            <div class="report-stat-val-row">
+              <span class="report-stat-number yellow" id="reportStatAvgScore">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Khung 3: 2 Cột Biểu đồ (Thực tập sinh theo quý & Phân bổ theo trường đại học) -->
+        <div class="report-charts-grid">
+          <!-- Cột Trái: Thực tập sinh theo quý -->
+          <div class="report-chart-card">
+            <div class="report-chart-header">
+              <h3 class="report-chart-title">Thực tập sinh theo quý</h3>
+            </div>
+            <div class="report-quarter-chart-container" id="reportQuarterChartContainer">
+              <!-- Render động bằng JS -->
+            </div>
+            <div class="report-chart-legend">
+              <span class="legend-item"><span class="legend-dot blue"></span> Tiếp nhận</span>
+              <span class="legend-item"><span class="legend-dot green"></span> Hoàn thành</span>
+            </div>
+          </div>
+
+          <!-- Cột Phải: Phân bổ theo trường đại học -->
+          <div class="report-chart-card">
+            <div class="report-chart-header">
+              <h3 class="report-chart-title">Phân bổ theo trường đại học</h3>
+            </div>
+            <div class="report-university-list" id="reportUniversityList">
+              <!-- Render động danh sách trường bằng JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Khung 4: Báo cáo kết quả thực tập cuối kỳ -->
+        <div class="report-evaluation-section">
+          <div class="report-section-header">
+            <h2 class="report-section-title">Báo cáo kết quả thực tập cuối kỳ</h2>
+            <p class="report-section-subtitle">Số liệu được tổng hợp từ hồ sơ, chấm công và đánh giá đã có trong hệ thống.</p>
+          </div>
+          <div class="report-bottom-stats-grid">
+            <div class="report-bottom-stat-card">
+              <div class="report-bottom-stat-number blue" id="reportBottomTotal">0</div>
+              <div class="report-bottom-stat-label">Tổng số thực tập sinh</div>
+            </div>
+            <div class="report-bottom-stat-card">
+              <div class="report-bottom-stat-number green" id="reportBottomCompleted">0</div>
+              <div class="report-bottom-stat-label">Đã hoàn thành</div>
+            </div>
+            <div class="report-bottom-stat-card">
+              <div class="report-bottom-stat-number blue" id="reportBottomActive">0</div>
+              <div class="report-bottom-stat-label">Đang thực tập</div>
+            </div>
+            <div class="report-bottom-stat-card">
+              <div class="report-bottom-stat-number orange" id="reportBottomIncomplete">0</div>
+              <div class="report-bottom-stat-label">Chưa hoàn thành</div>
+            </div>
+            <div class="report-bottom-stat-card">
+              <div class="report-bottom-stat-number purple" id="reportBottomEvaluated">0</div>
+              <div class="report-bottom-stat-label">Đã có đánh giá cuối kỳ</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Khung 5: Danh sách kết quả chi tiết -->
+        <div class="report-detail-card">
+          <div class="report-table-header">
+            <h3 class="report-table-title">Danh sách kết quả chi tiết</h3>
+            <p class="report-table-subtitle">Chỉ hiển thị điểm và xếp loại khi đã có đánh giá cuối kỳ.</p>
+          </div>
+          <div class="report-table-responsive">
+            <table class="report-data-table">
+              <thead>
+                <tr>
+                  <th>MÃ TTS</th>
+                  <th>HỌ TÊN</th>
+                  <th>TRƯỜNG &amp; NGÀNH</th>
+                  <th>PHÒNG BAN</th>
+                  <th>CHƯƠNG TRÌNH</th>
+                  <th>MENTOR PHỤ TRÁCH</th>
+                  <th>CHUYÊN CẦN</th>
+                  <th>ĐIỂM ĐÁNH GIÁ</th>
+                  <th>XẾP LOẠI</th>
+                </tr>
+              </thead>
+              <tbody id="reportTableBody">
+                <!-- Render động bởi renderReportTable -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 8. TAB CÔNG VIỆC & ĐÁNH GIÁ (SPRINT 3: STT 15, 18, 19, 20, 35) ==================== -->
+      <section id="tasksTab" class="tab-pane">
+        <header class="content-header">
+          <div>
+            <h1 class="page-title">Công việc & Đánh giá</h1>
+            <p class="page-subtitle">Giao nhiệm vụ, phản hồi báo cáo tuần và đánh giá kết quả thực tập sinh</p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn-primary" onclick="openCreateTaskModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-plus"></i>
+              <span>Giao nhiệm vụ</span>
+            </button>
+            <button type="button" class="btn-primary" onclick="openCreateMeetingModal()" style="display: inline-flex; align-items: center; gap: 6px; background: #0284c7; border-color: #0284c7;">
+              <i class="fa-regular fa-calendar-plus"></i>
+              <span>Lịch họp & Gửi email</span>
+            </button>
+            <button type="button" class="btn-primary" onclick="openEvaluationModal()" style="display: inline-flex; align-items: center; gap: 6px; background: #16a34a; border-color: #16a34a;">
+              <i class="fa-solid fa-award"></i>
+              <span>Đánh giá TTS</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Thanh chuyển tab con: Nhiệm vụ | Báo cáo tuần | Đánh giá cuối kỳ -->
+        <div style="display: flex; gap: 12px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
+          <button type="button" class="btn-subtab active" id="btnTaskSubTabTasks" onclick="switchTaskSubTab('tasks')" style="padding: 8px 16px; border-radius: 8px; border: none; background: #0d6efd; color: #fff; font-weight: 600; cursor: pointer;">
+            <i class="fa-solid fa-list-check me-1"></i> Danh sách Nhiệm vụ
+          </button>
+          <button type="button" class="btn-subtab" id="btnTaskSubTabReports" onclick="switchTaskSubTab('reports')" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-weight: 600; cursor: pointer;">
+            <i class="fa-regular fa-file-lines me-1"></i> Báo cáo tuần & Phản hồi
+          </button>
+          <button type="button" class="btn-subtab" id="btnTaskSubTabEvals" onclick="switchTaskSubTab('evals')" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-weight: 600; cursor: pointer;">
+            <i class="fa-solid fa-chart-line me-1"></i> Tổng hợp Đánh giá cuối kỳ
+          </button>
+        </div>
+
+        <!-- VIEW 1: DANH SÁCH NHIỆM VỤ (STT 15, 16) -->
+        <div id="viewTaskSubTasks" style="display: block;">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>TIÊU ĐỀ NHIỆM VỤ</th>
+                  <th>THỰC TẬP SINH</th>
+                  <th>HẠN HOÀN THÀNH</th>
+                  <th>ĐỘ ƯU TIÊN</th>
+                  <th>TIẾN ĐỘ</th>
+                  <th>TRẠNG THÁI</th>
+                  <th style="text-align: right;">THAO TÁC</th>
+                </tr>
+              </thead>
+              <tbody id="tasksTableBody">
+                <!-- Render động từ dashboard.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- VIEW 2: BÁO CÁO TUẦN & PHẢN HỒI (STT 17, 18) -->
+        <div id="viewTaskSubReports" style="display: none;">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>TUẦN</th>
+                  <th>THỰC TẬP SINH</th>
+                  <th>CÔNG VIỆC HOÀN THÀNH</th>
+                  <th>KẾ HOẠCH TIẾP THEO</th>
+                  <th>TRẠNG THÁI</th>
+                  <th>ĐIỂM TUẦN</th>
+                  <th style="text-align: right;">THAO TÁC</th>
+                </tr>
+              </thead>
+              <tbody id="weeklyReportsTableBody">
+                <!-- Render động từ dashboard.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- VIEW 3: TỔNG HỢP ĐÁNH GIÁ CUỐI KỲ (STT 19, 20) -->
+        <div id="viewTaskSubEvals" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div style="font-size: 14px; color: #64748b;" id="evalSummaryText">Đang tải bảng điểm tổng kết...</div>
+            <button type="button" class="btn-secondary" onclick="exportEvaluationReport()" style="display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-download"></i>
+              <span>Xuất báo cáo đánh giá cuối kỳ</span>
+            </button>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>THỰC TẬP SINH</th>
+                  <th>TRƯỜNG / NGÀNH</th>
+                  <th>CHUYÊN MÔN (40%)</th>
+                  <th>KỶ LUẬT (30%)</th>
+                  <th>THÁI ĐỘ (30%)</th>
+                  <th>ĐIỂM TỔNG KẾT</th>
+                  <th>XẾP LOẠI</th>
+                  <th>NHẬN XÉT CỦA MENTOR</th>
+                </tr>
+              </thead>
+              <tbody id="evaluationsTableBody">
+                <!-- Render động từ dashboard.js -->
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -1549,6 +2026,617 @@
       <div class="modal-footer" id="leaveDetailFooter" style="padding: 14px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; background: #ffffff;">
         <!-- Render các nút Duyệt / Từ chối / Đóng -->
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 14: THÊM MENTOR MỚI (CHUẨN SCREENSHOT 2) ==================== -->
+  <div class="modal" id="addMentorModal">
+    <div class="modal-dialog modal-md modal-dialog-md">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title modal-title-bold">Thêm Mentor mới</h3>
+          <p class="modal-subtitle modal-subtitle-text">Thông tin được dùng để phân công và theo dõi tải hướng dẫn.</p>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('addMentorModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <form onsubmit="handleAddMentorSubmit(event)">
+        <div class="modal-body">
+          <div class="form-row-2 mb-3">
+            <div class="form-group">
+              <label for="mentorAddName" class="form-label fw-semibold form-label-custom">Họ và tên <span class="text-danger">*</span></label>
+              <input type="text" id="mentorAddName" class="form-control" placeholder="Nguyễn Văn An" required>
+            </div>
+            <div class="form-group">
+              <label for="mentorAddRole" class="form-label fw-semibold form-label-custom">Chức danh <span class="text-danger">*</span></label>
+              <input type="text" id="mentorAddRole" class="form-control" placeholder="Senior Software Engineer" required>
+            </div>
+          </div>
+
+          <div class="form-row-2 mb-3">
+            <div class="form-group">
+              <label for="mentorAddEmail" class="form-label fw-semibold form-label-custom">Email công việc <span class="text-danger">*</span></label>
+              <input type="email" id="mentorAddEmail" class="form-control" placeholder="mentor@company.vn" required>
+            </div>
+            <div class="form-group">
+              <label for="mentorAddPhone" class="form-label fw-semibold form-label-custom">Số điện thoại</label>
+              <input type="text" id="mentorAddPhone" class="form-control" placeholder="090 000 0000">
+            </div>
+          </div>
+
+          <div class="form-row-2 mb-3">
+            <div class="form-group">
+              <label for="mentorAddDept" class="form-label fw-semibold form-label-custom">Phòng ban <span class="text-danger">*</span></label>
+              <select id="mentorAddDept" class="form-control" title="Chọn phòng ban" aria-label="Chọn phòng ban">
+                <option value="">Chọn phòng ban</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="mentorAddMax" class="form-label fw-semibold form-label-custom">Số TTS tối đa <span class="text-danger">*</span></label>
+              <input type="number" id="mentorAddMax" class="form-control" value="5" min="1" max="50" required>
+            </div>
+          </div>
+
+          <div class="form-group mb-2">
+            <label for="mentorAddAvatar" class="form-label fw-semibold form-label-custom">URL ảnh đại diện</label>
+            <input type="text" id="mentorAddAvatar" class="form-control" placeholder="https://...">
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-end gap-2 pt-3 border-top modal-footer-padded">
+          <button type="button" class="btn-secondary px-4 py-2" onclick="closeModal('addMentorModal')">Hủy</button>
+          <button type="submit" class="btn-primary px-4 py-2">Thêm Mentor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 15: PHÂN CÔNG THỰC TẬP SINH (CHUẨN SCREENSHOT 3) ==================== -->
+  <div class="modal" id="assignInternModal">
+    <div class="modal-dialog modal-dialog-assign">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title modal-title-bold">Phân công thực tập sinh</h3>
+          <p class="modal-subtitle modal-subtitle-text">Chọn thực tập sinh đã được duyệt và đủ điều kiện tiếp nhận.</p>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('assignInternModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body p-3">
+        <!-- Mentor Info Card -->
+        <div class="banner-assign-mentor mb-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="avatar-assign-mentor" id="assignMentorAvatarBadge">
+              SH
+            </div>
+            <div>
+              <div class="fw-bold text-dark fs-6" id="assignMentorName">--</div>
+              <div class="text-muted small" id="assignMentorSubtitle">--</div>
+            </div>
+          </div>
+          <div class="assign-stats-group">
+            <div class="assign-stat-col">
+              <div class="assign-stat-label">Đang hướng dẫn</div>
+              <div class="assign-stat-val" id="assignMentorCurrentCount">0</div>
+            </div>
+            <div class="assign-stat-col">
+              <div class="assign-stat-label">Tối đa</div>
+              <div class="assign-stat-val" id="assignMentorMaxCount">5</div>
+            </div>
+            <div class="assign-stat-col">
+              <div class="assign-stat-label">Còn trống</div>
+              <div class="assign-stat-val" id="assignMentorAvailableCount">5</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Row -->
+        <div class="assign-toolbar-row mb-3">
+          <div class="assign-search-box">
+            <i class="fa-solid fa-magnifying-glass assign-search-icon"></i>
+            <input type="text" id="assignInternSearch" class="assign-search-input" placeholder="Tìm kiếm thực tập sinh theo tên, email, trường..." oninput="renderAssignInternList()">
+          </div>
+          <div class="assign-filter-select-wrap">
+            <select id="assignProgramFilter" class="assign-select-control" title="Lọc theo chương trình thực tập" aria-label="Lọc theo chương trình thực tập" onchange="renderAssignInternList()">
+              <option value="">Tất cả chương trình</option>
+            </select>
+          </div>
+          <div class="assign-filter-select-wrap">
+            <select id="assignDeptFilter" class="assign-select-control" title="Lọc theo phòng ban" aria-label="Lọc theo phòng ban" onchange="renderAssignInternList()">
+              <option value="">Tất cả phòng ban</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Table of Interns / Empty state -->
+        <div class="assign-table-container">
+          <table class="assign-intern-table mb-0">
+            <thead class="assign-sticky-header">
+              <tr>
+                <th class="assign-col-check">
+                  <input type="checkbox" id="checkAllAssignInterns" title="Chọn tất cả thực tập sinh" aria-label="Chọn tất cả thực tập sinh" onchange="toggleSelectAllAssignInterns(this.checked)">
+                </th>
+                <th>THỰC TẬP SINH</th>
+                <th>TRƯỜNG & NGÀNH</th>
+                <th>CHƯƠNG TRÌNH</th>
+                <th>PHÒNG BAN</th>
+                <th>MENTOR HIỆN TẠI</th>
+                <th>HỒ SƠ</th>
+              </tr>
+            </thead>
+            <tbody id="assignInternTableBody">
+              <!-- Render động bằng renderAssignInternList() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer d-flex justify-content-between align-items-center modal-footer-padded">
+        <span class="text-muted small" id="selectedInternCountText">Đã chọn <strong>0</strong> thực tập sinh</span>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn-cancel-assign" onclick="closeModal('assignInternModal')">Hủy</button>
+          <button type="button" class="btn-submit-assign" onclick="confirmAssignInterns()">Xác nhận phân công</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 16: CẬP NHẬT MENTOR (CHUẨN SCREENSHOT 4) ==================== -->
+  <div class="modal" id="editMentorModal">
+    <div class="modal-dialog modal-md modal-dialog-md">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title modal-title-bold">Cập nhật Mentor</h3>
+          <p class="modal-subtitle modal-subtitle-text">Thông tin được dùng để phân công và theo dõi tải hướng dẫn.</p>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('editMentorModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <form onsubmit="handleEditMentorSubmit(event)">
+        <input type="hidden" id="mentorEditId">
+        <input type="hidden" id="mentorEditStatus" value="Đang hoạt động">
+        <div class="modal-body">
+          <div class="form-row-2 mb-3">
+            <div class="form-group">
+              <label for="mentorEditName" class="form-label fw-semibold form-label-custom">Họ và tên <span class="text-danger">*</span></label>
+              <input type="text" id="mentorEditName" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="mentorEditRole" class="form-label fw-semibold form-label-custom">Chức danh <span class="text-danger">*</span></label>
+              <input type="text" id="mentorEditRole" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="form-row-2 mb-3">
+            <div class="form-group">
+              <label for="mentorEditEmail" class="form-label fw-semibold form-label-custom">Email công việc <span class="text-danger">*</span></label>
+              <input type="email" id="mentorEditEmail" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="mentorEditPhone" class="form-label fw-semibold form-label-custom">Số điện thoại</label>
+              <input type="text" id="mentorEditPhone" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-row-2 mb-3">
+            <div class="form-group">
+              <label for="mentorEditDept" class="form-label fw-semibold form-label-custom">Phòng ban <span class="text-danger">*</span></label>
+              <select id="mentorEditDept" class="form-control" title="Phòng ban tiếp nhận" aria-label="Phòng ban tiếp nhận" required>
+                <!-- Render động -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="mentorEditMax" class="form-label fw-semibold form-label-custom">Số TTS tối đa <span class="text-danger">*</span></label>
+              <input type="number" id="mentorEditMax" class="form-control" min="1" max="50" required>
+            </div>
+          </div>
+
+          <div class="form-group mb-2">
+            <label for="mentorEditAvatar" class="form-label fw-semibold form-label-custom">URL ảnh đại diện</label>
+            <input type="text" id="mentorEditAvatar" class="form-control" placeholder="https://...">
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-end gap-2 pt-3 border-top modal-footer-padded">
+          <button type="button" class="btn-secondary px-4 py-2" onclick="closeModal('editMentorModal')">Hủy</button>
+          <button type="submit" class="btn-primary px-4 py-2">Lưu thay đổi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 17: XÁC NHẬN XÓA MENTOR (CHUẨN SCREENSHOT 5) ==================== -->
+  <div class="modal" id="deleteMentorModal">
+    <div class="modal-dialog modal-dialog-delete">
+      <div class="modal-body text-center p-4">
+        <div class="mx-auto mb-3 delete-icon-circle">
+          <i class="fa-solid fa-trash-can"></i>
+        </div>
+        <h4 class="fw-bold mb-2 text-dark modal-title-bold">Xác nhận xóa Mentor</h4>
+        <p class="text-muted mb-4 delete-dialog-subtext">
+          Bạn có chắc chắn muốn xóa mentor "<strong id="deleteMentorNameDisplay">--</strong>" khỏi hệ thống?
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+          <button type="button" class="btn-secondary px-4 py-2" onclick="closeModal('deleteMentorModal')">Hủy</button>
+          <button type="button" class="btn-danger px-4 py-2 btn-delete-confirm" onclick="confirmDeleteMentor()">Xác nhận xóa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 18: THÊM / SỬA PHÒNG BAN ==================== -->
+  <div class="modal" id="deptModal">
+    <div class="modal-dialog modal-md modal-dialog-dept">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title modal-title-bold" id="deptModalTitle">Thêm phòng ban mới</h3>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('deptModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <form onsubmit="handleSaveDept(event)">
+        <input type="hidden" id="deptEditId">
+        <div class="modal-body">
+          <div class="form-group mb-3">
+            <label for="deptFormCode" class="form-label fw-semibold form-label-custom">Mã phòng ban</label>
+            <input type="text" id="deptFormCode" class="form-control" placeholder="MKT, DEV, HR...">
+          </div>
+          <div class="form-group mb-3">
+            <label for="deptFormName" class="form-label fw-semibold form-label-custom">Tên phòng ban <span class="text-danger">*</span></label>
+            <input type="text" id="deptFormName" class="form-control" placeholder="Marketing, Kỹ thuật phần mềm..." required>
+          </div>
+          <div class="form-group mb-3">
+            <label for="deptFormDesc" class="form-label fw-semibold form-label-custom">Mô tả phòng ban</label>
+            <textarea id="deptFormDesc" class="form-control" rows="3" placeholder="Mô tả chức năng nhiệm vụ..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-end gap-2 pt-3 border-top modal-footer-padded">
+          <button type="button" class="btn-secondary px-4 py-2" onclick="closeModal('deptModal')">Hủy</button>
+          <button type="submit" class="btn-primary px-4 py-2">Lưu phòng ban</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 19: THÊM LỊCH TRÌNH CHƯƠNG TRÌNH (CHUẨN SCREENSHOT) ==================== -->
+  <div class="modal" id="addScheduleModal">
+    <div class="modal-dialog modal-dialog-schedule">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title modal-title-bold">Thêm lịch trình chương trình</h3>
+          <p class="modal-subtitle modal-subtitle-text">Thiết lập thời gian, người tham gia và phương thức tổ chức.</p>
+        </div>
+        <button type="button" class="btn-close" onclick="closeModal('addScheduleModal')" aria-label="Đóng">&times;</button>
+      </div>
+      <form id="scheduleActivityForm" onsubmit="handleSaveScheduleActivity(event)">
+        <div class="modal-body">
+          <!-- Tên hoạt động * -->
+          <div class="form-group mb-3">
+            <label for="schedActivityName" class="form-label fw-semibold form-label-custom">Tên hoạt động <span class="text-danger">*</span></label>
+            <input type="text" id="schedActivityName" class="form-control" placeholder="Nhập tên hoạt động" required>
+          </div>
+
+          <!-- Nội dung mô tả * -->
+          <div class="form-group mb-3">
+            <label for="schedActivityDesc" class="form-label fw-semibold form-label-custom">Nội dung mô tả <span class="text-danger">*</span></label>
+            <textarea id="schedActivityDesc" class="form-control" rows="3" placeholder="Nội dung, mục tiêu và lưu ý của hoạt động..." required></textarea>
+          </div>
+
+          <!-- Chương trình thực tập * -->
+          <div class="form-group mb-3">
+            <label for="schedProgramSelect" class="form-label fw-semibold form-label-custom">Chương trình thực tập <span class="text-danger">*</span></label>
+            <select id="schedProgramSelect" class="form-control" required onchange="handleSchedProgramChange(this.value)">
+              <option value="">Chọn chương trình thực tập...</option>
+            </select>
+
+            <!-- Khung thông tin chương trình được chọn (Chuẩn Screenshot 2 & 3) -->
+            <div class="schedule-prog-summary-box" id="schedProgSummaryBox">
+              <div class="sched-summary-col">
+                <span class="sched-summary-label">Phòng ban tiếp nhận</span>
+                <span class="sched-summary-val" id="schedBoxDept">--</span>
+                <span class="sched-summary-time" id="schedBoxTime">Thời gian chương trình: --</span>
+              </div>
+              <div class="sched-summary-col">
+                <span class="sched-summary-label">Mentor phụ trách</span>
+                <span class="sched-summary-val" id="schedBoxMentor">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hàng: Ngày & giờ bắt đầu - Ngày & giờ kết thúc (Chuẩn Screenshot 3) -->
+          <div class="form-row-2 mb-3">
+            <div class="form-group mb-0">
+              <label for="schedStartDate" class="form-label fw-semibold form-label-custom">Ngày và giờ bắt đầu <span class="text-danger">*</span></label>
+              <input type="datetime-local" id="schedStartDate" class="form-control" required>
+            </div>
+            <div class="form-group mb-0">
+              <label for="schedEndDate" class="form-label fw-semibold form-label-custom">Ngày và giờ kết thúc <span class="text-danger">*</span></label>
+              <input type="datetime-local" id="schedEndDate" class="form-control" required>
+            </div>
+          </div>
+
+          <!-- Hàng: Đối tượng tham gia - Người phụ trách * (Chuẩn Screenshot 3 & 4) -->
+          <div class="form-row-2 mb-3">
+            <div class="form-group mb-0">
+              <label for="schedTarget" class="form-label fw-semibold form-label-custom">Đối tượng tham gia</label>
+              <select id="schedTarget" class="form-control">
+                <option value="Cả hai" selected>Cả hai</option>
+                <option value="Thực tập sinh">Thực tập sinh</option>
+                <option value="Mentor">Mentor</option>
+              </select>
+            </div>
+            <div class="form-group mb-0">
+              <label for="schedInCharge" class="form-label fw-semibold form-label-custom">Người phụ trách <span class="text-danger">*</span></label>
+              <select id="schedInCharge" class="form-control" required>
+                <option value="">Chọn tài khoản phụ trách</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Hàng: Hình thức - Địa điểm tổ chức (Chuẩn Screenshot 3 & 4) -->
+          <div class="form-row-2 mb-3">
+            <div class="form-group mb-0">
+              <label for="schedFormat" class="form-label fw-semibold form-label-custom">Hình thức</label>
+              <select id="schedFormat" class="form-control">
+                <option value="Trực tiếp" selected>Trực tiếp</option>
+                <option value="Trực tuyến">Trực tuyến</option>
+                <option value="Kết hợp">Kết hợp</option>
+              </select>
+            </div>
+            <div class="form-group mb-0">
+              <label for="schedLocation" class="form-label fw-semibold form-label-custom">Địa điểm tổ chức</label>
+              <input type="text" id="schedLocation" class="form-control" placeholder="Ví dụ: Phòng họp tầng 6">
+            </div>
+          </div>
+
+          <!-- Hàng: Thời gian nhắc trước - Trạng thái hoạt động (Chuẩn Screenshot 4) -->
+          <div class="form-row-2 mb-3">
+            <div class="form-group mb-0">
+              <label for="schedReminder" class="form-label fw-semibold form-label-custom">Thời gian nhắc trước</label>
+              <select id="schedReminder" class="form-control">
+                <option value="15 phút" selected>15 phút</option>
+                <option value="30 phút">30 phút</option>
+                <option value="1 giờ">1 giờ</option>
+                <option value="2 giờ">2 giờ</option>
+                <option value="1 ngày">1 ngày</option>
+                <option value="Không nhắc">Không nhắc</option>
+              </select>
+            </div>
+            <div class="form-group mb-0">
+              <label for="schedStatus" class="form-label fw-semibold form-label-custom">Trạng thái hoạt động</label>
+              <select id="schedStatus" class="form-control">
+                <option value="Sắp diễn ra" selected>Sắp diễn ra</option>
+                <option value="Đang diễn ra">Đang diễn ra</option>
+                <option value="Đã hoàn thành">Đã hoàn thành</option>
+                <option value="Đã hủy">Đã hủy</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Khối bật thông báo & Ghi chú (Chuẩn Screenshot 4) -->
+          <div class="sched-notify-card">
+            <div class="sched-notify-header">
+              <div>
+                <div class="sched-notify-title">Gửi thông báo cho người tham gia</div>
+                <div class="sched-notify-sub">Thông báo theo đối tượng đã chọn khi lịch trình được lưu.</div>
+              </div>
+              <label class="sched-toggle-switch">
+                <input type="checkbox" id="schedSendNotify" checked>
+                <span class="sched-toggle-slider"></span>
+              </label>
+            </div>
+            <div class="sched-notify-banner">
+              Người tham gia sẽ nhận được thông báo về lịch trình và thời gian nhắc trước đã chọn.
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer d-flex justify-content-end gap-2 pt-3 border-top modal-footer-padded">
+          <button type="button" class="btn-sched-cancel" onclick="closeModal('addScheduleModal')">Hủy</button>
+          <button type="submit" class="btn-sched-submit">Lưu lịch trình</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: GIAO NHIỆM VỤ CHO TTS (STT 15) ==================== -->
+  <div class="modal" id="createTaskModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title">Giao nhiệm vụ cho Thực tập sinh</h2>
+        <button type="button" class="close-btn" onclick="closeModal('createTaskModal')">&times;</button>
+      </div>
+      <form id="createTaskForm" onsubmit="handleCreateTaskSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group mb-3">
+            <label class="form-label" for="taskInternSelect">Thực tập sinh nhận việc <span class="text-danger">*</span></label>
+            <select id="taskInternSelect" class="form-control" required>
+              <option value="">-- Chọn thực tập sinh --</option>
+            </select>
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="taskTitle">Tiêu đề nhiệm vụ <span class="text-danger">*</span></label>
+            <input type="text" id="taskTitle" class="form-control" placeholder="Ví dụ: Xây dựng giao diện Login bằng React" required>
+          </div>
+          <div class="row mb-3" style="display: flex; gap: 12px;">
+            <div style="flex: 1;">
+              <label class="form-label" for="taskDeadline">Hạn hoàn thành</label>
+              <input type="date" id="taskDeadline" class="form-control">
+            </div>
+            <div style="flex: 1;">
+              <label class="form-label" for="taskPriority">Độ ưu tiên</label>
+              <select id="taskPriority" class="form-control">
+                <option value="low">Thấp</option>
+                <option value="medium" selected>Trung bình</option>
+                <option value="high">Cao</option>
+                <option value="urgent">Khẩn cấp</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="taskDescription">Mô tả chi tiết & Yêu cầu</label>
+            <textarea id="taskDescription" class="form-control" rows="3" placeholder="Nêu rõ mục tiêu công việc, tài liệu tham khảo và tiêu chí nghiệm thu..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 15px; border-top: 1px solid #e2e8f0;">
+          <button type="button" class="btn-secondary" onclick="closeModal('createTaskModal')">Hủy</button>
+          <button type="submit" class="btn-primary">Giao nhiệm vụ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: PHẢN HỒI BÁO CÁO TUẦN (STT 18) ==================== -->
+  <div class="modal" id="feedbackReportModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h2 class="modal-title">Xem & Phản hồi Báo cáo tuần</h2>
+        <button type="button" class="close-btn" onclick="closeModal('feedbackReportModal')">&times;</button>
+      </div>
+      <form id="feedbackReportForm" onsubmit="handleFeedbackReportSubmit(event)">
+        <input type="hidden" id="feedbackReportId">
+        <div class="modal-body">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+            <div style="font-weight: 700; color: #1e293b; margin-bottom: 8px;" id="feedbackReportHeader">Báo cáo tuần</div>
+            <div style="margin-bottom: 10px;">
+              <span style="font-weight: 600; color: #475569; font-size: 13px;">Công việc đã hoàn thành:</span>
+              <p id="feedbackReportTasks" style="margin: 4px 0 0; color: #0f172a; white-space: pre-wrap; font-size: 13.5px;"></p>
+            </div>
+            <div style="margin-bottom: 10px;">
+              <span style="font-weight: 600; color: #475569; font-size: 13px;">Khó khăn, vướng mắc:</span>
+              <p id="feedbackReportIssues" style="margin: 4px 0 0; color: #e11d48; white-space: pre-wrap; font-size: 13.5px;"></p>
+            </div>
+            <div>
+              <span style="font-weight: 600; color: #475569; font-size: 13px;">Kế hoạch tuần tới:</span>
+              <p id="feedbackReportPlans" style="margin: 4px 0 0; color: #0284c7; white-space: pre-wrap; font-size: 13.5px;"></p>
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="form-label" for="mentorRating">Chấm điểm kết quả tuần (1 - 10)</label>
+            <input type="number" id="mentorRating" class="form-control" min="1" max="10" placeholder="Ví dụ: 9">
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="mentorFeedbackText">Nhận xét & Hướng dẫn hỗ trợ của Mentor <span class="text-danger">*</span></label>
+            <textarea id="mentorFeedbackText" class="form-control" rows="3" placeholder="Nhận xét ưu điểm, điểm cần cải thiện và gợi ý giải quyết vấn đề..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 15px; border-top: 1px solid #e2e8f0;">
+          <button type="button" class="btn-secondary" onclick="closeModal('feedbackReportModal')">Đóng</button>
+          <button type="submit" class="btn-primary">Gửi phản hồi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: TẠO LỊCH HỌP & GỬI EMAIL TỰ ĐỘNG (STT 35) ==================== -->
+  <div class="modal" id="createMeetingModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title">Tạo lịch họp & Gửi email tự động</h2>
+        <button type="button" class="close-btn" onclick="closeModal('createMeetingModal')">&times;</button>
+      </div>
+      <form id="createMeetingForm" onsubmit="handleCreateMeetingSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group mb-3">
+            <label class="form-label" for="meetingTitle">Chủ đề cuộc họp <span class="text-danger">*</span></label>
+            <input type="text" id="meetingTitle" class="form-control" placeholder="Ví dụ: Họp định kỳ tuần & Review tiến độ" required>
+          </div>
+          <div class="row mb-3" style="display: flex; gap: 12px;">
+            <div style="flex: 1;">
+              <label class="form-label" for="meetingDate">Ngày họp <span class="text-danger">*</span></label>
+              <input type="date" id="meetingDate" class="form-control" required>
+            </div>
+            <div style="flex: 1;">
+              <label class="form-label" for="meetingStartTime">Giờ bắt đầu <span class="text-danger">*</span></label>
+              <input type="time" id="meetingStartTime" class="form-control" value="09:00" required>
+            </div>
+            <div style="flex: 1;">
+              <label class="form-label" for="meetingEndTime">Giờ kết thúc <span class="text-danger">*</span></label>
+              <input type="time" id="meetingEndTime" class="form-control" value="10:30" required>
+            </div>
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="meetingLocation">Địa điểm / Nền tảng</label>
+            <input type="text" id="meetingLocation" class="form-control" value="Phòng họp Tầng 3 / Google Meet">
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="meetingLink">Đường dẫn cuộc họp (Google Meet / Zoom)</label>
+            <input type="url" id="meetingLink" class="form-control" placeholder="https://meet.google.com/abc-xyz-def">
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="meetingInternSelect">Chọn Thực tập sinh tham gia <span class="text-danger">*</span></label>
+            <select id="meetingInternSelect" class="form-control" multiple style="height: 100px;">
+              <!-- Render động danh sách TTS -->
+            </select>
+            <span style="font-size: 12px; color: #64748b;">Giữ Ctrl để chọn nhiều thực tập sinh nhận email thông báo.</span>
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="meetingNotes">Nội dung ghi chú cuộc họp</label>
+            <textarea id="meetingNotes" class="form-control" rows="2" placeholder="Chuẩn bị tài liệu báo cáo tuần trước khi tham gia..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 15px; border-top: 1px solid #e2e8f0;">
+          <button type="button" class="btn-secondary" onclick="closeModal('createMeetingModal')">Hủy</button>
+          <button type="submit" class="btn-primary" id="btnSubmitMeeting">
+            <i class="fa-regular fa-paper-plane me-1"></i> Tạo & Gửi Email thông báo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: ĐÁNH GIÁ THỰC TẬP SINH TỔNG KẾT (STT 19, 20) ==================== -->
+  <div class="modal" id="evaluationModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title">Đánh giá kết quả thực tập sinh</h2>
+        <button type="button" class="close-btn" onclick="closeModal('evaluationModal')">&times;</button>
+      </div>
+      <form id="evaluationForm" onsubmit="handleEvaluationSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group mb-3">
+            <label class="form-label" for="evalInternSelect">Thực tập sinh <span class="text-danger">*</span></label>
+            <select id="evalInternSelect" class="form-control" required onchange="handleEvalInternChange(this.value)">
+              <option value="">-- Chọn thực tập sinh --</option>
+            </select>
+          </div>
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <div class="row mb-2" style="display: flex; gap: 10px;">
+              <div style="flex: 1;">
+                <label class="form-label" style="font-size: 12.5px;">1. Kỹ năng chuyên môn (40%)</label>
+                <input type="number" id="evalTechScore" class="form-control" step="0.1" min="0" max="10" value="8.5" required oninput="calculateEvalTotal()">
+              </div>
+              <div style="flex: 1;">
+                <label class="form-label" style="font-size: 12.5px;">2. Kỷ luật & Chuyên cần (30%)</label>
+                <input type="number" id="evalDiscScore" class="form-control" step="0.1" min="0" max="10" value="9.0" required oninput="calculateEvalTotal()">
+              </div>
+              <div style="flex: 1;">
+                <label class="form-label" style="font-size: 12.5px;">3. Thái độ & Giao tiếp (30%)</label>
+                <input type="number" id="evalAttScore" class="form-control" step="0.1" min="0" max="10" value="9.0" required oninput="calculateEvalTotal()">
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px dashed #cbd5e1;">
+              <div>
+                <span style="font-size: 13px; color: #64748b;">Điểm tổng kết:</span>
+                <strong style="font-size: 18px; color: #2563eb; margin-left: 6px;" id="evalTotalScoreDisplay">8.8</strong>
+              </div>
+              <div>
+                <span style="font-size: 13px; color: #64748b;">Xếp loại dự kiến:</span>
+                <span id="evalGradeDisplay" style="margin-left: 6px; font-weight: 700; color: #16a34a; background: #dcfce7; padding: 3px 10px; border-radius: 12px; font-size: 12px;">Giỏi</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="form-label" for="evalMentorComment">Nhận xét chi tiết của Mentor</label>
+            <textarea id="evalMentorComment" class="form-control" rows="3" placeholder="Đánh giá tinh thần học hỏi, khả năng hoàn thành công việc và điểm nổi bật..."></textarea>
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="evalHrNotes">Ghi chú & Đề xuất của HR</label>
+            <textarea id="evalHrNotes" class="form-control" rows="2" placeholder="Đề xuất ký hợp đồng chính thức hoặc cấp giấy chứng nhận..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 15px; border-top: 1px solid #e2e8f0;">
+          <button type="button" class="btn-secondary" onclick="closeModal('evaluationModal')">Hủy</button>
+          <button type="submit" class="btn-primary">Lưu đánh giá</button>
+        </div>
+      </form>
     </div>
   </div>
 

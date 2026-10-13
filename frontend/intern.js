@@ -48,7 +48,7 @@ function switchPortalTab(tabName) {
   InternState.currentTab = tabName;
 
   // Danh sách các tab và menu tương ứng
-  const tabList = ['overview', 'documents', 'schedule', 'attendance', 'contracts', 'profile'];
+  const tabList = ['overview', 'documents', 'schedule', 'attendance', 'contracts', 'progress', 'reports', 'notifications', 'profile'];
 
   tabList.forEach(t => {
     const menuBtn = document.getElementById(`menu-${t}`);
@@ -87,6 +87,12 @@ function switchPortalTab(tabName) {
     initAttendanceTab();
   } else if (tabName === 'contracts') {
     initContractsTab();
+  } else if (tabName === 'progress') {
+    initProgressTab();
+  } else if (tabName === 'reports') {
+    initReportsTab();
+  } else if (tabName === 'notifications') {
+    initNotificationsTab();
   }
 
   // Cuộn nhẹ lên đầu trang
@@ -3005,7 +3011,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Kiểm tra tham số URL ?tab=... hoặc hash #...
   const urlParams = new URLSearchParams(window.location.search);
   const targetTab = urlParams.get('tab') || window.location.hash.replace('#', '');
-  if (targetTab && ['schedule', 'attendance', 'contracts'].includes(targetTab)) {
+  if (targetTab && ['schedule', 'attendance', 'contracts', 'progress', 'reports', 'notifications'].includes(targetTab)) {
     switchPortalTab(targetTab);
   }
 
@@ -3403,4 +3409,854 @@ async function checkUnreadEmails() {
     }
   } catch (e) {}
 }
+
+// ==============================================================================
+// 12. PHÂN HỆ TIẾN ĐỘ CÔNG VIỆC, BÁO CÁO TUẦN & THÔNG BÁO (FRONTEND ONLY)
+// ==============================================================================
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function getInternUserId() {
+  try {
+    const u = JSON.parse(localStorage.getItem('user') || '{}');
+    return u.internId || u.id || 'guest';
+  } catch (e) {
+    return 'guest';
+  }
+}
+
+// ------------------------------------------------------------------------------
+// MODULE 1: TIẾN ĐỘ CÔNG VIỆC
+// ------------------------------------------------------------------------------
+function getProgressStorageKey() {
+  return `intern_progress_tasks_${getInternUserId()}`;
+}
+
+function getProgressTasks() {
+  try {
+    const raw = localStorage.getItem(getProgressStorageKey());
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveProgressTasks(tasks) {
+  try {
+    localStorage.setItem(getProgressStorageKey(), JSON.stringify(tasks));
+  } catch (e) {}
+}
+
+async function initProgressTab() {
+  if (typeof apiGetTasks === 'function') {
+    try {
+      const res = await apiGetTasks();
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const mapped = res.data.map(t => ({
+          id: String(t.id),
+          name: t.title,
+          date: t.deadline ? t.deadline.slice(0, 10) : new Date().toISOString().slice(0, 10),
+          percent: Number(t.progress) || 0,
+          content: t.description || '',
+          blockers: '',
+          nextPlan: t.intern_note || '',
+          updatedAt: t.updated_at
+        }));
+        saveProgressTasks(mapped);
+      }
+    } catch (e) {}
+  }
+  renderProgressList();
+}
+
+function updateProgressPercentDisplay(val) {
+  const display = document.getElementById('progressPercentDisplay');
+  if (display) display.textContent = `${val}%`;
+}
+
+function openProgressModal(taskId = null) {
+  const modal = document.getElementById('progressModalOverlay');
+  const modalTitle = document.getElementById('progressModalTitle');
+  const editIdInput = document.getElementById('progressEditId');
+  const nameInput = document.getElementById('progressTaskName');
+  const dateInput = document.getElementById('progressTaskDate');
+  const percentInput = document.getElementById('progressTaskPercent');
+  const percentDisplay = document.getElementById('progressPercentDisplay');
+  const contentInput = document.getElementById('progressTaskContent');
+  const blockersInput = document.getElementById('progressTaskBlockers');
+  const nextPlanInput = document.getElementById('progressTaskNextPlan');
+
+  if (taskId) {
+    const tasks = getProgressTasks();
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      if (modalTitle) modalTitle.textContent = 'Cập nhật tiến độ';
+      if (editIdInput) editIdInput.value = task.id;
+      if (nameInput) nameInput.value = task.name || '';
+      if (dateInput) dateInput.value = task.date || '';
+      if (percentInput) percentInput.value = task.percent ?? 0;
+      if (percentDisplay) percentDisplay.textContent = `${task.percent ?? 0}%`;
+      if (contentInput) contentInput.value = task.content || '';
+      if (blockersInput) blockersInput.value = task.blockers || '';
+      if (nextPlanInput) nextPlanInput.value = task.nextPlan || '';
+    }
+  } else {
+    if (modalTitle) modalTitle.textContent = 'Thêm cập nhật tiến độ';
+    if (editIdInput) editIdInput.value = '';
+    if (nameInput) nameInput.value = '';
+
+    const today = new Date().toISOString().split('T')[0];
+    if (dateInput) dateInput.value = today;
+
+    if (percentInput) percentInput.value = 0;
+    if (percentDisplay) percentDisplay.textContent = '0%';
+    if (contentInput) contentInput.value = '';
+    if (blockersInput) blockersInput.value = '';
+    if (nextPlanInput) nextPlanInput.value = '';
+  }
+
+  if (modal) modal.classList.add('show');
+}
+
+function closeProgressModal() {
+  const modal = document.getElementById('progressModalOverlay');
+  if (modal) modal.classList.remove('show');
+}
+
+async function handleSaveProgress(event) {
+  if (event) event.preventDefault();
+  const editId = (document.getElementById('progressEditId')?.value || '').trim();
+  const name = (document.getElementById('progressTaskName')?.value || '').trim();
+  const date = (document.getElementById('progressTaskDate')?.value || '').trim();
+  const percent = parseInt(document.getElementById('progressTaskPercent')?.value || '0', 10);
+  const content = (document.getElementById('progressTaskContent')?.value || '').trim();
+  const blockers = (document.getElementById('progressTaskBlockers')?.value || '').trim();
+  const nextPlan = (document.getElementById('progressTaskNextPlan')?.value || '').trim();
+
+  if (!name) {
+    if (typeof showInternToast === 'function') showInternToast('Vui lòng nhập tên công việc!', 'warning');
+    return;
+  }
+
+  // Cập nhật lên MySQL nếu có ID số
+  if (editId && !isNaN(Number(editId)) && typeof apiUpdateTaskProgress === 'function') {
+    try {
+      await apiUpdateTaskProgress(Number(editId), {
+        progress: percent,
+        intern_note: nextPlan || content
+      });
+    } catch (apiErr) {}
+  } else if (!editId && typeof apiCreateTask === 'function') {
+    try {
+      const uStr = localStorage.getItem('user');
+      const u = uStr ? JSON.parse(uStr) : {};
+      const internId = u.internId || u.id || 1;
+      await apiCreateTask({
+        intern_id: internId,
+        title: name,
+        deadline: date,
+        description: content
+      });
+    } catch (apiErr) {}
+  }
+
+  let tasks = getProgressTasks();
+  if (editId) {
+    const idx = tasks.findIndex(t => t.id === editId);
+    if (idx !== -1) {
+      tasks[idx] = {
+        ...tasks[idx],
+        name,
+        date,
+        percent,
+        content,
+        blockers,
+        nextPlan,
+        updatedAt: new Date().toISOString()
+      };
+    }
+    if (typeof showInternToast === 'function') showInternToast('Cập nhật tiến độ thành công!', 'success');
+  } else {
+    const newTask = {
+      id: 'task_' + Date.now(),
+      name,
+      date,
+      percent,
+      content,
+      blockers,
+      nextPlan,
+      createdAt: new Date().toISOString()
+    };
+    tasks.unshift(newTask);
+    addPortalNotification('Cập nhật tiến độ mới', `Bạn đã ghi nhận tiến độ công việc "${name}" đạt ${percent}%.`, 'info');
+    if (typeof showInternToast === 'function') showInternToast('Thêm cập nhật tiến độ thành công!', 'success');
+  }
+
+  saveProgressTasks(tasks);
+  closeProgressModal();
+  renderProgressList();
+}
+
+function deleteProgressTask(taskId) {
+  if (!confirm('Bạn có chắc chắn muốn xóa tiến độ công việc này không?')) return;
+  let tasks = getProgressTasks();
+  tasks = tasks.filter(t => t.id !== taskId);
+  saveProgressTasks(tasks);
+  renderProgressList();
+  if (typeof showInternToast === 'function') showInternToast('Đã xóa tiến độ công việc!', 'info');
+}
+
+function renderProgressList() {
+  const container = document.getElementById('progressTasksContainer');
+  const tasks = getProgressTasks();
+
+  // Cập nhật 3 Thẻ thống kê (chuẩn hình ảnh 1: Tổng công việc, Đang thực hiện, Hoàn thành)
+  const total = tasks.length;
+  const inProgress = tasks.filter(t => (t.percent || 0) < 100).length;
+  const completed = tasks.filter(t => (t.percent || 0) >= 100).length;
+
+  const statTotal = document.getElementById('statTotalProgressTasks');
+  const statInProg = document.getElementById('statInProgressTasks');
+  const statComp = document.getElementById('statCompletedTasks');
+  if (statTotal) statTotal.textContent = total;
+  if (statInProg) statInProg.textContent = inProgress;
+  if (statComp) statComp.textContent = completed;
+
+  if (!container) return;
+
+  if (tasks.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state-wrap">
+        <div class="empty-state-icon">
+          <i class="bi bi-bar-chart-line"></i>
+        </div>
+        <h4 class="empty-state-title">Chưa có dữ liệu tiến độ công việc</h4>
+        <p class="empty-state-desc">Dữ liệu hiện đang để trống. Nhấn nút <strong>"+ Thêm cập nhật tiến độ"</strong> ở góc trên để bắt đầu ghi nhận tiến độ công việc đầu tiên của bạn.</p>
+        <button type="button" class="btn btn-primary px-4 py-2" onclick="openProgressModal()" style="border-radius: 10px; font-weight: 600; background: #2563eb; border-color: #2563eb;">
+          <i class="bi bi-plus-lg me-1"></i> Thêm cập nhật tiến độ
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  let html = `
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0 text-dark" style="font-size: 16px;">Danh sách công việc (${tasks.length})</h5>
+    </div>
+  `;
+
+  tasks.forEach(task => {
+    const isDone = (task.percent || 0) >= 100;
+    const statusBadge = isDone
+      ? `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>Hoàn thành</span>`
+      : `<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="bi bi-clock-history me-1"></i>Đang thực hiện</span>`;
+
+    html += `
+      <div class="progress-task-card">
+        <div class="progress-task-header">
+          <div>
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+              <h5 class="progress-task-title">${escapeHtml(task.name)}</h5>
+              ${statusBadge}
+            </div>
+            <div class="text-muted small">
+              <i class="bi bi-calendar3 me-1"></i>${escapeHtml(task.date || 'Chưa chọn ngày')}
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-1" onclick="openProgressModal('${task.id}')" title="Chỉnh sửa tiến độ" style="border-radius: 8px;">
+              <i class="bi bi-pencil-square"></i> Sửa
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1" onclick="deleteProgressTask('${task.id}')" title="Xóa" style="border-radius: 8px;">
+              <i class="bi bi-trash3"></i>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="d-flex justify-content-between align-items-center small fw-semibold text-secondary">
+            <span>Tiến độ thực tế</span>
+            <span class="text-primary">${task.percent || 0}%</span>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" style="width: ${Math.min(100, Math.max(0, task.percent || 0))}%;"></div>
+          </div>
+        </div>
+
+        <div class="progress-task-content-box">
+          <div class="fw-semibold text-dark mb-1"><i class="bi bi-card-text me-1 text-primary"></i>Nội dung đã thực hiện:</div>
+          <div class="text-secondary">${escapeHtml(task.content || 'Chưa có nội dung')}</div>
+        </div>
+
+        ${task.blockers ? `
+          <div class="mt-2 p-2 rounded bg-warning-subtle text-dark border border-warning-subtle small">
+            <strong><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Khó khăn gặp phải:</strong> ${escapeHtml(task.blockers)}
+          </div>
+        ` : ''}
+
+        ${task.nextPlan ? `
+          <div class="mt-2 p-2 rounded bg-light text-dark border small">
+            <strong><i class="bi bi-arrow-right-circle text-primary me-1"></i>Kế hoạch tiếp theo:</strong> ${escapeHtml(task.nextPlan)}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+// ------------------------------------------------------------------------------
+// MODULE 2: BÁO CÁO TUẦN
+// ------------------------------------------------------------------------------
+function getReportsStorageKey() {
+  return `intern_weekly_reports_${getInternUserId()}`;
+}
+
+function getWeeklyReports() {
+  try {
+    const raw = localStorage.getItem(getReportsStorageKey());
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveWeeklyReports(reports) {
+  try {
+    localStorage.setItem(getReportsStorageKey(), JSON.stringify(reports));
+  } catch (e) {}
+}
+
+async function initReportsTab() {
+  if (typeof apiGetWeeklyReports === 'function') {
+    try {
+      const res = await apiGetWeeklyReports();
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const mapped = res.data.map(r => ({
+          id: String(r.id),
+          weekTitle: `Tuần ${r.week_number}`,
+          workDone: r.tasks_completed,
+          results: r.mentor_feedback ? `Phản hồi Mentor: ${r.mentor_feedback} (${r.mentor_rating || 0}/10)` : 'Đang chờ Mentor phản hồi',
+          learnings: '',
+          difficulties: r.issues_faced || '',
+          nextPlan: r.plans_next_week || '',
+          status: r.status === 'reviewed' ? 'Đã phản hồi' : (r.status === 'draft' ? 'Bản nháp' : 'Đã nộp'),
+          date: r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
+          createdAt: r.submitted_at
+        }));
+        saveWeeklyReports(mapped);
+      }
+    } catch (e) {}
+  }
+  renderReportsList();
+}
+
+function openReportModal(reportId = null) {
+  const modal = document.getElementById('reportModalOverlay');
+  const modalTitle = document.getElementById('reportModalTitle');
+  const editIdInput = document.getElementById('reportEditId');
+  const weekTitleInput = document.getElementById('reportWeekTitle');
+  const workDoneInput = document.getElementById('reportWorkDone');
+  const resultsInput = document.getElementById('reportResults');
+  const learningsInput = document.getElementById('reportLearnings');
+  const difficultiesInput = document.getElementById('reportDifficulties');
+  const nextPlanInput = document.getElementById('reportNextPlan');
+
+  if (reportId) {
+    const reports = getWeeklyReports();
+    const rep = reports.find(r => r.id === reportId);
+    if (rep) {
+      if (modalTitle) modalTitle.textContent = 'Chỉnh sửa báo cáo tuần';
+      if (editIdInput) editIdInput.value = rep.id;
+      if (weekTitleInput) weekTitleInput.value = rep.weekTitle || '';
+      if (workDoneInput) workDoneInput.value = rep.workDone || '';
+      if (resultsInput) resultsInput.value = rep.results || '';
+      if (learningsInput) learningsInput.value = rep.learnings || '';
+      if (difficultiesInput) difficultiesInput.value = rep.difficulties || '';
+      if (nextPlanInput) nextPlanInput.value = rep.nextPlan || '';
+    }
+  } else {
+    if (modalTitle) modalTitle.textContent = 'Tạo báo cáo tuần';
+    if (editIdInput) editIdInput.value = '';
+    if (weekTitleInput) weekTitleInput.value = '';
+    if (workDoneInput) workDoneInput.value = '';
+    if (resultsInput) resultsInput.value = '';
+    if (learningsInput) learningsInput.value = '';
+    if (difficultiesInput) difficultiesInput.value = '';
+    if (nextPlanInput) nextPlanInput.value = '';
+  }
+
+  if (modal) modal.classList.add('show');
+}
+
+function closeReportModal() {
+  const modal = document.getElementById('reportModalOverlay');
+  if (modal) modal.classList.remove('show');
+}
+
+function handleSaveReportDraft() {
+  saveWeeklyReportProcess('Bản nháp');
+}
+
+function handleSubmitWeeklyReport(event) {
+  if (event) event.preventDefault();
+  saveWeeklyReportProcess('Đã nộp');
+}
+
+async function saveWeeklyReportProcess(status) {
+  const editId = (document.getElementById('reportEditId')?.value || '').trim();
+  const weekTitle = (document.getElementById('reportWeekTitle')?.value || '').trim();
+  const workDone = (document.getElementById('reportWorkDone')?.value || '').trim();
+  const results = (document.getElementById('reportResults')?.value || '').trim();
+  const learnings = (document.getElementById('reportLearnings')?.value || '').trim();
+  const difficulties = (document.getElementById('reportDifficulties')?.value || '').trim();
+  const nextPlan = (document.getElementById('reportNextPlan')?.value || '').trim();
+
+  if (!weekTitle) {
+    if (typeof showInternToast === 'function') showInternToast('Vui lòng nhập tuần báo cáo!', 'warning');
+    return;
+  }
+
+  // Tự động phân tích số tuần từ chuỗi (ví dụ: "Tuần 3" -> 3)
+  const weekMatch = weekTitle.match(/\d+/);
+  const weekNumber = weekMatch ? parseInt(weekMatch[0], 10) : 1;
+
+  // Ghi nhận trực tiếp vào MySQL qua API
+  if (typeof apiSubmitWeeklyReport === 'function') {
+    try {
+      const uStr = localStorage.getItem('user');
+      const u = uStr ? JSON.parse(uStr) : {};
+      const internId = u.internId || u.id || 1;
+      await apiSubmitWeeklyReport({
+        intern_id: internId,
+        week_number: weekNumber,
+        tasks_completed: workDone,
+        issues_faced: difficulties,
+        plans_next_week: nextPlan,
+        is_draft: status === 'Bản nháp'
+      });
+    } catch (apiErr) {}
+  }
+
+  let reports = getWeeklyReports();
+  const dateFormatted = new Date().toLocaleDateString('vi-VN');
+
+  if (editId) {
+    const idx = reports.findIndex(r => r.id === editId);
+    if (idx !== -1) {
+      reports[idx] = {
+        ...reports[idx],
+        weekTitle,
+        workDone,
+        results,
+        learnings,
+        difficulties,
+        nextPlan,
+        status,
+        updatedAt: new Date().toISOString()
+      };
+    }
+    if (typeof showInternToast === 'function') {
+      showInternToast(status === 'Đã nộp' ? 'Đã nộp báo cáo tuần thành công!' : 'Đã lưu bản nháp báo cáo tuần!', 'success');
+    }
+  } else {
+    const newReport = {
+      id: 'rep_' + Date.now(),
+      weekTitle,
+      workDone,
+      results,
+      learnings,
+      difficulties,
+      nextPlan,
+      status,
+      date: dateFormatted,
+      createdAt: new Date().toISOString()
+    };
+    reports.unshift(newReport);
+    addPortalNotification(
+      status === 'Đã nộp' ? 'Đã nộp báo cáo tuần' : 'Lưu bản nháp báo cáo tuần',
+      `Báo cáo "${weekTitle}" đã được ${status.toLowerCase()} thành công.`,
+      status === 'Đã nộp' ? 'success' : 'info'
+    );
+    if (typeof showInternToast === 'function') {
+      showInternToast(status === 'Đã nộp' ? 'Nộp báo cáo tuần thành công!' : 'Đã lưu bản nháp báo cáo tuần!', 'success');
+    }
+  }
+
+  saveWeeklyReports(reports);
+  closeReportModal();
+  renderReportsList();
+}
+
+function deleteWeeklyReport(reportId) {
+  if (!confirm('Bạn có chắc chắn muốn xóa báo cáo tuần này không?')) return;
+  let reports = getWeeklyReports();
+  reports = reports.filter(r => r.id !== reportId);
+  saveWeeklyReports(reports);
+  renderReportsList();
+  if (typeof showInternToast === 'function') showInternToast('Đã xóa báo cáo tuần!', 'info');
+}
+
+function openReportDetailModal(reportId) {
+  const reports = getWeeklyReports();
+  const rep = reports.find(r => r.id === reportId);
+  if (!rep) return;
+
+  const modal = document.getElementById('reportDetailModalOverlay');
+  const title = document.getElementById('reportDetailTitle');
+  const badge = document.getElementById('reportDetailBadge');
+  const body = document.getElementById('reportDetailBody');
+
+  if (title) title.textContent = rep.weekTitle || 'Chi tiết báo cáo tuần';
+  if (badge) {
+    if (rep.status === 'Đã nộp') {
+      badge.className = 'badge bg-success-subtle text-success border border-success-subtle px-2 py-1';
+      badge.innerHTML = '<i class="bi bi-send-check-fill me-1"></i>Đã nộp';
+    } else {
+      badge.className = 'badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1';
+      badge.innerHTML = '<i class="bi bi-pencil-square me-1"></i>Bản nháp';
+    }
+  }
+
+  if (body) {
+    body.innerHTML = `
+      <div class="mb-3 text-muted small"><i class="bi bi-calendar3 me-1"></i>Ngày ghi nhận: ${escapeHtml(rep.date || 'Gần đây')}</div>
+      <div class="mb-3">
+        <h6 class="fw-bold text-dark"><i class="bi bi-check2-circle text-primary me-1"></i>Công việc đã thực hiện:</h6>
+        <p class="text-secondary bg-light p-3 rounded mb-0">${escapeHtml(rep.workDone || 'Chưa cập nhật')}</p>
+      </div>
+      <div class="mb-3">
+        <h6 class="fw-bold text-dark"><i class="bi bi-award text-success me-1"></i>Kết quả đạt được:</h6>
+        <p class="text-secondary bg-light p-3 rounded mb-0">${escapeHtml(rep.results || 'Chưa cập nhật')}</p>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <h6 class="fw-bold text-dark"><i class="bi bi-lightbulb text-warning me-1"></i>Kiến thức & kỹ năng học được:</h6>
+          <p class="text-secondary bg-light p-3 rounded mb-0">${escapeHtml(rep.learnings || 'Không có')}</p>
+        </div>
+        <div class="col-md-6">
+          <h6 class="fw-bold text-dark"><i class="bi bi-exclamation-octagon text-danger me-1"></i>Khó khăn gặp phải:</h6>
+          <p class="text-secondary bg-light p-3 rounded mb-0">${escapeHtml(rep.difficulties || 'Không có')}</p>
+        </div>
+      </div>
+      <div>
+        <h6 class="fw-bold text-dark"><i class="bi bi-calendar-event text-info me-1"></i>Kế hoạch tuần tiếp theo:</h6>
+        <p class="text-secondary bg-light p-3 rounded mb-0">${escapeHtml(rep.nextPlan || 'Chưa cập nhật')}</p>
+      </div>
+    `;
+  }
+
+  if (modal) modal.classList.add('show');
+}
+
+function closeReportDetailModal() {
+  const modal = document.getElementById('reportDetailModalOverlay');
+  if (modal) modal.classList.remove('show');
+}
+
+function renderReportsList() {
+  const container = document.getElementById('weeklyReportsContainer');
+  const reports = getWeeklyReports();
+  if (!container) return;
+
+  if (reports.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state-wrap">
+        <div class="empty-state-icon">
+          <i class="bi bi-journal-text"></i>
+        </div>
+        <h4 class="empty-state-title">Chưa có báo cáo tuần nào</h4>
+        <p class="empty-state-desc">Dữ liệu hiện đang để trống. Nhấn nút <strong>"+ Tạo báo cáo tuần"</strong> ở góc trên để tạo bản nháp hoặc nộp báo cáo tuần mới cho Mentor.</p>
+        <button type="button" class="btn btn-primary px-4 py-2" onclick="openReportModal()" style="border-radius: 10px; font-weight: 600; background: #2563eb; border-color: #2563eb;">
+          <i class="bi bi-plus-lg me-1"></i> Tạo báo cáo tuần
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  let html = `
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0 text-dark" style="font-size: 16px;">Danh sách báo cáo tuần (${reports.length})</h5>
+    </div>
+  `;
+
+  reports.forEach(rep => {
+    const isSubmitted = rep.status === 'Đã nộp';
+    const statusBadge = isSubmitted
+      ? `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-send-check-fill me-1"></i>Đã nộp</span>`
+      : `<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="bi bi-pencil-square me-1"></i>Bản nháp</span>`;
+
+    html += `
+      <div class="report-card-item">
+        <div class="report-header-row">
+          <div>
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+              <span class="report-week-badge">${escapeHtml(rep.weekTitle)}</span>
+              ${statusBadge}
+            </div>
+            <div class="text-muted small">
+              <i class="bi bi-calendar3 me-1"></i>${escapeHtml(rep.date || 'Gần đây')}
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary px-2 py-1" onclick="openReportDetailModal('${rep.id}')" title="Xem chi tiết" style="border-radius: 8px;">
+              <i class="bi bi-eye"></i> Xem chi tiết
+            </button>
+            ${!isSubmitted ? `
+              <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-1" onclick="openReportModal('${rep.id}')" title="Chỉnh sửa" style="border-radius: 8px;">
+                <i class="bi bi-pencil-square"></i> Sửa
+              </button>
+            ` : ''}
+            <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1" onclick="deleteWeeklyReport('${rep.id}')" title="Xóa" style="border-radius: 8px;">
+              <i class="bi bi-trash3"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="report-section-snippet">
+          <strong>Công việc:</strong> ${escapeHtml(rep.workDone || 'Chưa cập nhật')}
+        </div>
+        <div class="report-section-snippet">
+          <strong>Kết quả:</strong> ${escapeHtml(rep.results || 'Chưa cập nhật')}
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+// ------------------------------------------------------------------------------
+// MODULE 3: THÔNG BÁO (STT 36 - HOẠT ĐỘNG THẬT TRÊN CSDL MYSQL)
+// ------------------------------------------------------------------------------
+function getNotificationsStorageKey() {
+  return `intern_portal_notifications_${getInternUserId()}`;
+}
+
+let internPortalNotifsCache = [];
+
+function getPortalNotifications() {
+  if (internPortalNotifsCache && internPortalNotifsCache.length > 0) {
+    return internPortalNotifsCache;
+  }
+  try {
+    const raw = localStorage.getItem(getNotificationsStorageKey());
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function savePortalNotifications(notifs) {
+  internPortalNotifsCache = notifs;
+  try {
+    localStorage.setItem(getNotificationsStorageKey(), JSON.stringify(notifs));
+  } catch (e) {}
+}
+
+let currentNotifFilter = 'all';
+
+async function initNotificationsTab() {
+  try {
+    const res = await apiGetInAppNotifications({ role: 'Thực tập sinh' });
+    if (res && res.success && Array.isArray(res.data)) {
+      internPortalNotifsCache = res.data.map(n => ({
+        id: n.id,
+        title: n.title,
+        content: n.content,
+        type: n.type || 'info',
+        time: n.created_at ? new Date(n.created_at).toLocaleString('vi-VN') : 'Gần đây',
+        isRead: Boolean(n.is_read),
+        link: n.link || ''
+      }));
+      try {
+        localStorage.setItem(getNotificationsStorageKey(), JSON.stringify(internPortalNotifsCache));
+      } catch (e) {}
+    }
+  } catch (e) {
+    console.warn('Không thể tải thông báo từ server, dùng cache:', e);
+  }
+  filterNotifications(currentNotifFilter || 'all');
+}
+
+function filterNotifications(filter) {
+  currentNotifFilter = filter;
+  ['all', 'unread', 'read'].forEach(f => {
+    const btn = document.getElementById(`btnNotifFilter-${f}`);
+    if (btn) {
+      if (f === filter) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+  });
+  renderNotificationsList();
+}
+
+async function addPortalNotification(title, content, type = 'info') {
+  const notifs = getPortalNotifications();
+  const now = new Date();
+  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} ${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+  const newNotif = {
+    id: 'notif_' + Date.now(),
+    title,
+    content,
+    type,
+    time: timeStr,
+    isRead: false,
+    createdAt: now.toISOString()
+  };
+  notifs.unshift(newNotif);
+  savePortalNotifications(notifs);
+
+  try {
+    await apiCreateInAppNotification({
+      role: 'Thực tập sinh',
+      title,
+      content,
+      type
+    });
+  } catch (e) {
+    console.warn('Lỗi lưu thông báo vào CSDL:', e);
+  }
+}
+
+async function toggleNotificationRead(notifId) {
+  const notifs = getPortalNotifications();
+  const target = notifs.find(n => String(n.id) === String(notifId));
+  if (target) {
+    target.isRead = !target.isRead;
+    savePortalNotifications(notifs);
+    renderNotificationsList();
+
+    if (typeof apiMarkNotificationRead === 'function' && !isNaN(notifId)) {
+      try {
+        await apiMarkNotificationRead(notifId);
+      } catch (e) {
+        console.warn('Lỗi đánh dấu đã đọc trên DB:', e);
+      }
+    }
+  }
+}
+
+async function deleteNotification(notifId) {
+  let notifs = getPortalNotifications();
+  notifs = notifs.filter(n => String(n.id) !== String(notifId));
+  savePortalNotifications(notifs);
+  renderNotificationsList();
+  if (typeof showInternToast === 'function') showInternToast('Đã xóa thông báo!', 'info');
+
+  if (typeof apiDeleteNotification === 'function' && !isNaN(notifId)) {
+    try {
+      await apiDeleteNotification(notifId);
+    } catch (e) {
+      console.warn('Lỗi xóa thông báo trên DB:', e);
+    }
+  }
+}
+
+async function markAllNotificationsAsRead() {
+  const notifs = getPortalNotifications();
+  notifs.forEach(n => n.isRead = true);
+  savePortalNotifications(notifs);
+  renderNotificationsList();
+  if (typeof showInternToast === 'function') showInternToast('Đã đánh dấu tất cả thông báo là đã đọc!', 'success');
+
+  if (typeof apiMarkAllNotificationsRead === 'function') {
+    try {
+      await apiMarkAllNotificationsRead({ role: 'Thực tập sinh' });
+    } catch (e) {
+      console.warn('Lỗi cập nhật CSDL đọc hết thông báo:', e);
+    }
+  }
+}
+
+function renderNotificationsList() {
+  const container = document.getElementById('notificationsContainer');
+  const actionsBar = document.getElementById('notifActionsBar');
+  const allNotifs = getPortalNotifications();
+
+  let filtered = allNotifs;
+  if (currentNotifFilter === 'unread') {
+    filtered = allNotifs.filter(n => !n.isRead);
+  } else if (currentNotifFilter === 'read') {
+    filtered = allNotifs.filter(n => n.isRead);
+  }
+
+  const unreadCount = allNotifs.filter(n => !n.isRead).length;
+  if (actionsBar) {
+    actionsBar.style.display = unreadCount > 0 ? 'block' : 'none';
+  }
+
+  if (!container) return;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state-wrap">
+        <div class="empty-state-icon">
+          <i class="bi bi-bell"></i>
+        </div>
+        <h4 class="empty-state-title">Không có thông báo nào</h4>
+        <p class="empty-state-desc">Dữ liệu hiện đang để trống. Bạn sẽ nhận được thông báo khi có phản hồi từ Mentor, cập nhật tiến độ công việc hoặc báo cáo tuần.</p>
+      </div>
+    `;
+    return;
+  }
+
+  let html = `
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <span class="text-muted small">Hiển thị ${filtered.length} thông báo</span>
+    </div>
+  `;
+
+  filtered.forEach(item => {
+    let iconClass = 'bi bi-info-circle-fill';
+    let iconType = 'info';
+    if (item.type === 'success') {
+      iconClass = 'bi bi-check-circle-fill';
+      iconType = 'success';
+    } else if (item.type === 'warning') {
+      iconClass = 'bi bi-exclamation-triangle-fill';
+      iconType = 'warning';
+    }
+
+    html += `
+      <div class="notif-list-item ${item.isRead ? '' : 'unread'}">
+        <div class="notif-item-icon ${iconType}">
+          <i class="${iconClass}"></i>
+        </div>
+        <div class="notif-item-body">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h6 class="notif-item-title">${escapeHtml(item.title)}</h6>
+            <div class="d-flex align-items-center gap-2">
+              ${!item.isRead ? '<span class="notif-unread-dot" title="Chưa đọc"></span>' : ''}
+              <button type="button" class="btn btn-sm btn-link text-secondary p-0 text-decoration-none" onclick="toggleNotificationRead('${item.id}')" title="${item.isRead ? 'Đánh dấu chưa đọc' : 'Đánh dấu đã đọc'}">
+                <i class="bi ${item.isRead ? 'bi-envelope' : 'bi-envelope-open'}"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" onclick="deleteNotification('${item.id}')" title="Xóa thông báo">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+          </div>
+          <p class="notif-item-text">${escapeHtml(item.content)}</p>
+          <div class="notif-item-meta">
+            <span><i class="bi bi-clock me-1"></i>${escapeHtml(item.time || 'Gần đây')}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
 

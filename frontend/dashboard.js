@@ -22,6 +22,10 @@ const DEFAULT_MOCK_APPLICATIONS = [];
 
 let applications = [];
 let internList = [];
+if (typeof window !== "undefined") {
+  window.applications = applications;
+  window.internList = internList;
+}
 
 // HỒ SƠ NGƯỜI DÙNG ĐĂNG NHẬP (LẤY TỪ PHIÊN ĐĂNG NHẬP THỰC TẾ)
 let userProfile = (() => {
@@ -62,7 +66,10 @@ function switchTab(tabName) {
     review: { tab: document.getElementById("reviewTab"), nav: document.getElementById("navReview") },
     interns: { tab: document.getElementById("internsTab"), nav: document.getElementById("navInterns") },
     attendance: { tab: document.getElementById("attendanceTab"), nav: document.getElementById("navAttendance") },
-    programs: { tab: document.getElementById("programsTab"), nav: document.getElementById("navPrograms") }
+    programs: { tab: document.getElementById("programsTab"), nav: document.getElementById("navPrograms") },
+    mentors: { tab: document.getElementById("mentorsTab"), nav: document.getElementById("navMentors") },
+    reports: { tab: document.getElementById("reportsTab"), nav: document.getElementById("navReports") },
+    tasks: { tab: document.getElementById("tasksTab"), nav: document.getElementById("navTasks") }
   };
 
   Object.keys(tabs).forEach((key) => {
@@ -86,6 +93,12 @@ function switchTab(tabName) {
     renderAttendanceTab();
   } else if (tabName === "programs") {
     renderPrograms();
+  } else if (tabName === "mentors") {
+    initMentorsTab();
+  } else if (tabName === "reports") {
+    renderReportsTab();
+  } else if (tabName === "tasks") {
+    initTasksTab();
   }
 }
 
@@ -791,6 +804,9 @@ function approveCandidate(candidate) {
       status: "Đang thực tập"
     };
     internList.unshift(newIntern);
+    try {
+      localStorage.setItem("codegym_saved_interns", JSON.stringify(internList));
+    } catch (e) {}
   }
 
   // Cập nhật lại giao diện các tab
@@ -1276,6 +1292,9 @@ function handleAddSubmit(e) {
   };
 
   internList.unshift(newIntern);
+  try {
+    localStorage.setItem("codegym_saved_interns", JSON.stringify(internList));
+  } catch (e) {}
   closeModal("addModal");
   filterData();
   renderOverview();
@@ -2018,6 +2037,10 @@ async function handleEditSubmit(e) {
       }
     }
 
+    try {
+      localStorage.setItem("codegym_saved_interns", JSON.stringify(internList));
+    } catch (e) {}
+
     closeModal("editModal");
     filterData();
     renderOverview();
@@ -2074,10 +2097,26 @@ async function executeDeleteIntern() {
     }
   }
 
-  internList = internList.filter((item) => item.id !== id);
-  filterData();
-  renderOverview();
-  showToast(`Đã xóa thực tập sinh "${internName}" khỏi danh sách.`, "warning");
+    internList = internList.filter((item) => item.id !== id);
+    try {
+      localStorage.setItem("codegym_saved_interns", JSON.stringify(internList));
+      let mentors = getMentors();
+      let changed = false;
+      mentors.forEach(m => {
+        if (Array.isArray(m.assignedInternIds) && m.assignedInternIds.some(iId => String(iId) === String(id))) {
+          m.assignedInternIds = m.assignedInternIds.filter(iId => String(iId) !== String(id));
+          changed = true;
+        }
+      });
+      if (changed) {
+        saveMentors(mentors);
+        renderMentorStats();
+        renderMentorTable();
+      }
+    } catch (e) {}
+    filterData();
+    renderOverview();
+    showToast(`Đã xóa thực tập sinh "${internName}" khỏi danh sách.`, "warning");
 }
 
 // ==========================================================================
@@ -2299,6 +2338,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const y = now.getFullYear();
     todayDisplay.textContent = `${d}/${m}/${y}`;
   }
+
+  // Đồng bộ danh sách thực tập sinh đã lưu ở frontend
+  try {
+    const savedInterns = localStorage.getItem("codegym_saved_interns");
+    if (savedInterns) {
+      const parsed = JSON.parse(savedInterns);
+      if (Array.isArray(parsed) && parsed.length > 0 && internList.length === 0) {
+        internList = parsed;
+      }
+    }
+  } catch (e) {}
 
   // Khởi tạo các bảng dữ liệu
   renderOverview();
@@ -2536,6 +2586,9 @@ async function loadInternsFromDB() {
         if (typeof renderAttendanceSheet === "function") {
           renderAttendanceSheet();
         }
+        if (typeof renderReportsTab === "function" && document.getElementById("reportsTab") && document.getElementById("reportsTab").classList.contains("active")) {
+          renderReportsTab();
+        }
         console.log(`✅ Đã nạp thành công ${res.data.length} bản ghi từ MySQL Database!`);
       }
     }
@@ -2625,7 +2678,7 @@ function initPrograms() {
           status: p.status || 'active',
           progress: 50,
           desc: p.description || '',
-          schedule: [],
+          schedule: getProgramSchedule('prog_' + p.id),
           isUserCreated: true
         }));
         if (!selectedProgramId && internshipPrograms.length > 0) {
@@ -2709,11 +2762,17 @@ function renderPrograms() {
     }
     if (scheduleTimeline) {
       scheduleTimeline.innerHTML = `
-        <div style="text-align: center; padding: 24px 16px; color: #94a3b8; font-size: 13px;">
-          Chưa có dữ liệu lịch trình
+        <div class="schedule-empty-state">
+          <div class="schedule-empty-icon-wrap">
+            <i class="fa-regular fa-file-lines"></i>
+          </div>
+          <div class="schedule-empty-title">Chưa có lịch trình</div>
+          <div class="schedule-empty-desc">Thêm các mốc quan trọng của chương trình.</div>
         </div>
       `;
     }
+    const subTitleEl = document.getElementById("programScheduleSubtitle");
+    if (subTitleEl) subTitleEl.textContent = "0 hoạt động";
     if (actionsEl) actionsEl.style.display = "none";
     return;
   }
@@ -2819,28 +2878,95 @@ function renderPrograms() {
     `;
   }
 
-  // 3. Render Lịch trình dự kiến (theo mẫu thẻ giai đoạn)
+  // 3. Render Lịch trình dự kiến (theo mẫu thẻ giai đoạn & hoạt động chuẩn Screenshot 1)
+  if (currentProg) {
+    if (!currentProg.schedule || currentProg.schedule.length === 0) {
+      currentProg.schedule = getProgramSchedule(currentProg.id);
+    }
+  }
+
+  const schedCount = (currentProg && Array.isArray(currentProg.schedule)) ? currentProg.schedule.length : 0;
+  const subtitleEl = document.getElementById("programScheduleSubtitle");
+  if (subtitleEl) {
+    subtitleEl.textContent = `${schedCount} hoạt động`;
+  }
+
   if (scheduleTimeline) {
-    if (currentProg && Array.isArray(currentProg.schedule) && currentProg.schedule.length > 0) {
+    if (schedCount > 0) {
       scheduleTimeline.innerHTML = currentProg.schedule.map((item, idx) => {
-        const numStr = String(idx + 1).padStart(2, "0");
-        const stageHeader = item.title 
-          ? `${item.week ? item.week + '  ' : ''}${item.title}`
-          : item.week;
-        return `
-          <div class="schedule-stage-card" style="margin-bottom: 8px; padding: 10px 14px;">
-            <div class="stage-num-badge" style="width: 32px; height: 32px; font-size: 13px;">${numStr}</div>
-            <div class="stage-info">
-              <div class="stage-title" style="font-size: 13px;">${stageHeader}</div>
-              <div class="stage-desc" style="font-size: 12.5px;">${item.desc || ''}</div>
+        if (item.name || item.startDate) {
+          let badgeClass = "sched-badge-upcoming";
+          if (item.status === "Đang diễn ra") badgeClass = "sched-badge-active";
+          else if (item.status === "Đã hoàn thành") badgeClass = "sched-badge-done";
+          else if (item.status === "Đã hủy") badgeClass = "sched-badge-cancelled";
+
+          const startFormatted = formatScheduleDateTime(item.startDate);
+          const endFormatted = formatScheduleDateTime(item.endDate);
+          const timeDisplay = (startFormatted && endFormatted) 
+            ? `${startFormatted} – ${endFormatted}` 
+            : (startFormatted || endFormatted || 'Chưa xếp thời gian');
+
+          return `
+            <div class="sched-activity-item">
+              <div class="sched-activity-header">
+                <div class="sched-activity-title-group">
+                  <h4 class="sched-activity-name">${item.name || 'Hoạt động'}</h4>
+                  <span class="sched-status-badge ${badgeClass}">${item.status || 'Sắp diễn ra'}</span>
+                </div>
+                <button type="button" class="btn-remove-stage" onclick="removeScheduleActivity('${item.id || idx}')" title="Xóa lịch trình">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+              ${item.desc ? `<div class="sched-activity-desc">${item.desc}</div>` : ''}
+              <div class="sched-activity-meta-grid">
+                <div class="sched-meta-item">
+                  <i class="fa-regular fa-calendar-check text-primary"></i>
+                  <span>${timeDisplay}</span>
+                </div>
+                <div class="sched-meta-item">
+                  <i class="fa-solid fa-location-dot text-danger"></i>
+                  <span>${item.format || 'Trực tiếp'}${item.location ? ' · ' + item.location : ''}</span>
+                </div>
+                ${item.inCharge ? `
+                <div class="sched-meta-item">
+                  <i class="fa-regular fa-user text-muted"></i>
+                  <span>Phụ trách: <strong>${item.inCharge}</strong></span>
+                </div>` : ''}
+                ${item.target ? `
+                <div class="sched-meta-item">
+                  <i class="fa-solid fa-users text-info"></i>
+                  <span>Đối tượng: ${item.target}</span>
+                </div>` : ''}
+              </div>
             </div>
-          </div>
-        `;
+          `;
+        } else {
+          const numStr = String(idx + 1).padStart(2, "0");
+          const stageHeader = item.title 
+            ? `${item.week ? item.week + '  ' : ''}${item.title}`
+            : item.week;
+          return `
+            <div class="schedule-stage-card" style="margin-bottom: 8px; padding: 10px 14px;">
+              <div class="stage-num-badge" style="width: 32px; height: 32px; font-size: 13px;">${numStr}</div>
+              <div class="stage-info">
+                <div class="stage-title" style="font-size: 13px;">${stageHeader}</div>
+                <div class="stage-desc" style="font-size: 12.5px;">${item.desc || ''}</div>
+              </div>
+              <button type="button" class="btn-remove-stage" onclick="removeScheduleActivity('${idx}')" title="Xóa giai đoạn">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          `;
+        }
       }).join("");
     } else {
       scheduleTimeline.innerHTML = `
-        <div style="text-align: center; padding: 20px 10px; color: #94a3b8; font-size: 13px; font-style: italic;">
-          Chưa có lịch trình dự kiến cho chương trình này
+        <div class="schedule-empty-state">
+          <div class="schedule-empty-icon-wrap">
+            <i class="fa-regular fa-file-lines"></i>
+          </div>
+          <div class="schedule-empty-title">Chưa có lịch trình</div>
+          <div class="schedule-empty-desc">Thêm các mốc quan trọng của chương trình.</div>
         </div>
       `;
     }
@@ -2941,6 +3067,261 @@ function removeModalStage(idx) {
   if (idx >= 0 && idx < currentModalStages.length) {
     currentModalStages.splice(idx, 1);
     renderModalStages();
+  }
+}
+
+// ==========================================
+// QUẢN LÝ LỊCH TRÌNH CHƯƠNG TRÌNH (MODAL 19 & SCREENSHOTS)
+// Không có dữ liệu cứng, dữ liệu mặc định để trống hoàn toàn (User request)
+// ==========================================
+
+function getProgramSchedule(progId) {
+  if (!progId) return [];
+  try {
+    const raw = localStorage.getItem("codegym_hr_schedule_" + progId);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {}
+  return [];
+}
+
+function saveProgramSchedule(progId, scheduleList) {
+  if (!progId) return;
+  try {
+    localStorage.setItem("codegym_hr_schedule_" + progId, JSON.stringify(scheduleList));
+  } catch (e) {}
+}
+
+function formatScheduleDateTime(dtStr) {
+  if (!dtStr) return "";
+  try {
+    const d = new Date(dtStr);
+    if (isNaN(d.getTime())) return dtStr;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${mins}`;
+  } catch (e) {
+    return dtStr;
+  }
+}
+
+function openAddScheduleModal() {
+  const form = document.getElementById("scheduleActivityForm");
+  if (form) form.reset();
+
+  // Nạp danh sách chương trình thực tập vào select
+  const progSelect = document.getElementById("schedProgramSelect");
+  if (progSelect) {
+    if (!internshipPrograms || internshipPrograms.length === 0) {
+      progSelect.innerHTML = `<option value="">Chưa có chương trình nào trong hệ thống</option>`;
+      updateScheduleProgramInfo("");
+    } else {
+      progSelect.innerHTML = `<option value="">Chọn chương trình thực tập...</option>` +
+        internshipPrograms.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+      
+      // Mặc định chọn chương trình đang xem nếu có
+      if (selectedProgramId && internshipPrograms.some(p => p.id === selectedProgramId)) {
+        progSelect.value = selectedProgramId;
+        updateScheduleProgramInfo(selectedProgramId);
+      } else if (internshipPrograms.length > 0) {
+        progSelect.value = internshipPrograms[0].id;
+        updateScheduleProgramInfo(internshipPrograms[0].id);
+      }
+    }
+  }
+
+  // Nạp danh sách tài khoản phụ trách: Mentor và HR Manager
+  const inChargeSelect = document.getElementById("schedInCharge");
+  if (inChargeSelect) {
+    const mentors = getAvailableMentors();
+    let optionsHtml = `<option value="">Chọn tài khoản phụ trách</option>`;
+    
+    // Tài khoản HR hiện tại
+    const hrName = (userProfile && userProfile.name) ? userProfile.name : "Nguyễn Thị Hoa";
+    optionsHtml += `<option value="${hrName}">${hrName} (HR Manager)</option>`;
+
+    // Các Mentor trong hệ thống
+    mentors.forEach(m => {
+      optionsHtml += `<option value="${m}">${m} (Mentor)</option>`;
+    });
+
+    inChargeSelect.innerHTML = optionsHtml;
+  }
+
+  // DỮ LIỆU ĐỂ TRỐNG HOÀN TOÀN (KHÔNG CÓ DỮ LIỆU CỨNG GIẢ LẬP)
+  const actName = document.getElementById("schedActivityName");
+  const actDesc = document.getElementById("schedActivityDesc");
+  const actStart = document.getElementById("schedStartDate");
+  const actEnd = document.getElementById("schedEndDate");
+  const actTarget = document.getElementById("schedTarget");
+  const actFormat = document.getElementById("schedFormat");
+  const actLocation = document.getElementById("schedLocation");
+  const actReminder = document.getElementById("schedReminder");
+  const actStatus = document.getElementById("schedStatus");
+  const actNotify = document.getElementById("schedSendNotify");
+
+  if (actName) actName.value = "";
+  if (actDesc) actDesc.value = "";
+  if (actStart) actStart.value = "";
+  if (actEnd) actEnd.value = "";
+  if (actTarget) actTarget.value = "Cả hai";
+  if (actFormat) actFormat.value = "Trực tiếp";
+  if (actLocation) actLocation.value = "";
+  if (actReminder) actReminder.value = "15 phút";
+  if (actStatus) actStatus.value = "Sắp diễn ra";
+  if (actNotify) actNotify.checked = true;
+
+  openModal("addScheduleModal");
+}
+
+function handleSchedProgramChange(val) {
+  updateScheduleProgramInfo(val);
+}
+
+function updateScheduleProgramInfo(programId) {
+  const deptEl = document.getElementById("schedBoxDept");
+  const mentorEl = document.getElementById("schedBoxMentor");
+  const timeEl = document.getElementById("schedBoxTime");
+
+  const prog = internshipPrograms.find(p => p.id === programId);
+  if (!prog) {
+    if (deptEl) deptEl.textContent = "--";
+    if (mentorEl) mentorEl.textContent = "--";
+    if (timeEl) timeEl.textContent = "Thời gian chương trình: --";
+    return;
+  }
+
+  if (deptEl) deptEl.textContent = prog.dept || "Chưa cập nhật";
+  if (mentorEl) mentorEl.textContent = prog.mentor || "Chưa phân công";
+
+  const timeStr = (prog.startDateFormatted || prog.endDateFormatted)
+    ? `${prog.startDateFormatted || 'Chưa xếp'} – ${prog.endDateFormatted || 'Chưa xếp'}`
+    : (prog.startDate && prog.endDate ? `${prog.startDate} – ${prog.endDate}` : 'Chưa xếp thời gian');
+
+  if (timeEl) timeEl.textContent = `Thời gian chương trình: ${timeStr}`;
+}
+
+function handleSaveScheduleActivity(e) {
+  e.preventDefault();
+
+  const progId = document.getElementById("schedProgramSelect").value;
+  if (!progId) {
+    showToast("Vui lòng chọn chương trình thực tập!", "warning");
+    return;
+  }
+
+  const prog = internshipPrograms.find(p => p.id === progId);
+  if (!prog) {
+    showToast("Chương trình thực tập không hợp lệ!", "danger");
+    return;
+  }
+
+  const name = document.getElementById("schedActivityName").value.trim();
+  const desc = document.getElementById("schedActivityDesc").value.trim();
+  const startDate = document.getElementById("schedStartDate").value;
+  const endDate = document.getElementById("schedEndDate").value;
+  const target = document.getElementById("schedTarget").value;
+  const inCharge = document.getElementById("schedInCharge").value;
+  const format = document.getElementById("schedFormat").value;
+  const location = document.getElementById("schedLocation").value.trim();
+  const reminder = document.getElementById("schedReminder").value;
+  const status = document.getElementById("schedStatus").value;
+  const sendNotify = document.getElementById("schedSendNotify").checked;
+
+  if (!name) {
+    showToast("Vui lòng nhập tên hoạt động!", "warning");
+    return;
+  }
+  if (!desc) {
+    showToast("Vui lòng nhập nội dung mô tả!", "warning");
+    return;
+  }
+  if (!startDate || !endDate) {
+    showToast("Vui lòng chọn thời gian bắt đầu và kết thúc!", "warning");
+    return;
+  }
+  if (!inCharge) {
+    showToast("Vui lòng chọn tài khoản phụ trách!", "warning");
+    return;
+  }
+
+  if (new Date(startDate) > new Date(endDate)) {
+    showToast("Ngày kết thúc phải diễn ra sau ngày bắt đầu!", "warning");
+    return;
+  }
+
+  const newActivity = {
+    id: "act_" + Date.now(),
+    name: name,
+    desc: desc,
+    programId: progId,
+    startDate: startDate,
+    endDate: endDate,
+    target: target,
+    inCharge: inCharge,
+    format: format,
+    location: location,
+    reminder: reminder,
+    status: status,
+    sendNotify: sendNotify,
+    createdAt: new Date().toISOString()
+  };
+
+  if (!Array.isArray(prog.schedule)) {
+    prog.schedule = [];
+  }
+  prog.schedule.push(newActivity);
+
+  // Lưu lịch trình theo từng chương trình vào localStorage
+  saveProgramSchedule(progId, prog.schedule);
+
+  // Đồng bộ lại internshipPrograms
+  try {
+    localStorage.setItem("codegym_hr_programs", JSON.stringify(internshipPrograms));
+  } catch (err) {}
+
+  // Gửi thông báo nếu người dùng tích chọn
+  if (sendNotify) {
+    try {
+      const notifs = JSON.parse(localStorage.getItem('codegym_notifications') || '[]');
+      notifs.unshift({
+        id: Date.now(),
+        title: `Lịch trình mới: ${name}`,
+        message: `Hoạt động "${name}" đã được xếp lịch cho đối tượng "${target}".`,
+        time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        type: 'schedule',
+        read: false
+      });
+      localStorage.setItem('codegym_notifications', JSON.stringify(notifs));
+    } catch (err) {}
+  }
+
+  closeModal("addScheduleModal");
+  showToast("Lưu lịch trình chương trình thành công!", "success");
+
+  // Hiển thị chương trình vừa thêm lịch
+  selectedProgramId = progId;
+  renderPrograms();
+}
+
+function removeScheduleActivity(actId) {
+  const currentProg = internshipPrograms.find(p => p.id === selectedProgramId);
+  if (!currentProg || !Array.isArray(currentProg.schedule)) return;
+
+  const idx = currentProg.schedule.findIndex((item, i) => String(item.id || i) === String(actId));
+  if (idx !== -1) {
+    currentProg.schedule.splice(idx, 1);
+    saveProgramSchedule(currentProg.id, currentProg.schedule);
+    try {
+      localStorage.setItem("codegym_hr_programs", JSON.stringify(internshipPrograms));
+    } catch (err) {}
+    renderPrograms();
+    showToast("Đã xóa hoạt động khỏi lịch trình.", "info");
   }
 }
 
@@ -4255,3 +4636,2250 @@ window.openLeaveDetailModal = openLeaveDetailModal;
 window.handleApproveLeave = handleApproveLeave;
 window.handleRejectLeave = handleRejectLeave;
 window.exportAttendanceReport = exportAttendanceReport;
+
+// ==========================================================================
+// 15. PHÂN HỆ MENTOR & PHÒNG BAN (FRONTEND CONTROLLER)
+// ==========================================================================
+// Đảm bảo dữ liệu phân hệ Mentor & Phòng ban khởi tạo sạch, để trống hoàn toàn theo yêu cầu
+const MENTOR_DATA_VERSION = "v_empty_fresh_reset_2026_clean";
+if (localStorage.getItem("hr_mentor_schema_ver") !== MENTOR_DATA_VERSION) {
+  localStorage.removeItem("hr_mentors_list");
+  localStorage.removeItem("hr_departments_list");
+  localStorage.setItem("hr_mentor_schema_ver", MENTOR_DATA_VERSION);
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+window.escapeHtml = escapeHtml;
+
+function getMentorsStorageKey() {
+  return "hr_mentors_list";
+}
+
+function getDeptsStorageKey() {
+  return "hr_departments_list";
+}
+
+function getMentors() {
+  try {
+    const raw = localStorage.getItem(getMentorsStorageKey());
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveMentors(mentors) {
+  try {
+    localStorage.setItem(getMentorsStorageKey(), JSON.stringify(mentors));
+  } catch (e) {}
+}
+
+function getDepartments() {
+  try {
+    const raw = localStorage.getItem(getDeptsStorageKey());
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveDepartments(depts) {
+  try {
+    localStorage.setItem(getDeptsStorageKey(), JSON.stringify(depts));
+  } catch (e) {}
+}
+
+let currentMentorSubTab = "mentors";
+let currentDeleteMentorId = null;
+let currentAssignMentorId = null;
+let selectedAssignInternIds = new Set();
+
+function handleMentorHeaderAction() {
+  if (currentMentorSubTab === "mentors") {
+    openAddMentorModal();
+  } else {
+    openAddDeptModal();
+  }
+}
+
+function updateMentorHeaderButton() {
+  const btnText = document.getElementById("btnHeaderMentorActionText");
+  const btn = document.getElementById("btnHeaderMentorAction");
+  if (!btn) return;
+  if (currentMentorSubTab === "mentors") {
+    if (btnText) btnText.textContent = "Thêm Mentor";
+    btn.onclick = openAddMentorModal;
+  } else {
+    if (btnText) btnText.textContent = "Thêm phòng ban";
+    btn.onclick = openAddDeptModal;
+  }
+}
+
+function initMentorsTab() {
+  updateDeptDropdowns();
+  renderMentorStats();
+  switchMentorSubTab(currentMentorSubTab || "mentors");
+}
+
+function switchMentorSubTab(tab) {
+  currentMentorSubTab = tab;
+  const btnMentors = document.getElementById("btnSubTabMentors");
+  const btnDepts = document.getElementById("btnSubTabDepts");
+  const viewMentors = document.getElementById("mentorSubTabView");
+  const viewDepts = document.getElementById("deptSubTabView");
+
+  updateMentorHeaderButton();
+
+  if (tab === "mentors") {
+    if (btnMentors) btnMentors.classList.add("active");
+    if (btnDepts) btnDepts.classList.remove("active");
+    if (viewMentors) {
+      viewMentors.style.display = "block";
+      viewMentors.classList.remove("d-none");
+    }
+    if (viewDepts) {
+      viewDepts.style.display = "none";
+      viewDepts.classList.add("d-none");
+    }
+    renderMentorTable();
+  } else {
+    if (btnDepts) btnDepts.classList.add("active");
+    if (btnMentors) btnMentors.classList.remove("active");
+    if (viewMentors) {
+      viewMentors.style.display = "none";
+      viewMentors.classList.add("d-none");
+    }
+    if (viewDepts) {
+      viewDepts.style.display = "block";
+      viewDepts.classList.remove("d-none");
+    }
+    renderDeptTable();
+  }
+}
+
+function updateDeptDropdowns() {
+  const depts = getDepartments();
+  const filterSelect = document.getElementById("filterMentorDept");
+  const addSelect = document.getElementById("mentorAddDept");
+  const editSelect = document.getElementById("mentorEditDept");
+  const assignDeptSelect = document.getElementById("assignDeptFilter");
+
+  const deptNames = Array.from(new Set(depts.map(d => d.name).filter(Boolean)));
+
+  if (filterSelect) {
+    const currentVal = filterSelect.value;
+    filterSelect.innerHTML = `<option value="">Tất cả phòng ban</option>` +
+      deptNames.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
+    if (currentVal && deptNames.includes(currentVal)) {
+      filterSelect.value = currentVal;
+    } else {
+      filterSelect.value = "";
+    }
+  }
+
+  if (addSelect) {
+    const currentVal = addSelect.value;
+    addSelect.innerHTML = `<option value="">Chọn phòng ban</option>` +
+      deptNames.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
+    if (currentVal && deptNames.includes(currentVal)) {
+      addSelect.value = currentVal;
+    }
+  }
+
+  if (editSelect) {
+    const currentVal = editSelect.value;
+    editSelect.innerHTML = `<option value="">Chọn phòng ban</option>` +
+      deptNames.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
+    if (currentVal && deptNames.includes(currentVal)) {
+      editSelect.value = currentVal;
+    }
+  }
+
+  if (assignDeptSelect) {
+    const currentVal = assignDeptSelect.value;
+    assignDeptSelect.innerHTML = `<option value="">Tất cả phòng ban</option>` +
+      deptNames.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join("");
+    if (currentVal && deptNames.includes(currentVal)) {
+      assignDeptSelect.value = currentVal;
+    } else {
+      assignDeptSelect.value = "";
+    }
+  }
+}
+
+function renderMentorStats() {
+  const mentors = getMentors();
+  const depts = getDepartments();
+
+  const activeMentors = mentors.filter(m => m.status === "Đang hoạt động");
+  const inactiveMentors = mentors.filter(m => m.status === "Tạm ngưng");
+
+  const capacityTotal = activeMentors.reduce((sum, m) => sum + (Number(m.maxInterns) || 5), 0);
+  const capacityAssigned = activeMentors.reduce((sum, m) => sum + ((m.assignedInternIds && m.assignedInternIds.length) || 0), 0);
+  const capacityPercent = capacityTotal > 0 ? Math.round((capacityAssigned / capacityTotal) * 100) : 0;
+
+  // Tính số lượng phòng ban từ cấu hình phòng ban và từ mentor đã phân bổ
+  const allDeptNames = new Set([
+    ...depts.map(d => d.name ? d.name.trim() : "").filter(Boolean),
+    ...mentors.map(m => (m.department && m.department !== "Chưa gán") ? m.department.trim() : "").filter(Boolean)
+  ]);
+  const activeDeptCount = allDeptNames.size;
+  const totalDeptCount = depts.length > 0 ? depts.length : activeDeptCount;
+
+  const elActiveMentors = document.getElementById("statActiveMentors");
+  const elInactiveMentors = document.getElementById("statInactiveMentors");
+  const elActiveDepts = document.getElementById("statActiveDepts");
+  const elTotalDepts = document.getElementById("statTotalDepts");
+  const elCapacityPercent = document.getElementById("statCapacityPercent");
+  const elCapacityAssigned = document.getElementById("statCapacityAssigned");
+  const elCapacityTotal = document.getElementById("statCapacityTotal");
+  const elBadgeMentor = document.getElementById("badgeMentorCount");
+  const elBadgeDept = document.getElementById("badgeDeptCount");
+
+  if (elActiveMentors) elActiveMentors.textContent = activeMentors.length;
+  if (elInactiveMentors) elInactiveMentors.textContent = inactiveMentors.length;
+  if (elActiveDepts) elActiveDepts.textContent = activeDeptCount;
+  if (elTotalDepts) elTotalDepts.textContent = totalDeptCount;
+  if (elCapacityPercent) elCapacityPercent.textContent = `${capacityPercent}%`;
+  if (elCapacityAssigned) elCapacityAssigned.textContent = capacityAssigned;
+  if (elCapacityTotal) elCapacityTotal.textContent = capacityTotal;
+  if (elBadgeMentor) elBadgeMentor.textContent = mentors.length;
+  if (elBadgeDept) elBadgeDept.textContent = totalDeptCount;
+}
+
+function getMentorInitials(name) {
+  if (!name) return "MT";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function renderMentorTable() {
+  const table = document.getElementById("mentorMainTable");
+  const tbody = document.getElementById("mentorTableBody");
+  const emptyState = document.getElementById("mentorEmptyState");
+  const mentors = getMentors();
+
+  const deptFilter = (document.getElementById("filterMentorDept")?.value || "").trim().toLowerCase();
+  const keyword = (document.getElementById("searchMentorKeyword")?.value || "").trim().toLowerCase();
+  const statusFilter = (document.getElementById("filterMentorStatus")?.value || "").trim();
+
+  let filtered = mentors.filter(m => {
+    if (deptFilter && (m.department || "").toLowerCase() !== deptFilter) return false;
+    if (statusFilter && m.status !== statusFilter) return false;
+    if (keyword) {
+      const matchName = (m.name || "").toLowerCase().includes(keyword);
+      const matchEmail = (m.email || "").toLowerCase().includes(keyword);
+      const matchRole = (m.role || "").toLowerCase().includes(keyword);
+      if (!matchName && !matchEmail && !matchRole) return false;
+    }
+    return true;
+  });
+
+  if (!tbody) return;
+
+  if (mentors.length === 0 || filtered.length === 0) {
+    if (table) {
+      table.style.display = "none";
+      table.classList.add("d-none");
+    }
+    if (emptyState) {
+      emptyState.style.display = "block";
+      emptyState.classList.remove("d-none");
+    }
+    tbody.innerHTML = "";
+    return;
+  }
+
+  if (table) {
+    table.style.display = "table";
+    table.classList.remove("d-none");
+  }
+  if (emptyState) {
+    emptyState.style.display = "none";
+    emptyState.classList.add("d-none");
+  }
+
+  tbody.innerHTML = filtered.map(m => {
+    const assignedCount = m.assignedInternIds ? m.assignedInternIds.length : 0;
+    const maxCount = Number(m.maxInterns) || 5;
+    const percent = Math.round((assignedCount / maxCount) * 100);
+    const initials = getMentorInitials(m.name);
+    const isActive = m.status === "Đang hoạt động";
+    const deptText = (m.department && m.department !== "Chưa gán") ? m.department : "Marketing";
+
+    return `
+      <tr>
+        <td>
+          <div class="mentor-cell-flex">
+            ${m.avatar ? `
+              <img src="${escapeHtml(m.avatar)}" alt="${escapeHtml(m.name)}" class="mentor-compact-avatar-img">
+            ` : `
+              <div class="mentor-compact-avatar">${initials}</div>
+            `}
+            <div class="mentor-compact-info">
+              <span class="mentor-compact-name">${escapeHtml(m.name)}</span>
+              <span class="mentor-compact-role">${escapeHtml(m.role || 'God')}</span>
+              <span class="mentor-compact-email">
+                <i class="fa-regular fa-envelope"></i>${escapeHtml(m.email)}
+              </span>
+            </div>
+          </div>
+        </td>
+        <td>
+          <span class="mentor-compact-dept-tag">
+            ${escapeHtml(deptText)}
+          </span>
+        </td>
+        <td>
+          <div class="mentor-compact-capacity">
+            <div class="mentor-capacity-row">
+              <span class="mentor-capacity-val">${assignedCount}/${maxCount} TTS</span>
+              <span class="mentor-capacity-pct">${percent}%</span>
+            </div>
+            <div class="mentor-capacity-track">
+              <div class="mentor-capacity-bar" style="width: ${Math.min(100, percent)}%;"></div>
+            </div>
+          </div>
+        </td>
+        <td>
+          ${isActive ? `
+            <span class="mentor-compact-status active">Đang hoạt động</span>
+          ` : `
+            <span class="mentor-compact-status inactive">Tạm ngưng</span>
+          `}
+        </td>
+        <td style="text-align: right;">
+          <div class="mentor-action-icons-wrap">
+            <button type="button" class="btn-mentor-action-icon" title="Phân công thực tập sinh" onclick="openAssignInternModal('${m.id}')">
+              <i class="fa-solid fa-user-plus"></i>
+            </button>
+            <button type="button" class="btn-mentor-action-icon" title="Chỉnh sửa Mentor" onclick="openEditMentorModal('${m.id}')">
+              <i class="fa-regular fa-pen-to-square"></i>
+            </button>
+            <button type="button" class="btn-mentor-action-icon btn-delete-icon" title="Xóa Mentor" onclick="openDeleteMentorModal('${m.id}')">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+// --- MODAL: THÊM MENTOR ---
+function openAddMentorModal() {
+  updateDeptDropdowns();
+
+  const form = document.querySelector("#addMentorModal form");
+  if (form) form.reset();
+
+  const nameInp = document.getElementById("mentorAddName");
+  const roleInp = document.getElementById("mentorAddRole");
+  const emailInp = document.getElementById("mentorAddEmail");
+  const phoneInp = document.getElementById("mentorAddPhone");
+  const deptInp = document.getElementById("mentorAddDept");
+  const maxInp = document.getElementById("mentorAddMax");
+  const avatarInp = document.getElementById("mentorAddAvatar");
+
+  if (nameInp) nameInp.value = "";
+  if (roleInp) roleInp.value = "";
+  if (emailInp) emailInp.value = "";
+  if (phoneInp) phoneInp.value = "";
+  if (deptInp) deptInp.value = "";
+  if (maxInp) maxInp.value = "5";
+  if (avatarInp) avatarInp.value = "";
+
+  openModal("addMentorModal");
+}
+
+function handleAddMentorSubmit(event) {
+  if (event) event.preventDefault();
+  const name = (document.getElementById("mentorAddName")?.value || "").trim();
+  const role = (document.getElementById("mentorAddRole")?.value || "").trim();
+  const email = (document.getElementById("mentorAddEmail")?.value || "").trim();
+  const phone = (document.getElementById("mentorAddPhone")?.value || "").trim();
+  const dept = (document.getElementById("mentorAddDept")?.value || "").trim();
+  const max = parseInt(document.getElementById("mentorAddMax")?.value || "5", 10);
+  const avatar = (document.getElementById("mentorAddAvatar")?.value || "").trim();
+
+  if (!name || !role || !email) {
+    showToast("Vui lòng điền họ tên, chức danh và email của Mentor!", "warning");
+    return;
+  }
+
+  const mentors = getMentors();
+  const newMentor = {
+    id: "mentor_" + Date.now(),
+    name,
+    role,
+    email,
+    phone,
+    department: dept || "Chưa gán",
+    maxInterns: isNaN(max) ? 5 : max,
+    status: "Đang hoạt động",
+    avatar,
+    assignedInternIds: []
+  };
+
+  mentors.unshift(newMentor);
+  saveMentors(mentors);
+
+  closeModal("addMentorModal");
+
+  // Tự động chuyển sang sub-tab Danh sách Mentor để người dùng thấy ngay kết quả
+  switchMentorSubTab("mentors");
+
+  // Xóa các bộ lọc tìm kiếm hiện tại để không vô tình ẩn Mentor vừa thêm
+  const filterDept = document.getElementById("filterMentorDept");
+  if (filterDept) filterDept.value = "";
+  const filterStatus = document.getElementById("filterMentorStatus");
+  if (filterStatus) filterStatus.value = "";
+  const searchKw = document.getElementById("searchMentorKeyword");
+  if (searchKw) searchKw.value = "";
+
+  updateDeptDropdowns();
+  renderMentorStats();
+  renderMentorTable();
+  renderDeptTable();
+  showToast(`Đã thêm Mentor "${name}" thành công!`, "success");
+}
+
+// --- MODAL: CHỈNH SỬA MENTOR ---
+function openEditMentorModal(mentorId) {
+  const mentors = getMentors();
+  const mentor = mentors.find(m => m.id === mentorId);
+  if (!mentor) return;
+
+  updateDeptDropdowns();
+  const idInp = document.getElementById("mentorEditId");
+  const nameInp = document.getElementById("mentorEditName");
+  const roleInp = document.getElementById("mentorEditRole");
+  const emailInp = document.getElementById("mentorEditEmail");
+  const phoneInp = document.getElementById("mentorEditPhone");
+  const deptInp = document.getElementById("mentorEditDept");
+  const maxInp = document.getElementById("mentorEditMax");
+  const statusInp = document.getElementById("mentorEditStatus");
+  const avatarInp = document.getElementById("mentorEditAvatar");
+
+  if (idInp) idInp.value = mentor.id;
+  if (nameInp) nameInp.value = mentor.name || "";
+  if (roleInp) roleInp.value = mentor.role || "";
+  if (emailInp) emailInp.value = mentor.email || "";
+  if (phoneInp) phoneInp.value = mentor.phone || "";
+  if (deptInp) {
+    const opts = deptInp.options ? Array.from(deptInp.options) : [];
+    if (mentor.department && !opts.some(o => o.value === mentor.department)) {
+      const opt = document.createElement("option");
+      opt.value = mentor.department;
+      opt.textContent = mentor.department;
+      deptInp.appendChild(opt);
+    }
+    deptInp.value = mentor.department || "";
+  }
+  if (maxInp) maxInp.value = mentor.maxInterns || 5;
+  if (statusInp) statusInp.value = mentor.status || "Đang hoạt động";
+  if (avatarInp) avatarInp.value = mentor.avatar || "";
+
+  openModal("editMentorModal");
+}
+
+function handleEditMentorSubmit(event) {
+  if (event) event.preventDefault();
+  const id = document.getElementById("mentorEditId")?.value;
+  let mentors = getMentors();
+  const idx = mentors.findIndex(m => String(m.id) === String(id));
+  if (idx === -1) {
+    showToast("Không tìm thấy Mentor cần cập nhật!", "error");
+    return;
+  }
+
+  const name = (document.getElementById("mentorEditName")?.value || "").trim();
+  const role = (document.getElementById("mentorEditRole")?.value || "").trim();
+  const email = (document.getElementById("mentorEditEmail")?.value || "").trim();
+  const phone = (document.getElementById("mentorEditPhone")?.value || "").trim();
+  const dept = (document.getElementById("mentorEditDept")?.value || "").trim();
+  const max = parseInt(document.getElementById("mentorEditMax")?.value || "5", 10);
+  const status = document.getElementById("mentorEditStatus")?.value || mentors[idx].status || "Đang hoạt động";
+  const avatar = (document.getElementById("mentorEditAvatar")?.value || "").trim();
+    mentors[idx] = {
+      ...mentors[idx],
+      name,
+      role,
+      email,
+      phone,
+      department: dept,
+      maxInterns: isNaN(max) ? 5 : max,
+      status,
+      avatar
+    };
+    saveMentors(mentors);
+    closeModal("editMentorModal");
+    updateDeptDropdowns();
+    renderMentorStats();
+    renderMentorTable();
+    showToast("Lưu thay đổi thông tin Mentor thành công!", "success");
+}
+
+// --- MODAL: XÓA MENTOR ---
+function openDeleteMentorModal(mentorId) {
+  const mentors = getMentors();
+  const mentor = mentors.find(m => m.id === mentorId);
+  if (!mentor) return;
+
+  currentDeleteMentorId = mentorId;
+  const nameDisplay = document.getElementById("deleteMentorNameDisplay");
+  if (nameDisplay) nameDisplay.textContent = mentor.name;
+
+  openModal("deleteMentorModal");
+}
+
+function confirmDeleteMentor() {
+  if (!currentDeleteMentorId) return;
+  let mentors = getMentors();
+  mentors = mentors.filter(m => m.id !== currentDeleteMentorId);
+  saveMentors(mentors);
+  currentDeleteMentorId = null;
+  closeModal("deleteMentorModal");
+  renderMentorStats();
+  renderMentorTable();
+  showToast("Đã xóa Mentor khỏi hệ thống!", "info");
+}
+
+// --- MODAL: PHÂN CÔNG THỰC TẬP SINH (CHUẨN SCREENSHOT 3) ---
+
+// Lấy danh sách thực tập sinh đủ điều kiện tiếp nhận & phân công
+function getEligibleInterns() {
+  const map = new Map();
+
+  // 1. Nguồn từ internList chính thức của hệ thống
+  if (Array.isArray(internList)) {
+    internList.forEach(i => {
+      if (i && (i.id || i.name)) {
+        const idKey = String(i.id || i.email || i.name);
+        map.set(idKey, {
+          id: i.id || idKey,
+          name: i.name || "Thực tập sinh",
+          email: i.email || "",
+          school: i.school || "ĐH Bách Khoa HN",
+          major: i.major || "CNTT",
+          program: i.program || i.position || "TTS Kỹ thuật phần mềm",
+          dept: i.dept || "Kỹ thuật phần mềm",
+          mentor: i.mentor || "Chưa gán",
+          status: i.status || "Đang thực tập",
+          dossierStatus: "Đầy đủ"
+        });
+      }
+    });
+  }
+
+  // 2. Nguồn từ applications (các hồ sơ đã được duyệt hoặc đang thực tập)
+  if (Array.isArray(applications)) {
+    applications.forEach(a => {
+      if (a && ["Đã duyệt", "Đang thực tập", "approved"].includes(a.status)) {
+        const idKey = String(a.id || a.email || a.name);
+        if (!map.has(idKey)) {
+          map.set(idKey, {
+            id: a.id || idKey,
+            name: a.name || "Ứng viên tiếp nhận",
+            email: a.email || "",
+            school: a.school || "ĐH Bách Khoa HN",
+            major: a.major || "CNTT",
+            program: a.program || a.position || "TTS Kỹ thuật phần mềm",
+            dept: a.dept || "Kỹ thuật phần mềm",
+            mentor: a.mentor || "Chưa gán",
+            status: a.status,
+            dossierStatus: "Đầy đủ"
+          });
+        }
+      }
+    });
+  }
+
+  // 3. Nguồn từ localStorage cache (nếu đã lưu từ trước)
+  try {
+    const rawCache = localStorage.getItem("codegym_saved_interns");
+    if (rawCache) {
+      const parsed = JSON.parse(rawCache);
+      if (Array.isArray(parsed)) {
+        parsed.forEach(i => {
+          if (i && (i.id || i.name)) {
+            const idKey = String(i.id || i.email || i.name);
+            if (!map.has(idKey)) {
+              map.set(idKey, {
+                id: i.id || idKey,
+                name: i.name,
+                email: i.email || "",
+                school: i.school || "ĐH Bách Khoa HN",
+                major: i.major || "CNTT",
+                program: i.program || i.position || "TTS Kỹ thuật phần mềm",
+                dept: i.dept || "Kỹ thuật phần mềm",
+                mentor: i.mentor || "Chưa gán",
+                status: i.status || "Đang thực tập",
+                dossierStatus: "Đầy đủ"
+              });
+            }
+          }
+        });
+      }
+    }
+  } catch (e) {}
+
+  return Array.from(map.values());
+}
+window.getEligibleInterns = getEligibleInterns;
+
+function openAssignInternModal(mentorId) {
+  const mentors = getMentors();
+  const mentor = mentors.find(m => String(m.id) === String(mentorId));
+  if (!mentor) {
+    showToast("Không tìm thấy thông tin Mentor!", "error");
+    return;
+  }
+
+  currentAssignMentorId = mentor.id;
+
+  // Lấy danh sách ID TTS đang được gán cho mentor này
+  selectedAssignInternIds = new Set((mentor.assignedInternIds || []).map(String));
+
+  // Đồng bộ thêm nếu có TTS trong hệ thống đang mang tên mentor này
+  const eligible = getEligibleInterns();
+  eligible.forEach(i => {
+    if (i.mentor === mentor.name) {
+      selectedAssignInternIds.add(String(i.id));
+    }
+  });
+
+  const nameEl = document.getElementById("assignMentorName");
+  const subEl = document.getElementById("assignMentorSubtitle");
+  const avatarEl = document.getElementById("assignMentorAvatarBadge");
+
+  if (nameEl) nameEl.textContent = mentor.name;
+  if (subEl) subEl.textContent = `${mentor.role || 'Mentor'} · ${mentor.department || 'Chưa gán'}`;
+  if (avatarEl) avatarEl.textContent = getMentorInitials(mentor.name);
+
+  // Nạp danh sách bộ lọc Chương trình thực tập
+  const progSelect = document.getElementById("assignProgramFilter");
+  if (progSelect) {
+    const progSet = new Set();
+    if (typeof getPrograms === "function") {
+      const progs = getPrograms();
+      progs.forEach(p => { if (p && p.title) progSet.add(p.title); });
+    }
+    eligible.forEach(i => { if (i.program) progSet.add(i.program); });
+
+    let progOptions = `<option value="">Tất cả chương trình</option>`;
+    progSet.forEach(title => {
+      progOptions += `<option value="${escapeHtml(title)}">${escapeHtml(title)}</option>`;
+    });
+    progSelect.innerHTML = progOptions;
+    progSelect.value = "";
+  }
+
+  // Nạp danh sách bộ lọc Phòng ban
+  const deptSelect = document.getElementById("assignDeptFilter");
+  if (deptSelect) {
+    const deptSet = new Set();
+    const depts = getDepartments();
+    depts.forEach(d => { if (d && d.name) deptSet.add(d.name); });
+    eligible.forEach(i => { if (i.dept) deptSet.add(i.dept); });
+
+    let deptOptions = `<option value="">Tất cả phòng ban</option>`;
+    deptSet.forEach(name => {
+      deptOptions += `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+    });
+    deptSelect.innerHTML = deptOptions;
+    deptSelect.value = "";
+  }
+
+  // Đặt lại ô tìm kiếm
+  const searchInp = document.getElementById("assignInternSearch");
+  if (searchInp) searchInp.value = "";
+
+  renderAssignInternList();
+  updateAssignCountDisplay();
+  openModal("assignInternModal");
+}
+window.openAssignInternModal = openAssignInternModal;
+
+function renderAssignInternList() {
+  const tbody = document.getElementById("assignInternTableBody");
+  const checkAll = document.getElementById("checkAllAssignInterns");
+
+  const searchKeyword = (document.getElementById("assignInternSearch")?.value || "").trim().toLowerCase();
+  const progFilter = (document.getElementById("assignProgramFilter")?.value || "").trim().toLowerCase();
+  const deptFilter = (document.getElementById("assignDeptFilter")?.value || "").trim().toLowerCase();
+
+  const allEligible = getEligibleInterns();
+
+  const filtered = allEligible.filter(intern => {
+    if (progFilter && (intern.program || "").toLowerCase() !== progFilter) return false;
+    if (deptFilter && (intern.dept || "").toLowerCase() !== deptFilter) return false;
+    if (searchKeyword) {
+      const matchName = (intern.name || "").toLowerCase().includes(searchKeyword);
+      const matchEmail = (intern.email || "").toLowerCase().includes(searchKeyword);
+      const matchSchool = (intern.school || "").toLowerCase().includes(searchKeyword);
+      const matchMajor = (intern.major || "").toLowerCase().includes(searchKeyword);
+      if (!matchName && !matchEmail && !matchSchool && !matchMajor) return false;
+    }
+    return true;
+  });
+
+  if (!tbody) return;
+
+  if (allEligible.length === 0 || filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="assign-empty-cell">
+          <div class="empty-folder-box">
+            <i class="fa-solid fa-folder-open assign-empty-folder-icon"></i>
+            <div class="assign-empty-folder-text">Chưa có thực tập sinh nào đủ điều kiện tiếp nhận.</div>
+          </div>
+        </td>
+      </tr>
+    `;
+    if (checkAll) {
+      checkAll.checked = false;
+      checkAll.disabled = true;
+    }
+    updateAssignCountDisplay();
+    return;
+  }
+
+  if (checkAll) {
+    checkAll.disabled = false;
+    checkAll.checked = filtered.length > 0 && filtered.every(i => selectedAssignInternIds.has(String(i.id)));
+  }
+
+  tbody.innerHTML = filtered.map(intern => {
+    const isChecked = selectedAssignInternIds.has(String(intern.id));
+    return `
+      <tr>
+        <td class="assign-col-check">
+          <input type="checkbox" class="assign-row-checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectAssignIntern('${intern.id}', this.checked)">
+        </td>
+        <td>
+          <div class="fw-bold text-dark" style="font-size: 13.5px;">${escapeHtml(intern.name)}</div>
+          <div class="text-muted small" style="font-size: 12px;">${escapeHtml(intern.email || '')}</div>
+        </td>
+        <td>
+          <div class="text-dark small" style="font-size: 12.5px;">${escapeHtml(intern.school || 'Đại học Bách Khoa')}</div>
+          <div class="text-muted small" style="font-size: 11.5px;">${escapeHtml(intern.major || 'CNTT')}</div>
+        </td>
+        <td>
+          <span class="assign-badge-program">
+            ${escapeHtml(intern.program || 'TTS Kỹ thuật phần mềm')}
+          </span>
+        </td>
+        <td>
+          <span class="assign-badge-dept">
+            ${escapeHtml(intern.dept || 'Kỹ thuật')}
+          </span>
+        </td>
+        <td>
+          <span class="text-muted small" style="font-size: 12.5px;">${escapeHtml(intern.mentor || 'Chưa gán')}</span>
+        </td>
+        <td>
+          <span class="assign-badge-dossier">Đầy đủ</span>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  updateAssignCountDisplay();
+}
+window.renderAssignInternList = renderAssignInternList;
+
+function toggleSelectAssignIntern(internId, checked) {
+  const mentors = getMentors();
+  const mentor = mentors.find(m => String(m.id) === String(currentAssignMentorId));
+  const max = mentor ? (Number(mentor.maxInterns) || 5) : 5;
+  const idStr = String(internId);
+
+  if (checked) {
+    if (selectedAssignInternIds.size >= max) {
+      showToast(`Mentor "${mentor ? mentor.name : ''}" đã đạt số lượng tối đa (${max} TTS)! Không thể phân công thêm.`, "warning");
+      renderAssignInternList();
+      return;
+    }
+    selectedAssignInternIds.add(idStr);
+  } else {
+    selectedAssignInternIds.delete(idStr);
+  }
+
+  updateAssignCountDisplay();
+
+  const checkAll = document.getElementById("checkAllAssignInterns");
+  if (checkAll) {
+    const searchKeyword = (document.getElementById("assignInternSearch")?.value || "").trim().toLowerCase();
+    const progFilter = (document.getElementById("assignProgramFilter")?.value || "").trim().toLowerCase();
+    const deptFilter = (document.getElementById("assignDeptFilter")?.value || "").trim().toLowerCase();
+    const filtered = getEligibleInterns().filter(intern => {
+      if (progFilter && (intern.program || "").toLowerCase() !== progFilter) return false;
+      if (deptFilter && (intern.dept || "").toLowerCase() !== deptFilter) return false;
+      if (searchKeyword) {
+        const matchName = (intern.name || "").toLowerCase().includes(searchKeyword);
+        const matchEmail = (intern.email || "").toLowerCase().includes(searchKeyword);
+        const matchSchool = (intern.school || "").toLowerCase().includes(searchKeyword);
+        const matchMajor = (intern.major || "").toLowerCase().includes(searchKeyword);
+        if (!matchName && !matchEmail && !matchSchool && !matchMajor) return false;
+      }
+      return true;
+    });
+    checkAll.checked = filtered.length > 0 && filtered.every(i => selectedAssignInternIds.has(String(i.id)));
+  }
+}
+window.toggleSelectAssignIntern = toggleSelectAssignIntern;
+
+function toggleSelectAllAssignInterns(checked) {
+  const mentors = getMentors();
+  const mentor = mentors.find(m => String(m.id) === String(currentAssignMentorId));
+  const max = mentor ? (Number(mentor.maxInterns) || 5) : 5;
+
+  const searchKeyword = (document.getElementById("assignInternSearch")?.value || "").trim().toLowerCase();
+  const progFilter = (document.getElementById("assignProgramFilter")?.value || "").trim().toLowerCase();
+  const deptFilter = (document.getElementById("assignDeptFilter")?.value || "").trim().toLowerCase();
+
+  const filtered = getEligibleInterns().filter(intern => {
+    if (progFilter && (intern.program || "").toLowerCase() !== progFilter) return false;
+    if (deptFilter && (intern.dept || "").toLowerCase() !== deptFilter) return false;
+    if (searchKeyword) {
+      const matchName = (intern.name || "").toLowerCase().includes(searchKeyword);
+      const matchEmail = (intern.email || "").toLowerCase().includes(searchKeyword);
+      const matchSchool = (intern.school || "").toLowerCase().includes(searchKeyword);
+      const matchMajor = (intern.major || "").toLowerCase().includes(searchKeyword);
+      if (!matchName && !matchEmail && !matchSchool && !matchMajor) return false;
+    }
+    return true;
+  });
+
+  if (checked) {
+    let hitLimit = false;
+    for (const intern of filtered) {
+      const idStr = String(intern.id);
+      if (!selectedAssignInternIds.has(idStr)) {
+        if (selectedAssignInternIds.size >= max) {
+          hitLimit = true;
+          break;
+        }
+        selectedAssignInternIds.add(idStr);
+      }
+    }
+    if (hitLimit) {
+      showToast(`Đã chọn tối đa ${max} thực tập sinh cho mentor theo định mức.`, "info");
+    }
+  } else {
+    filtered.forEach(intern => {
+      selectedAssignInternIds.delete(String(intern.id));
+    });
+  }
+
+  renderAssignInternList();
+}
+window.toggleSelectAllAssignInterns = toggleSelectAllAssignInterns;
+
+function updateAssignCountDisplay() {
+  const countText = document.getElementById("selectedInternCountText");
+  const curCountEl = document.getElementById("assignMentorCurrentCount");
+  const maxCountEl = document.getElementById("assignMentorMaxCount");
+  const availCountEl = document.getElementById("assignMentorAvailableCount");
+
+  const mentors = getMentors();
+  const mentor = mentors.find(m => String(m.id) === String(currentAssignMentorId));
+  const max = mentor ? (Number(mentor.maxInterns) || 5) : 5;
+  const count = selectedAssignInternIds.size;
+  const avail = Math.max(0, max - count);
+
+  if (countText) {
+    countText.innerHTML = `Đã chọn <strong>${count}</strong> thực tập sinh`;
+  }
+  if (curCountEl) curCountEl.textContent = count;
+  if (maxCountEl) maxCountEl.textContent = max;
+  if (availCountEl) availCountEl.textContent = avail;
+}
+window.updateAssignCountDisplay = updateAssignCountDisplay;
+
+function confirmAssignInterns() {
+  if (!currentAssignMentorId) return;
+  let mentors = getMentors();
+  const mentor = mentors.find(m => String(m.id) === String(currentAssignMentorId));
+  if (!mentor) {
+    showToast("Không tìm thấy thông tin Mentor!", "error");
+    return;
+  }
+
+  const assignedArr = Array.from(selectedAssignInternIds).map(String);
+  mentor.assignedInternIds = assignedArr;
+
+  // Nếu TTS này trước đó đang được gán cho một Mentor khác, tự động gỡ khỏi Mentor cũ
+  mentors.forEach(otherM => {
+    if (String(otherM.id) !== String(mentor.id) && Array.isArray(otherM.assignedInternIds)) {
+      otherM.assignedInternIds = otherM.assignedInternIds.filter(id => !assignedArr.includes(String(id)));
+    }
+  });
+
+  saveMentors(mentors);
+
+  // Đồng bộ và cập nhật trường mentor cho các TTS tương ứng trong internList
+  const eligible = getEligibleInterns();
+  if (!Array.isArray(internList)) internList = [];
+
+  // Đảm bảo tất cả TTS đủ điều kiện đều có mặt trong internList
+  eligible.forEach(elig => {
+    const exists = internList.some(i => String(i.id) === String(elig.id));
+    if (!exists) {
+      internList.push({ ...elig });
+    }
+  });
+
+  // Cập nhật mentor cho các TTS
+  internList.forEach(intern => {
+    const iId = String(intern.id);
+    if (assignedArr.includes(iId)) {
+      intern.mentor = mentor.name;
+      if (mentor.department && mentor.department !== "Chưa gán") {
+        intern.dept = mentor.department;
+      }
+    } else if (intern.mentor === mentor.name) {
+      intern.mentor = "Chưa gán";
+    }
+  });
+
+  try {
+    localStorage.setItem("codegym_saved_interns", JSON.stringify(internList));
+  } catch (e) {}
+
+  // Cập nhật applications nếu có
+  if (Array.isArray(applications)) {
+    applications.forEach(a => {
+      const aId = String(a.id);
+      if (assignedArr.includes(aId)) {
+        a.mentor = mentor.name;
+        if (mentor.department && mentor.department !== "Chưa gán") {
+          a.dept = mentor.department;
+        }
+      } else if (a.mentor === mentor.name) {
+        a.mentor = "Chưa gán";
+      }
+    });
+  }
+
+  closeModal("assignInternModal");
+  renderMentorStats();
+  renderMentorTable();
+  renderDeptTable();
+  if (typeof filterData === "function") filterData();
+  if (typeof renderOverview === "function") renderOverview();
+  showToast(`Phân công ${assignedArr.length} thực tập sinh cho mentor "${mentor.name}" thành công!`, "success");
+}
+window.confirmAssignInterns = confirmAssignInterns;
+
+// --- SUB-VIEW: QUẢN LÝ PHÒNG BAN ---
+function renderDeptTable() {
+  const tbody = document.getElementById("deptTableBody");
+  const table = document.getElementById("deptMainTable");
+  const emptyState = document.getElementById("deptEmptyState");
+  const depts = getDepartments();
+  const mentors = getMentors();
+  const searchKeyword = (document.getElementById("searchDeptKeyword")?.value || "").trim().toLowerCase();
+
+  if (!tbody) return;
+
+  let filtered = depts.filter(d => {
+    if (searchKeyword) {
+      const matchName = (d.name || "").toLowerCase().includes(searchKeyword);
+      const matchCode = (d.code || "").toLowerCase().includes(searchKeyword);
+      const matchDesc = (d.desc || "").toLowerCase().includes(searchKeyword);
+      if (!matchName && !matchCode && !matchDesc) return false;
+    }
+    return true;
+  });
+
+  if (depts.length === 0 || filtered.length === 0) {
+    if (table) {
+      table.style.display = "none";
+      table.classList.add("d-none");
+    }
+    if (emptyState) {
+      emptyState.style.display = "block";
+      emptyState.classList.remove("d-none");
+    }
+    tbody.innerHTML = "";
+    return;
+  }
+
+  if (table) {
+    table.style.display = "table";
+    table.classList.remove("d-none");
+  }
+  if (emptyState) {
+    emptyState.style.display = "none";
+    emptyState.classList.add("d-none");
+  }
+
+  tbody.innerHTML = filtered.map(d => {
+    const deptMentors = mentors.filter(m => (m.department || "").toLowerCase() === (d.name || "").toLowerCase());
+    const mentorCount = deptMentors.length;
+    const internCount = deptMentors.reduce((sum, m) => sum + ((m.assignedInternIds && m.assignedInternIds.length) || 0), 0);
+
+    return `
+      <tr>
+        <td>
+          <span class="dept-code-tag">${escapeHtml(d.code || 'PB')}</span>
+        </td>
+        <td>
+          <div class="dept-cell-flex">
+            <div class="dept-compact-avatar">
+              <i class="fa-solid fa-building"></i>
+            </div>
+            <div class="dept-compact-info">
+              <span class="dept-compact-name">${escapeHtml(d.name)}</span>
+              <span class="dept-compact-desc">${escapeHtml(d.desc || 'Chưa có mô tả bổ sung')}</span>
+            </div>
+          </div>
+        </td>
+        <td>
+          <span class="dept-metric-pill ${mentorCount > 0 ? 'mentor-active' : 'metric-zero'}">
+            <i class="fa-solid fa-user-tie me-1"></i>${mentorCount} Mentor
+          </span>
+        </td>
+        <td>
+          <span class="dept-metric-pill ${internCount > 0 ? 'intern-active' : 'metric-zero'}">
+            <i class="fa-solid fa-graduation-cap me-1"></i>${internCount} TTS
+          </span>
+        </td>
+        <td style="text-align: right;">
+          <div class="mentor-action-icons-wrap">
+            <button type="button" class="btn-mentor-action-icon" title="Chỉnh sửa phòng ban" onclick="openEditDeptModal('${d.id}')">
+              <i class="fa-regular fa-pen-to-square"></i>
+            </button>
+            <button type="button" class="btn-mentor-action-icon btn-delete-icon" title="Xóa phòng ban" onclick="deleteDept('${d.id}')">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function openAddDeptModal() {
+  const idInp = document.getElementById("deptEditId");
+  const codeInp = document.getElementById("deptFormCode");
+  const nameInp = document.getElementById("deptFormName");
+  const descInp = document.getElementById("deptFormDesc");
+  const title = document.getElementById("deptModalTitle");
+
+  if (title) title.textContent = "Thêm phòng ban mới";
+  if (idInp) idInp.value = "";
+  if (codeInp) codeInp.value = "";
+  if (nameInp) nameInp.value = "";
+  if (descInp) descInp.value = "";
+
+  openModal("deptModal");
+}
+
+function openEditDeptModal(deptId) {
+  const depts = getDepartments();
+  const d = depts.find(item => item.id === deptId);
+  if (!d) return;
+
+  const idInp = document.getElementById("deptEditId");
+  const codeInp = document.getElementById("deptFormCode");
+  const nameInp = document.getElementById("deptFormName");
+  const descInp = document.getElementById("deptFormDesc");
+  const title = document.getElementById("deptModalTitle");
+
+  if (title) title.textContent = "Chỉnh sửa phòng ban";
+  if (idInp) idInp.value = d.id;
+  if (codeInp) codeInp.value = d.code || "";
+  if (nameInp) nameInp.value = d.name || "";
+  if (descInp) descInp.value = d.desc || "";
+
+  openModal("deptModal");
+}
+
+function handleSaveDept(event) {
+  if (event) event.preventDefault();
+  const id = document.getElementById("deptEditId")?.value;
+  const code = (document.getElementById("deptFormCode")?.value || "").trim().toUpperCase();
+  const name = (document.getElementById("deptFormName")?.value || "").trim();
+  const desc = (document.getElementById("deptFormDesc")?.value || "").trim();
+
+  if (!name) {
+    showToast("Vui lòng nhập tên phòng ban!", "warning");
+    return;
+  }
+
+  let depts = getDepartments();
+  if (id) {
+    const idx = depts.findIndex(d => d.id === id);
+    if (idx !== -1) {
+      depts[idx] = { ...depts[idx], code: code || name.substring(0, 3).toUpperCase(), name, desc };
+    }
+    showToast("Cập nhật phòng ban thành công!", "success");
+  } else {
+    depts.push({
+      id: "dept_" + Date.now(),
+      code: code || name.substring(0, 3).toUpperCase(),
+      name,
+      desc
+    });
+    showToast("Thêm phòng ban mới thành công!", "success");
+  }
+
+  saveDepartments(depts);
+  closeModal("deptModal");
+  updateDeptDropdowns();
+  renderMentorStats();
+  renderDeptTable();
+}
+
+function deleteDept(deptId) {
+  if (!confirm("Bạn có chắc chắn muốn xóa phòng ban này không?")) return;
+  let depts = getDepartments();
+  depts = depts.filter(d => d.id !== deptId);
+  saveDepartments(depts);
+  updateDeptDropdowns();
+  renderMentorStats();
+  renderDeptTable();
+  showToast("Đã xóa phòng ban!", "info");
+}
+
+// Gắn toàn bộ hàm của module Mentor & Phòng ban vào window
+window.initMentorsTab = initMentorsTab;
+window.switchMentorSubTab = switchMentorSubTab;
+window.renderMentorStats = renderMentorStats;
+window.renderMentorTable = renderMentorTable;
+window.openAddMentorModal = openAddMentorModal;
+window.handleAddMentorSubmit = handleAddMentorSubmit;
+window.openEditMentorModal = openEditMentorModal;
+window.handleEditMentorSubmit = handleEditMentorSubmit;
+window.openDeleteMentorModal = openDeleteMentorModal;
+window.confirmDeleteMentor = confirmDeleteMentor;
+window.openAssignInternModal = openAssignInternModal;
+window.renderAssignInternList = renderAssignInternList;
+window.toggleSelectAssignIntern = toggleSelectAssignIntern;
+window.toggleSelectAllAssignInterns = toggleSelectAllAssignInterns;
+window.confirmAssignInterns = confirmAssignInterns;
+window.openAddDeptModal = openAddDeptModal;
+window.openEditDeptModal = openEditDeptModal;
+window.handleSaveDept = handleSaveDept;
+window.deleteDept = deleteDept;
+window.renderDeptTable = renderDeptTable;
+window.handleMentorHeaderAction = handleMentorHeaderAction;
+window.updateMentorHeaderButton = updateMentorHeaderButton;
+
+// ==========================================================================
+// 17. PHÂN HỆ BÁO CÁO & THỐNG KÊ (REPORTS & ANALYTICS) - 100% FRONTEND ONLY
+// KHÔNG CHÈN DỮ LIỆU CỨNG, KHỞI TẠO ĐỂ TRỐNG (0), TỰ ĐỘNG TỔNG HỢP KHI CÓ DỮ LIỆU
+// ==========================================================================
+
+let reportFilters = {
+  program: "",
+  dept: "",
+  univ: "",
+  startDate: "",
+  endDate: ""
+};
+
+// Chuẩn hóa chuỗi ngày tháng dd/mm/yyyy thành yyyy-mm-dd để so sánh
+function normalizeReportDate(dateStr) {
+  if (!dateStr) return null;
+  const str = String(dateStr).trim();
+  if (str.includes("/")) {
+    const parts = str.split("/");
+    if (parts.length === 3) {
+      if (parts[2].length === 4) {
+        return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+      }
+    }
+  }
+  return str;
+}
+
+// Lấy thông tin Quý/Năm từ chuỗi ngày (e.g. "Q2/2026")
+function getQuarterFromDate(dateStr) {
+  const norm = normalizeReportDate(dateStr);
+  if (!norm) return null;
+  const d = new Date(norm);
+  if (isNaN(d.getTime())) return null;
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const q = Math.ceil(month / 3);
+  return `Q${q}/${year}`;
+}
+
+// Lọc danh sách TTS theo bộ lọc hiện tại (hoàn toàn dựa trên dữ liệu thật, không mock)
+function getEligibleReportInterns() {
+  const sourceList = (typeof window !== "undefined" && Array.isArray(window.internList) && window.internList.length > 0)
+    ? window.internList
+    : (Array.isArray(internList) ? internList : []);
+
+  if (sourceList.length === 0) {
+    return [];
+  }
+
+  return sourceList.filter((intern) => {
+    // 1. Lọc theo chương trình
+    if (reportFilters.program) {
+      const prog = (intern.program || intern.position || intern.major || "").toLowerCase();
+      if (!prog.includes(reportFilters.program.toLowerCase())) {
+        return false;
+      }
+    }
+
+    // 2. Lọc theo phòng ban
+    if (reportFilters.dept) {
+      const dept = (intern.dept || "").toLowerCase();
+      if (dept !== reportFilters.dept.toLowerCase()) {
+        return false;
+      }
+    }
+
+    // 3. Lọc theo trường đại học
+    if (reportFilters.univ) {
+      const school = (intern.school || "").toLowerCase();
+      if (school !== reportFilters.univ.toLowerCase()) {
+        return false;
+      }
+    }
+
+    // 4. Lọc theo ngày bắt đầu
+    if (reportFilters.startDate) {
+      const internStart = normalizeReportDate(intern.startDate || intern.start_date || intern.startFormatted);
+      if (internStart && internStart < reportFilters.startDate) {
+        return false;
+      }
+    }
+
+    // 5. Lọc theo ngày kết thúc
+    if (reportFilters.endDate) {
+      const internEnd = normalizeReportDate(intern.endDate || intern.end_date || intern.endFormatted);
+      if (internEnd && internEnd > reportFilters.endDate) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+// Cập nhật các lựa chọn dropdown trong Bộ lọc báo cáo từ dữ liệu thực tế
+function populateReportFilterOptions() {
+  const sourceList = (typeof window !== "undefined" && Array.isArray(window.internList) && window.internList.length > 0)
+    ? window.internList
+    : (Array.isArray(internList) ? internList : []);
+
+  const progSelect = document.getElementById("reportFilterProgram");
+  const deptSelect = document.getElementById("reportFilterDept");
+  const univSelect = document.getElementById("reportFilterUniv");
+
+  // 1. Dropdown Chương trình
+  if (progSelect) {
+    const curVal = progSelect.value;
+    const progSet = new Set();
+    if (Array.isArray(internshipPrograms)) {
+      internshipPrograms.forEach((p) => {
+        if (p && p.name) progSet.add(p.name);
+      });
+    }
+    if (Array.isArray(sourceList)) {
+      sourceList.forEach((i) => {
+        if (i.program) progSet.add(i.program);
+        else if (i.position) progSet.add(i.position);
+      });
+    }
+
+    let html = `<option value="">Tất cả chương trình</option>`;
+    progSet.forEach((p) => {
+      html += `<option value="${p}">${p}</option>`;
+    });
+    progSelect.innerHTML = html;
+    if (curVal && progSet.has(curVal)) {
+      progSelect.value = curVal;
+    }
+  }
+
+  // 2. Dropdown Phòng ban
+  if (deptSelect) {
+    const curVal = deptSelect.value;
+    const deptSet = new Set();
+    if (typeof getDepartments === "function") {
+      const depts = getDepartments();
+      depts.forEach((d) => {
+        if (d && d.name) deptSet.add(d.name);
+      });
+    }
+    if (Array.isArray(sourceList)) {
+      sourceList.forEach((i) => {
+        if (i.dept) deptSet.add(i.dept);
+      });
+    }
+
+    let html = `<option value="">Tất cả phòng ban</option>`;
+    deptSet.forEach((d) => {
+      html += `<option value="${d}">${d}</option>`;
+    });
+    deptSelect.innerHTML = html;
+    if (curVal && deptSet.has(curVal)) {
+      deptSelect.value = curVal;
+    }
+  }
+
+  // 3. Dropdown Trường đại học
+  if (univSelect) {
+    const curVal = univSelect.value;
+    const univSet = new Set();
+    if (Array.isArray(sourceList)) {
+      sourceList.forEach((i) => {
+        if (i.school) univSet.add(i.school);
+      });
+    }
+
+    let html = `<option value="">Tất cả trường đại học</option>`;
+    univSet.forEach((u) => {
+      html += `<option value="${u}">${u}</option>`;
+    });
+    univSelect.innerHTML = html;
+    if (curVal && univSet.has(curVal)) {
+      univSelect.value = curVal;
+    }
+  }
+}
+
+// Khởi chạy / hiển thị tab Báo cáo & Thống kê
+function renderReportsTab() {
+  populateReportFilterOptions();
+  renderReportDashboard();
+}
+
+// Áp dụng bộ lọc
+function applyReportFilters() {
+  const progSelect = document.getElementById("reportFilterProgram");
+  const deptSelect = document.getElementById("reportFilterDept");
+  const univSelect = document.getElementById("reportFilterUniv");
+  const startDateInput = document.getElementById("reportFilterStartDate");
+  const endDateInput = document.getElementById("reportFilterEndDate");
+
+  reportFilters.program = progSelect ? progSelect.value : "";
+  reportFilters.dept = deptSelect ? deptSelect.value : "";
+  reportFilters.univ = univSelect ? univSelect.value : "";
+  reportFilters.startDate = startDateInput ? startDateInput.value : "";
+  reportFilters.endDate = endDateInput ? endDateInput.value : "";
+
+  renderReportDashboard();
+}
+
+// Đặt lại bộ lọc
+function resetReportFilters() {
+  const progSelect = document.getElementById("reportFilterProgram");
+  const deptSelect = document.getElementById("reportFilterDept");
+  const univSelect = document.getElementById("reportFilterUniv");
+  const startDateInput = document.getElementById("reportFilterStartDate");
+  const endDateInput = document.getElementById("reportFilterEndDate");
+
+  if (progSelect) progSelect.value = "";
+  if (deptSelect) deptSelect.value = "";
+  if (univSelect) univSelect.value = "";
+  if (startDateInput) startDateInput.value = "";
+  if (endDateInput) endDateInput.value = "";
+
+  reportFilters = {
+    program: "",
+    dept: "",
+    univ: "",
+    startDate: "",
+    endDate: ""
+  };
+
+  renderReportDashboard();
+}
+
+// Render toàn bộ giao diện dashboard báo cáo
+function renderReportDashboard() {
+  const list = getEligibleReportInterns();
+
+  renderReportTopStats(list);
+  renderReportQuarterChart(list);
+  renderReportUniversityDistribution(list);
+  renderReportBottomStats(list);
+  renderReportTable(list);
+}
+
+// Render 4 thẻ thống kê con số tổng quan ở phía trên
+function renderReportTopStats(list) {
+  const elAccepted = document.getElementById("reportStatAccepted");
+  const elCompletionRate = document.getElementById("reportStatCompletionRate");
+  const elEvaluated = document.getElementById("reportStatEvaluated");
+  const elAvgScore = document.getElementById("reportStatAvgScore");
+
+  const total = list.length;
+  const completed = list.filter((i) => {
+    const s = (i.status || "").toLowerCase();
+    return s.includes("hoàn thành") || s.includes("kết thúc");
+  }).length;
+
+  const evaluatedList = list.filter((i) => {
+    return (
+      (i.score !== undefined && i.score !== null && i.score !== "" && i.score !== "—") ||
+      (i.evaluationScore !== undefined && i.evaluationScore !== null && i.evaluationScore !== "" && i.evaluationScore !== "—")
+    );
+  });
+
+  const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  let avgScoreStr = "—";
+  if (evaluatedList.length > 0) {
+    const sum = evaluatedList.reduce((acc, cur) => {
+      const val = parseFloat(cur.score || cur.evaluationScore || 0);
+      return acc + (isNaN(val) ? 0 : val);
+    }, 0);
+    avgScoreStr = (sum / evaluatedList.length).toFixed(1);
+  }
+
+  if (elAccepted) elAccepted.textContent = total;
+  if (elCompletionRate) elCompletionRate.textContent = `${completionRate}%`;
+  if (elEvaluated) elEvaluated.textContent = evaluatedList.length;
+  if (elAvgScore) elAvgScore.textContent = avgScoreStr;
+}
+
+// Render Biểu đồ thực tập sinh theo quý
+function renderReportQuarterChart(list) {
+  const container = document.getElementById("reportQuarterChartContainer");
+  if (!container) return;
+
+  // Thu thập các quý từ dữ liệu thực tế
+  const quarterMap = {};
+  const defaultQuarters = ["Q2/2026", "Q3/2026", "Q4/2026"];
+
+  defaultQuarters.forEach((q) => {
+    quarterMap[q] = { accepted: 0, completed: 0 };
+  });
+
+  if (list && list.length > 0) {
+    list.forEach((intern) => {
+      const q = getQuarterFromDate(intern.startDate || intern.start_date || intern.startFormatted) || "Q3/2026";
+      if (!quarterMap[q]) {
+        quarterMap[q] = { accepted: 0, completed: 0 };
+      }
+      quarterMap[q].accepted += 1;
+
+      const s = (intern.status || "").toLowerCase();
+      if (s.includes("hoàn thành") || s.includes("kết thúc")) {
+        quarterMap[q].completed += 1;
+      }
+    });
+  }
+
+  const quarters = Object.keys(quarterMap);
+  let maxCount = 0;
+  quarters.forEach((q) => {
+    if (quarterMap[q].accepted > maxCount) maxCount = quarterMap[q].accepted;
+    if (quarterMap[q].completed > maxCount) maxCount = quarterMap[q].completed;
+  });
+
+  const maxHeightPx = 160;
+  let html = "";
+
+  quarters.forEach((q) => {
+    const data = quarterMap[q];
+    const accHeight = maxCount > 0 && data.accepted > 0 ? Math.max(8, Math.round((data.accepted / maxCount) * maxHeightPx)) : 4;
+    const compHeight = maxCount > 0 && data.completed > 0 ? Math.max(8, Math.round((data.completed / maxCount) * maxHeightPx)) : 4;
+
+    html += `
+      <div class="quarter-col">
+        <div class="quarter-bars">
+          <div class="bar-item blue" style="height: ${accHeight}px;">
+            <div class="bar-tooltip">${data.accepted} Tiếp nhận</div>
+          </div>
+          <div class="bar-item green" style="height: ${compHeight}px;">
+            <div class="bar-tooltip">${data.completed} Hoàn thành</div>
+          </div>
+        </div>
+        <div class="quarter-label">${q}</div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+// Render Phân bổ theo trường đại học
+function renderReportUniversityDistribution(list) {
+  const container = document.getElementById("reportUniversityList");
+  if (!container) return;
+
+  if (!list || list.length === 0) {
+    container.innerHTML = `
+      <div class="empty-report-state">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <p>Chưa có dữ liệu phân bổ trường đại học</p>
+      </div>
+    `;
+    return;
+  }
+
+  const schoolMap = {};
+  list.forEach((intern) => {
+    const school = intern.school || "Chưa cập nhật";
+    schoolMap[school] = (schoolMap[school] || 0) + 1;
+  });
+
+  const schools = Object.keys(schoolMap).map((name) => ({
+    name,
+    count: schoolMap[name]
+  }));
+
+  schools.sort((a, b) => b.count - a.count);
+  const maxSchoolCount = schools.length > 0 ? schools[0].count : 1;
+
+  let html = "";
+  schools.forEach((item) => {
+    const percent = Math.round((item.count / maxSchoolCount) * 100);
+    html += `
+      <div class="school-item">
+        <div class="school-name" title="${item.name}">${item.name}</div>
+        <div class="school-bar-track">
+          <div class="school-bar-fill" style="width: ${percent}%;"></div>
+        </div>
+        <div class="school-count">${item.count} TTS</div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+// Render 5 Thẻ tóm tắt kết quả thực tập cuối kỳ
+function renderReportBottomStats(list) {
+  const elTotal = document.getElementById("reportBottomTotal");
+  const elCompleted = document.getElementById("reportBottomCompleted");
+  const elActive = document.getElementById("reportBottomActive");
+  const elIncomplete = document.getElementById("reportBottomIncomplete");
+  const elEvaluated = document.getElementById("reportBottomEvaluated");
+
+  const total = list.length;
+  const completed = list.filter((i) => {
+    const s = (i.status || "").toLowerCase();
+    return s.includes("hoàn thành") || s.includes("kết thúc");
+  }).length;
+
+  const active = list.filter((i) => {
+    const s = (i.status || "").toLowerCase();
+    return s.includes("đang thực tập") || s === "" || s === "chưa xếp lịch";
+  }).length;
+
+  const incomplete = list.filter((i) => {
+    const s = (i.status || "").toLowerCase();
+    return s.includes("chưa hoàn thành") || s.includes("tạm dừng") || s.includes("thôi việc") || s.includes("hủy");
+  }).length;
+
+  const evaluated = list.filter((i) => {
+    return (
+      (i.score !== undefined && i.score !== null && i.score !== "" && i.score !== "—") ||
+      (i.evaluationScore !== undefined && i.evaluationScore !== null && i.evaluationScore !== "" && i.evaluationScore !== "—")
+    );
+  }).length;
+
+  if (elTotal) elTotal.textContent = total;
+  if (elCompleted) elCompleted.textContent = completed;
+  if (elActive) elActive.textContent = active;
+  if (elIncomplete) elIncomplete.textContent = incomplete;
+  if (elEvaluated) elEvaluated.textContent = evaluated;
+}
+
+// Render Bảng danh sách kết quả chi tiết
+function renderReportTable(list) {
+  const tbody = document.getElementById("reportTableBody");
+  if (!tbody) return;
+
+  if (!list || list.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9">
+          <div class="empty-report-state">
+            <i class="fa-solid fa-folder-open"></i>
+            <p>Chưa có dữ liệu kết quả chi tiết</p>
+            <span style="font-size: 12.5px; color: #94a3b8; margin-top: 4px;">Dữ liệu sẽ tự động tổng hợp khi có hồ sơ thực tập sinh</span>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  let html = "";
+  list.forEach((intern, idx) => {
+    const code = `TTS-${String(intern.id || idx + 1).padStart(3, "0")}`;
+    const name = intern.name || "—";
+    const school = intern.school || "—";
+    const major = intern.major || "";
+    const dept = intern.dept || "—";
+    const program = intern.program || (intern.position ? intern.position.replace(/^Thực tập sinh\s*/i, "") : "—");
+    const mentor = intern.mentor || "Chưa phân công";
+
+    // Chuyên cần
+    let attText = "100%";
+    if (intern.attendanceRate) {
+      attText = intern.attendanceRate;
+    } else if (typeof attendanceRecords !== "undefined" && attendanceRecords) {
+      const recs = Object.values(attendanceRecords).filter((r) => r && r.intern_id === intern.id);
+      if (recs.length > 0) {
+        const presentCount = recs.filter((r) => r.status === "Có mặt").length;
+        attText = `${Math.round((presentCount / recs.length) * 100)}%`;
+      }
+    }
+
+    // Điểm đánh giá & xếp loại
+    const rawScore = intern.score || intern.evaluationScore;
+    let scoreDisplay = "—";
+    let gradeBadge = `<span class="report-grade-badge grade-pending">Chưa đánh giá</span>`;
+
+    if (rawScore !== undefined && rawScore !== null && rawScore !== "" && rawScore !== "—") {
+      const num = parseFloat(rawScore);
+      if (!isNaN(num)) {
+        scoreDisplay = num.toFixed(1);
+        if (num >= 9.0) {
+          gradeBadge = `<span class="report-grade-badge grade-excellent">Xuất sắc</span>`;
+        } else if (num >= 8.0) {
+          gradeBadge = `<span class="report-grade-badge grade-good">Giỏi</span>`;
+        } else if (num >= 6.5) {
+          gradeBadge = `<span class="report-grade-badge grade-fair">Khá</span>`;
+        } else if (num >= 5.0) {
+          gradeBadge = `<span class="report-grade-badge grade-pass">Trung bình</span>`;
+        } else {
+          gradeBadge = `<span class="report-grade-badge grade-fail">Chưa đạt</span>`;
+        }
+      }
+    }
+
+    html += `
+      <tr>
+        <td><strong class="text-primary">${code}</strong></td>
+        <td><strong>${name}</strong></td>
+        <td>
+          <div class="fw-semibold text-dark">${school}</div>
+          ${major ? `<div class="text-muted" style="font-size: 12px;">${major}</div>` : ""}
+        </td>
+        <td>${dept}</td>
+        <td>${program}</td>
+        <td>${mentor}</td>
+        <td><span class="fw-semibold">${attText}</span></td>
+        <td><span class="fw-bold">${scoreDisplay}</span></td>
+        <td>${gradeBadge}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
+
+// Xuất file Excel (CSV kèm UTF-8 BOM chuẩn tiếng Việt)
+function exportReportExcel() {
+  const list = getEligibleReportInterns();
+  if (!list || list.length === 0) {
+    if (typeof showToast === "function") {
+      showToast("Không có dữ liệu thực tập sinh để xuất Excel!", "warning");
+    } else {
+      alert("Không có dữ liệu thực tập sinh để xuất Excel!");
+    }
+    return;
+  }
+
+  let csvContent = "\uFEFF"; // UTF-8 BOM
+  csvContent += "MÃ TTS,HỌ TÊN,TRƯỜNG,NGÀNH,PHÒNG BAN,CHƯƠNG TRÌNH,MENTOR PHỤ TRÁCH,CHUYÊN CẦN,ĐIỂM ĐÁNH GIÁ,XẾP LOẠI\n";
+
+  list.forEach((intern, idx) => {
+    const code = `TTS-${String(intern.id || idx + 1).padStart(3, "0")}`;
+    const name = `"${(intern.name || "").replace(/"/g, '""')}"`;
+    const school = `"${(intern.school || "").replace(/"/g, '""')}"`;
+    const major = `"${(intern.major || "").replace(/"/g, '""')}"`;
+    const dept = `"${(intern.dept || "").replace(/"/g, '""')}"`;
+    const program = `"${(intern.program || intern.position || "").replace(/"/g, '""')}"`;
+    const mentor = `"${(intern.mentor || "Chưa phân công").replace(/"/g, '""')}"`;
+    const att = intern.attendanceRate || "100%";
+    const score = intern.score || intern.evaluationScore || "—";
+
+    let grade = "Chưa đánh giá";
+    if (score && score !== "—") {
+      const num = parseFloat(score);
+      if (!isNaN(num)) {
+        if (num >= 9.0) grade = "Xuất sắc";
+        else if (num >= 8.0) grade = "Giỏi";
+        else if (num >= 6.5) grade = "Khá";
+        else if (num >= 5.0) grade = "Trung bình";
+        else grade = "Chưa đạt";
+      }
+    }
+
+    csvContent += `${code},${name},${school},${major},${dept},${program},${mentor},${att},${score},${grade}\n`;
+  });
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `Bao_Cao_Thong_Ke_Thuc_Tap_Sinh_${Date.now()}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  if (typeof showToast === "function") {
+    showToast("Đã xuất báo cáo Excel thành công!", "success");
+  }
+}
+
+// Xuất file PDF (Kích hoạt hộp thoại in / xuất PDF của trình duyệt)
+function exportReportPDF() {
+  window.print();
+}
+
+// Gắn toàn bộ hàm của module Báo cáo & Thống kê vào window
+window.renderReportsTab = renderReportsTab;
+window.populateReportFilterOptions = populateReportFilterOptions;
+window.applyReportFilters = applyReportFilters;
+window.resetReportFilters = resetReportFilters;
+window.renderReportDashboard = renderReportDashboard;
+window.renderReportTopStats = renderReportTopStats;
+window.renderReportQuarterChart = renderReportQuarterChart;
+window.renderReportUniversityDistribution = renderReportUniversityDistribution;
+window.renderReportBottomStats = renderReportBottomStats;
+window.renderReportTable = renderReportTable;
+window.exportReportExcel = exportReportExcel;
+window.exportReportPDF = exportReportPDF;
+
+// ==============================================================================
+// MODULE CÔNG VIỆC, BÁO CÁO TUẦN, ĐÁNH GIÁ & LỊCH HỌP (SPRINT 3: STT 15, 18, 19, 20, 35)
+// ==============================================================================
+
+let currentTaskSubTab = 'tasks';
+let loadedTasksList = [];
+let loadedWeeklyReportsList = [];
+let loadedEvaluationsList = [];
+
+function initTasksTab() {
+  populateTaskInternSelects();
+  switchTaskSubTab(currentTaskSubTab || 'tasks');
+}
+
+function switchTaskSubTab(subTab) {
+  currentTaskSubTab = subTab;
+  const btnTasks = document.getElementById('btnTaskSubTabTasks');
+  const btnReports = document.getElementById('btnTaskSubTabReports');
+  const btnEvals = document.getElementById('btnTaskSubTabEvals');
+
+  const viewTasks = document.getElementById('viewTaskSubTasks');
+  const viewReports = document.getElementById('viewTaskSubReports');
+  const viewEvals = document.getElementById('viewTaskSubEvals');
+
+  const activeStyle = 'padding: 8px 16px; border-radius: 8px; border: none; background: #0d6efd; color: #fff; font-weight: 600; cursor: pointer;';
+  const inactiveStyle = 'padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-weight: 600; cursor: pointer;';
+
+  if (btnTasks) btnTasks.style.cssText = subTab === 'tasks' ? activeStyle : inactiveStyle;
+  if (btnReports) btnReports.style.cssText = subTab === 'reports' ? activeStyle : inactiveStyle;
+  if (btnEvals) btnEvals.style.cssText = subTab === 'evals' ? activeStyle : inactiveStyle;
+
+  if (viewTasks) viewTasks.style.display = subTab === 'tasks' ? 'block' : 'none';
+  if (viewReports) viewReports.style.display = subTab === 'reports' ? 'block' : 'none';
+  if (viewEvals) viewEvals.style.display = subTab === 'evals' ? 'block' : 'none';
+
+  if (subTab === 'tasks') loadTasksFromAPI();
+  else if (subTab === 'reports') loadWeeklyReportsFromAPI();
+  else if (subTab === 'evals') loadEvaluationsFromAPI();
+}
+
+function populateTaskInternSelects() {
+  const list = (typeof internList !== 'undefined' && Array.isArray(internList)) ? internList : [];
+  const selects = ['taskInternSelect', 'evalInternSelect', 'meetingInternSelect'];
+
+  selects.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isMulti = el.hasAttribute('multiple');
+    let opts = isMulti ? '' : '<option value="">-- Chọn thực tập sinh --</option>';
+
+    list.forEach(i => {
+      opts += `<option value="${i.id}">${i.name} (${i.major || i.dept || 'TTS'}) - ${i.email}</option>`;
+    });
+    el.innerHTML = opts;
+  });
+}
+
+// 1. NHIỆM VỤ (STT 15, 16)
+async function loadTasksFromAPI() {
+  const tbody = document.getElementById('tasksTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Đang tải danh sách nhiệm vụ từ MySQL...</td></tr>';
+
+  let tasks = [];
+  if (typeof apiGetTasks === 'function') {
+    const res = await apiGetTasks();
+    if (res && res.success && Array.isArray(res.data)) {
+      tasks = res.data;
+    }
+  }
+
+  loadedTasksList = tasks;
+  if (tasks.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Chưa có nhiệm vụ nào được giao. Bấm "Giao nhiệm vụ" để tạo mới!</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = tasks.map(t => {
+    const p = Number(t.progress) || 0;
+    let badgeClass = 'bg-secondary';
+    let statusText = 'Chưa làm';
+    if (t.status === 'done' || p >= 100) { badgeClass = 'bg-success'; statusText = 'Đã hoàn thành'; }
+    else if (t.status === 'in_progress' || p > 0) { badgeClass = 'bg-primary'; statusText = 'Đang thực hiện'; }
+    else if (t.status === 'review') { badgeClass = 'bg-warning text-dark'; statusText = 'Chờ review'; }
+
+    let priorityBadge = '<span class="badge bg-light text-dark border">Trung bình</span>';
+    if (t.priority === 'urgent') priorityBadge = '<span class="badge bg-danger">Khẩn cấp</span>';
+    else if (t.priority === 'high') priorityBadge = '<span class="badge bg-warning text-dark">Cao</span>';
+    else if (t.priority === 'low') priorityBadge = '<span class="badge bg-info text-dark">Thấp</span>';
+
+    return `
+      <tr>
+        <td>
+          <div style="font-weight: 600; color: #0f172a;">${t.title}</div>
+          <div style="font-size: 12px; color: #64748b;">${t.description ? t.description.slice(0, 50) + '...' : 'Không có mô tả'}</div>
+        </td>
+        <td>
+          <strong>${t.intern_name || 'TTS #' + t.intern_id}</strong>
+          <div style="font-size: 11px; color: #64748b;">${t.intern_email || ''}</div>
+        </td>
+        <td>${t.deadline ? new Date(t.deadline).toLocaleDateString('vi-VN') : '<span class="text-muted">Không hạn</span>'}</td>
+        <td>${priorityBadge}</td>
+        <td style="min-width: 140px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+            <span>Tiến độ</span>
+            <strong>${p}%</strong>
+          </div>
+          <div style="height: 6px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+            <div style="width: ${p}%; height: 100%; background: ${p >= 100 ? '#16a34a' : '#0d6efd'};"></div>
+          </div>
+        </td>
+        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+        <td style="text-align: right;">
+          <button type="button" class="btn-action-icon text-danger" onclick="deleteTaskItem(${t.id})" title="Xóa nhiệm vụ">
+            <i class="fa-regular fa-trash-can"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openCreateTaskModal() {
+  populateTaskInternSelects();
+  const form = document.getElementById('createTaskForm');
+  if (form) form.reset();
+  openModal('createTaskModal');
+}
+
+async function handleCreateTaskSubmit(e) {
+  if (e) e.preventDefault();
+  const internId = document.getElementById('taskInternSelect')?.value;
+  const title = document.getElementById('taskTitle')?.value?.trim();
+  const deadline = document.getElementById('taskDeadline')?.value;
+  const priority = document.getElementById('taskPriority')?.value || 'medium';
+  const description = document.getElementById('taskDescription')?.value?.trim();
+
+  if (!internId || !title) {
+    if (typeof showToast === 'function') showToast('Vui lòng chọn TTS và nhập tiêu đề!', 'warning');
+    return;
+  }
+
+  if (typeof apiCreateTask === 'function') {
+    const res = await apiCreateTask({
+      intern_id: Number(internId),
+      title,
+      deadline,
+      priority,
+      description
+    });
+    if (res && res.success) {
+      if (typeof showToast === 'function') showToast('Đã giao nhiệm vụ thành công cho thực tập sinh!', 'success');
+      closeModal('createTaskModal');
+      loadTasksFromAPI();
+    } else {
+      if (typeof showToast === 'function') showToast(res ? res.message : 'Lỗi khi giao việc', 'danger');
+    }
+  }
+}
+
+async function deleteTaskItem(id) {
+  if (!confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này?')) return;
+  if (typeof apiDeleteTask === 'function') {
+    const res = await apiDeleteTask(id);
+    if (res && res.success) {
+      if (typeof showToast === 'function') showToast('Đã xóa nhiệm vụ thành công!', 'success');
+      loadTasksFromAPI();
+    }
+  }
+}
+
+// 2. BÁO CÁO TUẦN (STT 17, 18)
+async function loadWeeklyReportsFromAPI() {
+  const tbody = document.getElementById('weeklyReportsTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Đang tải danh sách báo cáo tuần...</td></tr>';
+
+  let reports = [];
+  if (typeof apiGetWeeklyReports === 'function') {
+    const res = await apiGetWeeklyReports();
+    if (res && res.success && Array.isArray(res.data)) {
+      reports = res.data;
+    }
+  }
+
+  loadedWeeklyReportsList = reports;
+  if (reports.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Chưa có báo cáo tuần nào từ thực tập sinh.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = reports.map(r => {
+    const isReviewed = r.status === 'reviewed';
+    return `
+      <tr>
+        <td><strong>Tuần ${r.week_number}</strong></td>
+        <td>
+          <div style="font-weight: 600;">${r.intern_name || 'TTS #' + r.intern_id}</div>
+          <div style="font-size: 11px; color: #64748b;">${r.intern_email || ''}</div>
+        </td>
+        <td>
+          <div style="font-size: 13px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            ${r.tasks_completed}
+          </div>
+        </td>
+        <td>
+          <div style="font-size: 13px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            ${r.plans_next_week || 'Không có'}
+          </div>
+        </td>
+        <td>
+          <span class="badge ${isReviewed ? 'bg-success' : 'bg-warning text-dark'}">
+            ${isReviewed ? 'Đã phản hồi' : 'Chờ phản hồi'}
+          </span>
+        </td>
+        <td>
+          ${r.mentor_rating ? `<strong class="text-primary">${r.mentor_rating}/10</strong>` : '<span class="text-muted">Chưa chấm</span>'}
+        </td>
+        <td style="text-align: right;">
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="openFeedbackReportModal(${r.id})">
+            <i class="fa-solid fa-reply me-1"></i> ${isReviewed ? 'Xem lại' : 'Phản hồi'}
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openFeedbackReportModal(reportId) {
+  const r = loadedWeeklyReportsList.find(x => x.id === reportId);
+  if (!r) return;
+
+  document.getElementById('feedbackReportId').value = r.id;
+  document.getElementById('feedbackReportHeader').textContent = `Báo cáo Tuần ${r.week_number} - Thực tập sinh: ${r.intern_name || 'TTS'}`;
+  document.getElementById('feedbackReportTasks').textContent = r.tasks_completed || 'Không có nội dung';
+  document.getElementById('feedbackReportIssues').textContent = r.issues_faced || 'Không có khó khăn';
+  document.getElementById('feedbackReportPlans').textContent = r.plans_next_week || 'Không có kế hoạch';
+
+  document.getElementById('mentorRating').value = r.mentor_rating || '';
+  document.getElementById('mentorFeedbackText').value = r.mentor_feedback || '';
+
+  openModal('feedbackReportModal');
+}
+
+async function handleFeedbackReportSubmit(e) {
+  if (e) e.preventDefault();
+  const id = document.getElementById('feedbackReportId')?.value;
+  const rating = document.getElementById('mentorRating')?.value;
+  const feedback = document.getElementById('mentorFeedbackText')?.value?.trim();
+
+  if (!id || !feedback) {
+    if (typeof showToast === 'function') showToast('Vui lòng nhập nhận xét phản hồi!', 'warning');
+    return;
+  }
+
+  if (typeof apiFeedbackWeeklyReport === 'function') {
+    const res = await apiFeedbackWeeklyReport(id, {
+      mentor_feedback: feedback,
+      mentor_rating: rating ? Number(rating) : null
+    });
+    if (res && res.success) {
+      if (typeof showToast === 'function') showToast('Đã gửi nhận xét và phản hồi cho TTS thành công!', 'success');
+      closeModal('feedbackReportModal');
+      loadWeeklyReportsFromAPI();
+    } else {
+      if (typeof showToast === 'function') showToast(res ? res.message : 'Lỗi khi gửi phản hồi', 'danger');
+    }
+  }
+}
+
+// 3. ĐÁNH GIÁ CUỐI KỲ (STT 19, 20)
+async function loadEvaluationsFromAPI() {
+  const tbody = document.getElementById('evaluationsTableBody');
+  const sumEl = document.getElementById('evalSummaryText');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Đang tải bảng điểm đánh giá tổng kết từ MySQL...</td></tr>';
+
+  let evals = [];
+  let summary = null;
+  if (typeof apiGetAllEvaluations === 'function') {
+    const res = await apiGetAllEvaluations();
+    if (res && res.success) {
+      evals = res.data || [];
+      summary = res.summary || null;
+    }
+  }
+
+  loadedEvaluationsList = evals;
+  if (sumEl && summary) {
+    sumEl.innerHTML = `Tổng số: <strong>${summary.total}</strong> TTS | Điểm trung bình: <strong class="text-primary">${summary.avgScore}</strong> | Xuất sắc: <strong>${summary.xuatSac}</strong>, Giỏi: <strong>${summary.gioi}</strong>, Khá: <strong>${summary.kha}</strong>`;
+  }
+
+  if (evals.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Chưa có bản ghi đánh giá tổng kết nào. Bấm "Đánh giá TTS" để chấm điểm!</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = evals.map(e => {
+    let gradeBadge = 'bg-primary';
+    if (e.grade === 'Xuất sắc') gradeBadge = 'bg-success';
+    else if (e.grade === 'Khá') gradeBadge = 'bg-info text-dark';
+    else if (e.grade === 'Trung bình') gradeBadge = 'bg-secondary';
+
+    return `
+      <tr>
+        <td>
+          <strong style="color: #0f172a;">${e.intern_name}</strong>
+          <div style="font-size: 11px; color: #64748b;">${e.intern_email}</div>
+        </td>
+        <td>${e.school} - ${e.major}</td>
+        <td><strong>${e.technical_score}</strong></td>
+        <td><strong>${e.discipline_score}</strong></td>
+        <td><strong>${e.attitude_score}</strong></td>
+        <td><strong style="font-size: 15px; color: #2563eb;">${e.total_score}</strong></td>
+        <td><span class="badge ${gradeBadge}">${e.grade}</span></td>
+        <td>
+          <div style="font-size: 12.5px; color: #334155; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${e.mentor_comments || ''}">
+            ${e.mentor_comments || '<span class="text-muted">Chưa có nhận xét</span>'}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openEvaluationModal(internId = null) {
+  populateTaskInternSelects();
+  const select = document.getElementById('evalInternSelect');
+  if (select && internId) {
+    select.value = internId;
+    handleEvalInternChange(internId);
+  }
+  calculateEvalTotal();
+  openModal('evaluationModal');
+}
+
+async function handleEvalInternChange(internId) {
+  if (!internId) return;
+  if (typeof apiGetEvaluationByIntern === 'function') {
+    const res = await apiGetEvaluationByIntern(internId);
+    if (res && res.success && res.data) {
+      const d = res.data;
+      if (document.getElementById('evalTechScore')) document.getElementById('evalTechScore').value = d.technical_score;
+      if (document.getElementById('evalDiscScore')) document.getElementById('evalDiscScore').value = d.discipline_score;
+      if (document.getElementById('evalAttScore')) document.getElementById('evalAttScore').value = d.attitude_score;
+      if (document.getElementById('evalMentorComment')) document.getElementById('evalMentorComment').value = d.mentor_comments || '';
+      if (document.getElementById('evalHrNotes')) document.getElementById('evalHrNotes').value = d.hr_notes || '';
+      calculateEvalTotal();
+    }
+  }
+}
+
+function calculateEvalTotal() {
+  const t = Number(document.getElementById('evalTechScore')?.value) || 0;
+  const d = Number(document.getElementById('evalDiscScore')?.value) || 0;
+  const a = Number(document.getElementById('evalAttScore')?.value) || 0;
+
+  const total = Number(((t * 0.4) + (d * 0.3) + (a * 0.3)).toFixed(1));
+  const totalEl = document.getElementById('evalTotalScoreDisplay');
+  const gradeEl = document.getElementById('evalGradeDisplay');
+
+  if (totalEl) totalEl.textContent = total;
+
+  let grade = 'Trung bình';
+  let badgeColor = '#64748b';
+  let bg = '#f1f5f9';
+
+  if (total >= 9.0) { grade = 'Xuất sắc'; badgeColor = '#15803d'; bg = '#dcfce7'; }
+  else if (total >= 8.0) { grade = 'Giỏi'; badgeColor = '#16a34a'; bg = '#dcfce7'; }
+  else if (total >= 6.5) { grade = 'Khá'; badgeColor = '#0284c7'; bg = '#e0f2fe'; }
+  else if (total >= 5.0) { grade = 'Trung bình'; badgeColor = '#ca8a04'; bg = '#fef9c3'; }
+  else { grade = 'Yếu'; badgeColor = '#dc2626'; bg = '#fee2e2'; }
+
+  if (gradeEl) {
+    gradeEl.textContent = grade;
+    gradeEl.style.color = badgeColor;
+    gradeEl.style.background = bg;
+  }
+}
+
+async function handleEvaluationSubmit(e) {
+  if (e) e.preventDefault();
+  const internId = document.getElementById('evalInternSelect')?.value;
+  const t = document.getElementById('evalTechScore')?.value;
+  const d = document.getElementById('evalDiscScore')?.value;
+  const a = document.getElementById('evalAttScore')?.value;
+  const comments = document.getElementById('evalMentorComment')?.value?.trim();
+  const hrNotes = document.getElementById('evalHrNotes')?.value?.trim();
+
+  if (!internId) {
+    if (typeof showToast === 'function') showToast('Vui lòng chọn thực tập sinh!', 'warning');
+    return;
+  }
+
+  if (typeof apiSaveEvaluation === 'function') {
+    const res = await apiSaveEvaluation({
+      intern_id: Number(internId),
+      technical_score: t,
+      discipline_score: d,
+      attitude_score: a,
+      mentor_comments: comments,
+      hr_notes: hrNotes
+    });
+    if (res && res.success) {
+      if (typeof showToast === 'function') showToast('Lưu kết quả đánh giá tổng kết thành công!', 'success');
+      closeModal('evaluationModal');
+      loadEvaluationsFromAPI();
+    } else {
+      if (typeof showToast === 'function') showToast(res ? res.message : 'Lỗi khi lưu đánh giá', 'danger');
+    }
+  }
+}
+
+function exportEvaluationReport() {
+  if (loadedEvaluationsList.length === 0) {
+    if (typeof showToast === 'function') showToast('Chưa có dữ liệu đánh giá để xuất!', 'warning');
+    return;
+  }
+
+  let csv = "\uFEFFHọ tên,Email,Trường,Ngành,Điểm kỹ thuật,Điểm kỷ luật,Điểm thái độ,Điểm tổng kết,Xếp loại,Nhận xét của Mentor\n";
+  loadedEvaluationsList.forEach(e => {
+    csv += `"${e.intern_name}","${e.intern_email}","${e.school}","${e.major}",${e.technical_score},${e.discipline_score},${e.attitude_score},${e.total_score},"${e.grade}","${(e.mentor_comments || '').replace(/"/g, '""')}"\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Bao_Cao_Danh_Gia_Tong_Ket_${Date.now()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  if (typeof showToast === 'function') showToast('Đã xuất báo cáo đánh giá cuối kỳ thành công!', 'success');
+}
+
+// 4. LỊCH HỌP & GỬI EMAIL TỰ ĐỘNG (STT 35)
+function openCreateMeetingModal() {
+  populateTaskInternSelects();
+  const form = document.getElementById('createMeetingForm');
+  if (form) form.reset();
+  const dateInput = document.getElementById('meetingDate');
+  if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+  openModal('createMeetingModal');
+}
+
+async function handleCreateMeetingSubmit(e) {
+  if (e) e.preventDefault();
+  const title = document.getElementById('meetingTitle')?.value?.trim();
+  const date = document.getElementById('meetingDate')?.value;
+  const start = document.getElementById('meetingStartTime')?.value;
+  const end = document.getElementById('meetingEndTime')?.value;
+  const location = document.getElementById('meetingLocation')?.value?.trim();
+  const link = document.getElementById('meetingLink')?.value?.trim();
+  const select = document.getElementById('meetingInternSelect');
+  const notes = document.getElementById('meetingNotes')?.value?.trim();
+
+  const selectedInternIds = [];
+  if (select) {
+    for (let opt of select.options) {
+      if (opt.selected) selectedInternIds.push(Number(opt.value));
+    }
+  }
+
+  if (!title || !date || selectedInternIds.length === 0) {
+    if (typeof showToast === 'function') showToast('Vui lòng nhập chủ đề và chọn ít nhất 1 TTS tham gia!', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmitMeeting');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Đang tạo & gửi mail...';
+  }
+
+  try {
+    if (typeof apiCreateMeeting === 'function') {
+      const res = await apiCreateMeeting({
+        title,
+        meeting_date: date,
+        start_time: start,
+        end_time: end,
+        location,
+        link,
+        host_name: 'Mentor / HR CodeGym',
+        intern_ids: selectedInternIds,
+        notes
+      });
+
+      if (res && res.success) {
+        if (typeof showToast === 'function') {
+          showToast(`Đã tạo lịch họp và tự động gửi email cho ${res.emailsSentCount || selectedInternIds.length} thực tập sinh!`, 'success');
+        }
+        closeModal('createMeetingModal');
+      } else {
+        if (typeof showToast === 'function') showToast(res ? res.message : 'Lỗi khi tạo lịch họp', 'danger');
+      }
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') showToast('Lỗi gửi email lịch họp', 'danger');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-regular fa-paper-plane me-1"></i> Tạo & Gửi Email thông báo';
+    }
+  }
+}
+
+// Gắn toàn bộ hàm của Tasks & Evaluations vào window
+window.initTasksTab = initTasksTab;
+window.switchTaskSubTab = switchTaskSubTab;
+window.openCreateTaskModal = openCreateTaskModal;
+window.handleCreateTaskSubmit = handleCreateTaskSubmit;
+window.deleteTaskItem = deleteTaskItem;
+window.openFeedbackReportModal = openFeedbackReportModal;
+window.handleFeedbackReportSubmit = handleFeedbackReportSubmit;
+window.openEvaluationModal = openEvaluationModal;
+window.handleEvalInternChange = handleEvalInternChange;
+window.calculateEvalTotal = calculateEvalTotal;
+window.handleEvaluationSubmit = handleEvaluationSubmit;
+window.exportEvaluationReport = exportEvaluationReport;
+window.openCreateMeetingModal = openCreateMeetingModal;
+window.handleCreateMeetingSubmit = handleCreateMeetingSubmit;
+
+
+

@@ -62,6 +62,12 @@
               <span>Phân quyền</span>
             </a>
           </li>
+          <li>
+            <a href="javascript:void(0)" class="nav-item" data-section="integrations" id="nav-integrations">
+              <i class="fa-solid fa-network-wired"></i>
+              <span>Tích hợp hệ thống</span>
+            </a>
+          </li>
         </ul>
       </nav>
 
@@ -495,6 +501,114 @@
           <div class="matrix-card-footer">
             <button type="button" class="btn btn-secondary" onclick="resetPermissions()">Hủy thay đổi</button>
             <button type="button" class="btn btn-primary" onclick="savePermissions()">Lưu phân quyền</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- 4. SECTION: TÍCH HỢP HỆ THỐNG (SPRINT 3: STT 37, 38)            -->
+      <!-- ============================================================== -->
+      <section class="admin-section" id="section-integrations">
+        <div class="page-header">
+          <h1 class="page-title">Tích hợp hệ thống</h1>
+          <p class="page-subtitle">Quản lý kết nối dữ liệu nhân sự với HRM Core và đồng bộ chấm công tự động bằng mã QR/Thẻ từ.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px; margin-top: 20px;">
+          <!-- Card 1: Tích hợp HRM (STT 37) -->
+          <div style="background: #ffffff; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 44px; height: 44px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                  <i class="fa-solid fa-users-gear"></i>
+                </div>
+                <div>
+                  <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #1e293b;">Tích hợp HRM Core</h3>
+                  <span style="font-size: 13px; color: #64748b;">Đồng bộ dữ liệu nhân sự & thực tập sinh</span>
+                </div>
+              </div>
+              <span id="hrmStatusBadge" style="background: #dcfce7; color: #15803d; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span> Đã kết nối
+              </span>
+            </div>
+
+            <p style="font-size: 13.5px; color: #475569; line-height: 1.5; margin-bottom: 20px;">
+              Hệ thống tự động liên kết với phần mềm quản lý nhân sự HRM để đồng bộ thông tin Mentor, danh sách thực tập sinh và hợp đồng mới nhất.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                <span style="color: #64748b;">Endpoint API:</span>
+                <span style="font-family: monospace; font-weight: 600; color: #0f172a;" id="hrmEndpointText">https://hrm.codegym.vn/api/v1/sync</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                <span style="color: #64748b;">API Key:</span>
+                <span style="font-family: monospace; font-weight: 600; color: #0f172a;" id="hrmApiKeyText">hrm_live_key_••••••••</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                <span style="color: #64748b;">Tần suất đồng bộ:</span>
+                <span style="font-weight: 600; color: #0f172a;">Hàng ngày 00:00 (Tự động)</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                <span style="color: #64748b;">Lần đồng bộ gần nhất:</span>
+                <span style="font-weight: 600; color: #2563eb;" id="hrmLastSyncText">Vừa cập nhật hôm nay</span>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+              <button type="button" class="btn btn-primary" id="btnSyncHRM" onclick="triggerHRMSync()" style="flex: 1; display: inline-flex; justify-content: center; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>Đồng bộ ngay với HRM</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Card 2: Tích hợp Chấm công QR Code & Thẻ từ (STT 38) -->
+          <div style="background: #ffffff; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 44px; height: 44px; border-radius: 10px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                  <i class="fa-solid fa-qrcode"></i>
+                </div>
+                <div>
+                  <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #1e293b;">Chấm công QR & Thẻ từ</h3>
+                  <span style="font-size: 13px; color: #64748b;">Thiết bị điểm danh tự động cửa vào</span>
+                </div>
+              </div>
+              <span id="qrStatusBadge" style="background: #dcfce7; color: #15803d; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span> Đang hoạt động
+              </span>
+            </div>
+
+            <p style="font-size: 13.5px; color: #475569; line-height: 1.5; margin-bottom: 20px;">
+              Nhận dữ liệu quét thẻ và quét mã QR trực tiếp từ cổng kiểm soát hoặc camera thông minh, tự động ghi nhận dữ liệu vào bảng điểm danh của hệ thống.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                <span style="color: #64748b;">Thiết bị kết nối:</span>
+                <span style="font-weight: 600; color: #0f172a;">Máy quét Hikvision Gate-01</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                <span style="color: #64748b;">Phương thức nhận:</span>
+                <span style="font-weight: 600; color: #0f172a;">Webhook Realtime / QR Check-in</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                <span style="color: #64748b;">Dung sai trễ giờ:</span>
+                <span style="font-weight: 600; color: #0f172a;">15 phút (Sau 08:45 tính Đi muộn)</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                <span style="color: #64748b;">Lượt quét gần nhất:</span>
+                <span style="font-weight: 600; color: #16a34a;" id="qrLastScanText">Hôm nay, 08:25 (Hợp lệ)</span>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+              <button type="button" class="btn btn-primary" id="btnSimulateQR" onclick="triggerSimulateQRCheckIn()" style="flex: 1; display: inline-flex; justify-content: center; align-items: center; gap: 8px; background: #0284c7; border-color: #0284c7;">
+                <i class="fa-solid fa-camera"></i>
+                <span>Thử nghiệm Quét QR / Thẻ điểm danh</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>

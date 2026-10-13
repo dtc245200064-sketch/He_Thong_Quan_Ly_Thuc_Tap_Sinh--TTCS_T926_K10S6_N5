@@ -3015,3 +3015,296 @@ body {
     justify-content: center;
   }
 }
+
+/* ==========================================================================
+   10. TIẾN ĐỘ CÔNG VIỆC, BÁO CÁO TUẦN & THÔNG BÁO (CHUẨN SCREENSHOTS)
+   ========================================================================== */
+
+/* 3 Thẻ thống kê tiến độ công việc */
+.progress-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.progress-metric-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.progress-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.progress-metric-label {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.progress-metric-val {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+}
+
+/* Card lớn chứa nội dung các Tab */
+.portal-main-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  min-height: 440px;
+}
+
+/* Empty State sạch đẹp khi dữ liệu để trống */
+.empty-state-wrap {
+  text-align: center;
+  padding: 60px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin-bottom: 18px;
+}
+
+.empty-state-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.empty-state-desc {
+  font-size: 14px;
+  color: #64748b;
+  max-width: 480px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* Danh sách task tiến độ công việc */
+.progress-task-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.progress-task-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.progress-task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.progress-task-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.progress-bar-wrap {
+  background: #f1f5f9;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+.progress-bar-fill {
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-task-content-box {
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  color: #334155;
+  margin-top: 10px;
+}
+
+/* Danh sách báo cáo tuần */
+.report-card-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.report-card-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.report-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.report-week-badge {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.report-section-snippet {
+  font-size: 13.5px;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+/* Thanh filter tabs Thông báo (Chuẩn hình ảnh 5) */
+.notif-pills-bar {
+  display: inline-flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+  gap: 4px;
+}
+
+.notif-pill-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 18px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notif-pill-btn:hover {
+  color: #0f172a;
+}
+
+.notif-pill-btn.active {
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.notif-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s ease;
+  border-radius: 10px;
+}
+
+.notif-list-item:hover {
+  background: #f8fafc;
+}
+
+.notif-list-item.unread {
+  background: #f0f7ff;
+}
+
+.notif-item-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.notif-item-icon.info {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.notif-item-icon.success {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.notif-item-icon.warning {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+
+.notif-item-body {
+  flex-grow: 1;
+}
+
+.notif-item-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.notif-item-text {
+  font-size: 13.5px;
+  color: #475569;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.notif-item-meta {
+  font-size: 12px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notif-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2563eb;
+  display: inline-block;
+}
+
+@media (max-width: 768px) {
+  .progress-metrics-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
