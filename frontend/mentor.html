@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng Người Hướng Dẫn - Quản lý Thực tập sinh CodeGym</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Mentor Stylesheet -->
+  <link rel="stylesheet" href="mentor.css">
+</head>
+
+<body>
+  <div class="mentor-wrapper">
+    <!-- ============================================================== -->
+    <!-- 1. SIDEBAR BÊN TRÁI DÀNH RIÊNG CHO MENTOR                      -->
+    <!-- ============================================================== -->
+    <aside class="mentor-sidebar" id="mentorSidebar">
+      <!-- Thương hiệu & Logo -->
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <span class="logo-badge">MENTOR</span>
+          <span class="logo-title">Portal Hướng Dẫn</span>
+        </div>
+      </div>
+
+      <!-- Khung hiển thị vai trò Mentor -->
+      <div class="mentor-badge-box">
+        <span class="mentor-badge-subtitle">Không gian làm việc</span>
+        <div class="mentor-badge-role">
+          <span class="status-dot-mentor"></span>
+          <span class="role-text" id="sidebarMentorRole">Tech Lead / Mentor</span>
+        </div>
+      </div>
+
+      <!-- Menu Điều Hướng Phân Hệ Mentor -->
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <a href="javascript:void(0)" class="nav-item active" data-tab="overview" id="nav-overview">
+              <i class="fa-solid fa-table-cells-large"></i>
+              <span>Tổng quan</span>
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" class="nav-item" data-tab="interns" id="nav-interns">
+              <i class="fa-solid fa-user-graduate"></i>
+              <span>Thực tập sinh của tôi</span>
+              <span class="nav-badge" id="badgeInternCount" style="display:none;">0</span>
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" class="nav-item" data-tab="tasks" id="nav-tasks">
+              <i class="fa-solid fa-list-check"></i>
+              <span>Giao việc & Nhiệm vụ</span>
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" class="nav-item" data-tab="reports" id="nav-reports">
+              <i class="fa-solid fa-file-lines"></i>
+              <span>Báo cáo tuần & Phản hồi</span>
+              <span class="nav-badge" id="badgePendingReports" style="display:none;">0</span>
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" class="nav-item" data-tab="evaluations" id="nav-evaluations">
+              <i class="fa-solid fa-award"></i>
+              <span>Đánh giá tổng kết</span>
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" class="nav-item" data-tab="meetings" id="nav-meetings">
+              <i class="fa-solid fa-calendar-check"></i>
+              <span>Lịch họp & Trao đổi</span>
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" class="nav-item" data-tab="notifications" id="nav-notifications">
+              <i class="fa-solid fa-bell"></i>
+              <span>Thông báo</span>
+              <span class="nav-badge" id="badgeNotifCount" style="display:none;">0</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Thông tin Mentor & Nút đăng xuất cuối sidebar -->
+      <div class="sidebar-footer">
+        <div class="mentor-profile-info">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120" alt="Avatar" class="mentor-avatar" id="sidebarMentorAvatar">
+          <div class="profile-texts">
+            <span class="profile-name" id="sidebarMentorName">Nguyễn Anh Tuấn</span>
+            <span class="profile-role" id="sidebarMentorDept">Phòng Phát triển Phần mềm</span>
+          </div>
+        </div>
+        <button type="button" class="btn-sidebar-logout" onclick="openLogoutModal()" title="Đăng xuất">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ============================================================== -->
+    <!-- 2. KHU VỰC NỘI DUNG CHÍNH (MAIN VIEW)                          -->
+    <!-- ============================================================== -->
+    <main class="mentor-main">
+      <!-- TOPBAR CỐ ĐỊNH PHÍA TRÊN -->
+      <header class="mentor-topbar">
+        <div class="topbar-left">
+          <h1 class="page-title" id="pageTitle">Tổng quan người hướng dẫn</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="live-date-pill">
+            <i class="fa-regular fa-calendar"></i>
+            <span id="liveDateText">Hôm nay: ...</span>
+          </div>
+
+          <button type="button" class="topbar-icon-btn" onclick="switchMentorTab('notifications')" title="Thông báo">
+            <i class="fa-regular fa-bell"></i>
+            <span class="topbar-badge-dot" id="topbarNotifDot" style="display:none;"></span>
+          </button>
+
+          <!-- Nút đăng xuất nhanh -->
+          <button type="button" class="btn btn-outline btn-sm" onclick="openLogoutModal()">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <span>Đăng xuất</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- KHUNG CHỨA CÁC TAB NỘI DUNG -->
+      <div class="page-container">
+
+        <!-- ======================================================== -->
+        <!-- TAB 1: TỔNG QUAN (OVERVIEW)                               -->
+        <!-- ======================================================== -->
+        <section class="tab-pane active" id="pane-overview">
+          <!-- 4 Thẻ KPI thống kê nhanh -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon indigo">
+                <i class="fa-solid fa-user-graduate"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value" id="statMyInterns">0</span>
+                <span class="stat-label">TTS đang phụ trách</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon emerald">
+                <i class="fa-solid fa-list-check"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value" id="statActiveTasks">0</span>
+                <span class="stat-label">Nhiệm vụ đang giao</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon amber">
+                <i class="fa-solid fa-file-pen"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value" id="statPendingReports">0</span>
+                <span class="stat-label">Báo cáo tuần chờ duyệt</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon sky">
+                <i class="fa-solid fa-calendar-check"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value" id="statUpcomingMeetings">0</span>
+                <span class="stat-label">Lịch họp & trao đổi</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bảng tóm tắt TTS nhóm của tôi & Nhiệm vụ gần đây -->
+          <div class="content-card">
+            <div class="content-card-header">
+              <div class="card-title-group">
+                <div class="card-title-icon"><i class="fa-solid fa-users"></i></div>
+                <div>
+                  <h3 class="card-title">Thực tập sinh nhóm của tôi</h3>
+                  <p class="card-subtitle">Tiến độ và trạng thái các bạn TTS được gán cho bạn hướng dẫn</p>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn btn-primary btn-sm" onclick="switchMentorTab('tasks'); openCreateTaskModal();">
+                  <i class="fa-solid fa-plus"></i> Giao việc mới
+                </button>
+              </div>
+            </div>
+            <div class="content-card-body">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Họ tên TTS</th>
+                      <th>Trường / Chuyên ngành</th>
+                      <th>Giai đoạn thực tập</th>
+                      <th>Tiến độ hoàn thành</th>
+                      <th>Trạng thái</th>
+                      <th style="text-align:right;">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="overviewInternsTableBody">
+                    <tr><td colspan="6" style="text-align:center; padding: 24px; color:#94a3b8;">Đang tải danh sách thực tập sinh...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bảng báo cáo tuần mới nộp chờ phản hồi -->
+          <div class="content-card">
+            <div class="content-card-header">
+              <div class="card-title-group">
+                <div class="card-title-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <div>
+                  <h3 class="card-title">Báo cáo tuần mới nộp cần nhận xét (STT 18)</h3>
+                  <p class="card-subtitle">Các báo cáo tuần do thực tập sinh nộp lên chờ Mentor phản hồi và cho điểm</p>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn btn-outline btn-sm" onclick="switchMentorTab('reports')">
+                  Xem tất cả báo cáo
+                </button>
+              </div>
+            </div>
+            <div class="content-card-body">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Tuần</th>
+                      <th>TTS nộp bài</th>
+                      <th>Thời gian nộp</th>
+                      <th>Tóm tắt công việc</th>
+                      <th>Trạng thái</th>
+                      <th style="text-align:right;">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="overviewReportsTableBody">
+                    <tr><td colspan="6" style="text-align:center; padding: 24px; color:#94a3b8;">Chưa có báo cáo tuần nào cần phản hồi.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- TAB 2: DANH SÁCH THỰC TẬP SINH CỦA TÔI (MY INTERNS)       -->
+        <!-- ======================================================== -->
+        <section class="tab-pane" id="pane-interns">
+          <div class="content-card">
+            <div class="content-card-header">
+              <div class="card-title-group">
+                <div class="card-title-icon"><i class="fa-solid fa-user-graduate"></i></div>
+                <div>
+                  <h3 class="card-title">Danh sách Thực tập sinh phụ trách</h3>
+                  <p class="card-subtitle">Quản lý và đồng hành cùng các bạn thực tập sinh trong kỳ thực tập</p>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn btn-primary btn-sm" onclick="openCreateMeetingModal()">
+                  <i class="fa-solid fa-calendar-plus"></i> Đặt lịch họp nhóm
+                </button>
+              </div>
+            </div>
+            <div class="content-card-body">
+              <!-- Bộ lọc tìm kiếm -->
+              <div class="filter-bar">
+                <div class="search-input-box">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" id="searchInternInput" placeholder="Tìm theo tên, email, trường đại học..." oninput="filterMentorInterns()">
+                </div>
+                <div class="filter-selects">
+                  <select class="form-select" id="filterInternStatus" onchange="filterMentorInterns()">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="Đang thực tập">Đang thực tập</option>
+                    <option value="Hoàn thành">Hoàn thành</option>
+                    <option value="Chờ xét duyệt">Chờ xét duyệt</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Thông tin TTS</th>
+                      <th>Liên hệ</th>
+                      <th>Trường / Ngành học</th>
+                      <th>Thời gian thực tập</th>
+                      <th>Tiến độ</th>
+                      <th>Trạng thái</th>
+                      <th style="text-align:right;">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mentorInternsTableBody">
+                    <tr><td colspan="7" style="text-align:center; padding: 24px; color:#94a3b8;">Đang tải dữ liệu...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- TAB 3: GIAO VIỆC & QUẢN LÝ NHIỆM VỤ (STT 15, 16)          -->
+        <!-- ======================================================== -->
+        <section class="tab-pane" id="pane-tasks">
+          <div class="content-card">
+            <div class="content-card-header">
+              <div class="card-title-group">
+                <div class="card-title-icon"><i class="fa-solid fa-list-check"></i></div>
+                <div>
+                  <h3 class="card-title">Quản lý công việc & Nhiệm vụ đã giao (STT 15, 16)</h3>
+                  <p class="card-subtitle">Giao nhiệm vụ, đặt hạn chót và giám sát tiến độ thực hiện của từng TTS</p>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn btn-primary" onclick="openCreateTaskModal()">
+                  <i class="fa-solid fa-plus"></i> Giao việc mới
+                </button>
+              </div>
+            </div>
+            <div class="content-card-body">
+              <!-- Bộ lọc tasks -->
+              <div class="filter-bar">
+                <div class="search-input-box">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" id="searchTaskInput" placeholder="Tìm theo tên nhiệm vụ..." oninput="filterMentorTasks()">
+                </div>
+                <div class="filter-selects">
+                  <select class="form-select" id="filterTaskIntern" onchange="filterMentorTasks()">
+                    <option value="">Tất cả TTS</option>
+                  </select>
+                  <select class="form-select" id="filterTaskStatus" onchange="filterMentorTasks()">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="todo">Chưa thực hiện (To-Do)</option>
+                    <option value="in_progress">Đang làm (In-Progress)</option>
+                    <option value="done">Hoàn thành (Done)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Tiêu đề nhiệm vụ</th>
+                      <th>TTS phụ trách</th>
+                      <th>Hạn chót</th>
+                      <th>Độ ưu tiên</th>
+                      <th>Tiến độ</th>
+                      <th>Trạng thái</th>
+                      <th style="text-align:right;">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mentorTasksTableBody">
+                    <tr><td colspan="7" style="text-align:center; padding: 24px; color:#94a3b8;">Đang tải danh sách nhiệm vụ...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- TAB 4: BÁO CÁO TUẦN & PHẢN HỒI (STT 17, 18)               -->
+        <!-- ======================================================== -->
+        <section class="tab-pane" id="pane-reports">
+          <div class="content-card">
+            <div class="content-card-header">
+              <div class="card-title-group">
+                <div class="card-title-icon"><i class="fa-solid fa-file-signature"></i></div>
+                <div>
+                  <h3 class="card-title">Duyệt & Phản hồi Báo cáo tuần (STT 17, 18)</h3>
+                  <p class="card-subtitle">Xem chi tiết báo cáo, tháo gỡ khó khăn và gửi nhận xét chuyên môn cho TTS</p>
+                </div>
+              </div>
+            </div>
+            <div class="content-card-body">
+              <!-- Bộ lọc báo cáo -->
+              <div class="filter-bar">
+                <div class="search-input-box">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" id="searchReportInput" placeholder="Tìm theo tuần hoặc tên TTS..." oninput="filterMentorReports()">
+                </div>
+                <div class="filter-selects">
+                  <select class="form-select" id="filterReportStatus" onchange="filterMentorReports()">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="submitted">Chờ phản hồi</option>
+                    <option value="reviewed">Đã phản hồi</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Tuần báo cáo</th>
+                      <th>TTS thực hiện</th>
+                      <th>Khoảng thời gian</th>
+                      <th>Nội dung đạt được</th>
+                      <th>Khó khăn / Vướng mắc</th>
+                      <th>Điểm tuần</th>
+                      <th>Trạng thái</th>
+                      <th style="text-align:right;">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mentorReportsTableBody">
+                    <tr><td colspan="8" style="text-align:center; padding: 24px; color:#94a3b8;">Đang tải báo cáo tuần...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- TAB 5: ĐÁNH GIÁ TỔNG KẾT KỲ THỰC TẬP (STT 19)             -->
+        <!-- ======================================================== -->
+        <section class="tab-pane" id="pane-evaluations">
+          <div class="content-card">
+            <div class="content-card-header">
+              <div class="card-title-group">
+                <div class="card-title-icon"><i class="fa-solid fa-award"></i></div>
+                <div>
+                  <h3 class="card-title">Đánh giá kỹ năng & Thái độ tổng kết (STT 19)</h3>
+                  <p class="card-subtitle">Chấm điểm năng lực chuyên môn, kỷ luật và nhận xét tổng kết kỳ thực tập cho từng TTS</p>
+                </div>
+              </div>
+            </div>
+            <div class="content-card-body">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Thực tập sinh</th>
+                      <th>Trường / Ngành</th>
+                      <th>Điểm Chuyên môn</th>
+                      <th>Điểm Kỷ luật</th>
+                      <th>Điểm Tổng kết</th>
+                      <th>Xếp loại</th>
+                      <th>Nhận xét của Mentor</th>
+                      <th style="text-align:right;">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mentorEvaluationsTableBody">
+                    <tr><td colspan="8" style="text-align:center; padding: 24px; color:#94a3b8;">Đang tải danh sách đánh giá...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- TAB 6: LỊCH HỌP & TRAO ĐỔI VỚI TTS (STT 35)               -->
+        <!-- ======================================================== -->
+        <section class="tab-pane" id="pane-meetings">
+          <div class="content-card">
+            <div class="content-card-header">
+              <div class="card-title-group">
+                <div class="card-title-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                <div>
+                  <h3 class="card-title">Lịch họp & Trao đổi 1-on-1 (STT 35)</h3>
+                  <p class="card-subtitle">Tạo lịch họp định kỳ, phỏng vấn hoặc giải đáp kỹ thuật, hệ thống tự động gửi email cho TTS</p>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn btn-primary" onclick="openCreateMeetingModal()">
+                  <i class="fa-solid fa-plus"></i> Tạo lịch họp mới
+                </button>
+              </div>
+            </div>
+            <div class="content-card-body">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Tiêu đề cuộc họp</th>
+                      <th>Ngày họp</th>
+                      <th>Khung giờ</th>
+                      <th>Địa điểm / Link Meet</th>
+                      <th>TTS tham gia</th>
+                      <th>Ghi chú</th>
+                      <th style="text-align:right;">Trạng thái Email</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mentorMeetingsTableBody">
+                    <tr><td colspan="7" style="text-align:center; padding: 24px; color:#94a3b8;">Đang tải danh sách lịch họp...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- TAB 7: THÔNG BÁO HỆ THỐNG (STT 36)                        -->
+        <!-- ======================================================== -->
+        <section class="tab-pane" id="pane-notifications">
+          <div class="content-card">
+            <div class="content-card-header">
+              <div class="card-title-group">
+                <div class="card-title-icon"><i class="fa-solid fa-bell"></i></div>
+                <div>
+                  <h3 class="card-title">Thông báo trong ứng dụng (In-App)</h3>
+                  <p class="card-subtitle">Các thông báo mới về tiến độ nhiệm vụ, báo cáo tuần và lịch họp</p>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn btn-outline btn-sm" onclick="markAllMentorNotifsRead()">
+                  Đánh dấu đọc tất cả
+                </button>
+              </div>
+            </div>
+            <div class="content-card-body">
+              <div id="mentorNotifList" style="display:flex; flex-direction:column; gap:12px;">
+                <!-- Danh sách thông báo -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 1: GIAO NHIỆM VỤ MỚI CHO TTS (STT 15)                    -->
+  <!-- ============================================================== -->
+  <div class="mentor-modal" id="createTaskModal">
+    <div class="mentor-modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-list-check" style="color:var(--primary);"></i> Giao nhiệm vụ cho Thực tập sinh</h3>
+        <button type="button" class="modal-close-btn" onclick="closeModal('createTaskModal')">&times;</button>
+      </div>
+      <form id="createTaskForm" onsubmit="handleCreateTaskSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="taskInternSelect">Chọn Thực tập sinh <span style="color:#ef4444;">*</span></label>
+            <select class="form-control" id="taskInternSelect" required>
+              <option value="">-- Chọn Thực tập sinh trong nhóm --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="taskTitleInput">Tiêu đề nhiệm vụ <span style="color:#ef4444;">*</span></label>
+            <input type="text" class="form-control" id="taskTitleInput" placeholder="Ví dụ: Thiết kế giao diện Dashboard theo Figma" required>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="taskDeadlineInput">Hạn chót hoàn thành <span style="color:#ef4444;">*</span></label>
+              <input type="date" class="form-control" id="taskDeadlineInput" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="taskPrioritySelect">Mức độ ưu tiên</label>
+              <select class="form-control" id="taskPrioritySelect">
+                <option value="medium">Trung bình</option>
+                <option value="high">Ưu tiên cao</option>
+                <option value="low">Thấp</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="taskDescInput">Mô tả chi tiết & Yêu cầu kỹ thuật</label>
+            <textarea class="form-control" id="taskDescInput" placeholder="Ghi chú chi tiết mục tiêu cần đạt, tài liệu tham khảo..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('createTaskModal')">Hủy bỏ</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Giao việc ngay</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 2: MENTOR PHẢN HỒI & NHẬN XÉT BÁO CÁO TUẦN (STT 18)       -->
+  <!-- ============================================================== -->
+  <div class="mentor-modal" id="feedbackReportModal">
+    <div class="mentor-modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-file-pen" style="color:var(--primary);"></i> Phản hồi & Cho điểm Báo cáo tuần</h3>
+        <button type="button" class="modal-close-btn" onclick="closeModal('feedbackReportModal')">&times;</button>
+      </div>
+      <form id="feedbackReportForm" onsubmit="handleFeedbackReportSubmit(event)">
+        <input type="hidden" id="feedbackReportId">
+        <div class="modal-body">
+          <div style="background:#f8fafc; padding:16px; border-radius:var(--radius-md); margin-bottom:18px; border:1px solid var(--border-color);">
+            <h4 id="reportDetailTitle" style="font-size:15px; font-weight:700; margin-bottom:6px;">Báo cáo tuần ... - TTS: ...</h4>
+            <div style="font-size:13px; color:var(--text-muted); margin-bottom:8px;" id="reportDetailTime">Khoảng thời gian: ...</div>
+            <div style="margin-top:10px;">
+              <strong style="font-size:13px;">Công việc đã hoàn thành:</strong>
+              <p id="reportDetailDone" style="font-size:13px; margin-top:3px; color:var(--text-main); white-space:pre-wrap;">...</p>
+            </div>
+            <div style="margin-top:10px;">
+              <strong style="font-size:13px; color:#ef4444;">Khó khăn gặp phải:</strong>
+              <p id="reportDetailIssues" style="font-size:13px; margin-top:3px; color:var(--text-main); white-space:pre-wrap;">...</p>
+            </div>
+            <div style="margin-top:10px;">
+              <strong style="font-size:13px; color:var(--primary);">Kế hoạch tuần tới:</strong>
+              <p id="reportDetailPlans" style="font-size:13px; margin-top:3px; color:var(--text-main); white-space:pre-wrap;">...</p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reportRatingInput">Chấm điểm báo cáo tuần (Thang điểm 1 - 10) <span style="color:#ef4444;">*</span></label>
+            <input type="number" min="1" max="10" step="0.5" class="form-control" id="reportRatingInput" placeholder="Ví dụ: 8.5" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reportFeedbackInput">Nhận xét của Mentor & Hướng dẫn tháo gỡ khó khăn <span style="color:#ef4444;">*</span></label>
+            <textarea class="form-control" id="reportFeedbackInput" placeholder="Nhận xét chất lượng công việc, góp ý giải pháp khắc phục vấn đề..." required rows="4"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('feedbackReportModal')">Đóng</button>
+          <button type="submit" class="btn btn-success"><i class="fa-solid fa-check"></i> Lưu & Gửi phản hồi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 3: ĐÁNH GIÁ TỔNG KẾT KỸ NĂNG & THÁI ĐỘ (STT 19)          -->
+  <!-- ============================================================== -->
+  <div class="mentor-modal" id="evaluationModal">
+    <div class="mentor-modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-award" style="color:var(--primary);"></i> Đánh giá tổng kết Thực tập sinh</h3>
+        <button type="button" class="modal-close-btn" onclick="closeModal('evaluationModal')">&times;</button>
+      </div>
+      <form id="evaluationForm" onsubmit="handleEvaluationSubmit(event)">
+        <input type="hidden" id="evalInternId">
+        <div class="modal-body">
+          <div style="background:#f8fafc; padding:14px; border-radius:var(--radius-md); margin-bottom:16px;">
+            <strong id="evalInternNameTitle" style="font-size:15px;">Thực tập sinh: ...</strong>
+            <div id="evalInternSchoolSub" style="font-size:13px; color:var(--text-muted);">Trường: ...</div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="evalTechScore">Điểm Kỹ năng chuyên môn (1-10) <span style="color:#ef4444;">*</span></label>
+              <input type="number" min="1" max="10" step="0.1" class="form-control" id="evalTechScore" placeholder="8.5" required oninput="calcEvalTotalScore()">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="evalDisciplineScore">Điểm Thái độ & Kỷ luật (1-10) <span style="color:#ef4444;">*</span></label>
+              <input type="number" min="1" max="10" step="0.1" class="form-control" id="evalDisciplineScore" placeholder="9.0" required oninput="calcEvalTotalScore()">
+            </div>
+          </div>
+
+          <div class="score-pill-card">
+            <div style="font-size:12px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">Điểm Tổng kết & Xếp loại</div>
+            <div class="score-num" id="evalTotalScoreDisplay">0.0</div>
+            <div class="score-rank" id="evalGradeDisplay">Chưa đánh giá</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="evalComments">Nhận xét chi tiết tổng kết của Mentor <span style="color:#ef4444;">*</span></label>
+            <textarea class="form-control" id="evalComments" placeholder="Đánh giá tinh thần học hỏi, khả năng làm việc nhóm, tiềm năng phát triển và đề xuất tiếp nhận chính thức..." required rows="4"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('evaluationModal')">Đóng</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Lưu đánh giá tổng kết</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 4: TẠO LỊCH HỌP VÀ TỰ ĐỘNG GỬI EMAIL CHO TTS (STT 35)    -->
+  <!-- ============================================================== -->
+  <div class="mentor-modal" id="createMeetingModal">
+    <div class="mentor-modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-calendar-plus" style="color:var(--primary);"></i> Tạo lịch họp & Tự động gửi Email</h3>
+        <button type="button" class="modal-close-btn" onclick="closeModal('createMeetingModal')">&times;</button>
+      </div>
+      <form id="createMeetingForm" onsubmit="handleCreateMeetingSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="meetingTitle">Tiêu đề cuộc họp / Phỏng vấn <span style="color:#ef4444;">*</span></label>
+            <input type="text" class="form-control" id="meetingTitle" placeholder="Ví dụ: Họp review tiến độ Sprint 3 & Giải đáp kỹ thuật" required>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="meetingDate">Ngày họp <span style="color:#ef4444;">*</span></label>
+              <input type="date" class="form-control" id="meetingDate" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="meetingInternSelect">Chọn TTS tham gia <span style="color:#ef4444;">*</span></label>
+              <select class="form-control" id="meetingInternSelect" required>
+                <option value="">-- Chọn Thực tập sinh --</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="meetingStartTime">Giờ bắt đầu <span style="color:#ef4444;">*</span></label>
+              <input type="time" class="form-control" id="meetingStartTime" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="meetingEndTime">Giờ kết thúc <span style="color:#ef4444;">*</span></label>
+              <input type="time" class="form-control" id="meetingEndTime" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="meetingLink">Địa điểm hoặc Link Google Meet / Zoom</label>
+            <input type="text" class="form-control" id="meetingLink" placeholder="https://meet.google.com/xyz-abcd-efg hoặc Phòng họp P204">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="meetingNotes">Nội dung / Ghi chú chuẩn bị trước</label>
+            <textarea class="form-control" id="meetingNotes" placeholder="TTS chuẩn bị báo cáo tiến độ và câu hỏi kỹ thuật..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('createMeetingModal')">Hủy bỏ</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-envelope-circle-check"></i> Lưu & Gửi Email tự động</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 5: XÁC NHẬN ĐĂNG XUẤT                                    -->
+  <!-- ============================================================== -->
+  <div class="mentor-modal" id="logoutModal">
+    <div class="mentor-modal-box" style="max-width:420px; text-align:center;">
+      <div class="modal-body" style="padding: 32px 24px;">
+        <div style="width:60px; height:60px; border-radius:50%; background:var(--danger-light); color:var(--danger); display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 16px;">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </div>
+        <h3 style="font-size:18px; font-weight:700; margin-bottom:8px;">Xác nhận đăng xuất</h3>
+        <p style="font-size:14px; color:var(--text-muted); margin-bottom:24px;">Bạn có chắc chắn muốn rời khỏi Cổng Người Hướng Dẫn không?</p>
+        <div style="display:flex; justify-content:center; gap:12px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('logoutModal')">Ở lại</button>
+          <button type="button" class="btn btn-primary" style="background:var(--danger);" onclick="confirmLogout()">Đăng xuất ngay</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATIONS CONTAINER -->
+  <div class="mentor-toast-container" id="toastContainer"></div>
+
+  <!-- SCRIPTS -->
+  <script src="api.js"></script>
+  <script src="mentor.js"></script>
+</body>
+
+</html>

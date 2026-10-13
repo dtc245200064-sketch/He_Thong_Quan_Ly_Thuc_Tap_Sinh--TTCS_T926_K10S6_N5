@@ -2381,13 +2381,19 @@ async function applyRolePermissionsToDashboard() {
     console.warn('Lỗi gọi apiGetMe:', e);
   }
 
+  // Tự động chuyển hướng nếu người dùng là Mentor (đã có cổng riêng mentor.html)
+  const savedRole = localStorage.getItem('userRole');
+  if (savedRole === 'Mentor' || savedRole === 'MENTOR') {
+    window.location.href = 'mentor.html';
+    return;
+  }
+
   // Tự động kết nối lấy token từ MySQL nếu chưa có phiên đăng nhập hợp lệ
   if (!meRes || !meRes.success || !meRes.user) {
-    const savedRole = localStorage.getItem('userRole') || 'HR Manager';
+    const roleForLogin = savedRole || 'HR Manager';
     let defaultEmail = 'hr@company.vn';
-    if (savedRole === 'Mentor' || savedRole === 'MENTOR') defaultEmail = 'mentor@company.vn';
-    else if (savedRole === 'Admin' || savedRole === 'ADMIN') defaultEmail = 'admin@company.vn';
-    else if (savedRole === 'INTERN' || savedRole === 'Thực tập sinh') defaultEmail = 'intern@student.vn';
+    if (roleForLogin === 'Admin' || roleForLogin === 'ADMIN') defaultEmail = 'admin@company.vn';
+    else if (roleForLogin === 'INTERN' || roleForLogin === 'Thực tập sinh') defaultEmail = 'intern@student.vn';
 
     try {
       if (typeof apiLogin === 'function') {

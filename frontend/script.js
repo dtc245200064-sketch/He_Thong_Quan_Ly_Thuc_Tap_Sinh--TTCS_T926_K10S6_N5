@@ -3,14 +3,25 @@
 // Tuyệt đối không dùng API / Backend. Xử lý trực tiếp qua DOM & localStorage.
 // ==========================================================================
 
+function setActiveRoleTabStyle(activeBtn) {
+  const buttons = document.querySelectorAll('.role-tabs .role-btn');
+  buttons.forEach(btn => {
+    btn.classList.remove('active');
+    btn.style.background = 'transparent';
+    btn.style.color = '#64748b';
+    btn.style.boxShadow = 'none';
+  });
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+    activeBtn.style.background = '#ffffff';
+    activeBtn.style.color = '#1e293b';
+    activeBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+  }
+}
+
 // 1. KHI BẤM NÚT "HR": KÍCH HOẠT VAI TRÒ HR VÀ ĐIỀN THÔNG TIN MẪU
 function selectHRRole(button) {
-  // Đặt trạng thái active duy nhất cho nút HR
-  const buttons = document.querySelectorAll('.role-tabs .role-btn');
-  buttons.forEach(btn => btn.classList.remove('active'));
-  if (button) {
-    button.classList.add('active');
-  }
+  setActiveRoleTabStyle(button);
 
   // Điền thông tin tài khoản mẫu của HR
   const usernameInput = document.getElementById('username');
@@ -18,15 +29,12 @@ function selectHRRole(button) {
   if (usernameInput) usernameInput.value = 'hr@company.vn';
   if (passwordInput) passwordInput.value = '123456';
 
-  // Ẩn thông báo lỗi nếu có
   hideLoginError();
 }
 
 // 1.1. KHI BẤM NÚT "Mentor": KÍCH HOẠT VAI TRÒ MENTOR VÀ ĐIỀN THÔNG TIN MẪU
 function selectMentorRole(button) {
-  const buttons = document.querySelectorAll('.role-tabs .role-btn');
-  buttons.forEach(btn => btn.classList.remove('active'));
-  if (button) button.classList.add('active');
+  setActiveRoleTabStyle(button);
 
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
@@ -38,12 +46,7 @@ function selectMentorRole(button) {
 
 // 1.2. KHI BẤM NÚT "Thực tập sinh": KÍCH HOẠT VAI TRÒ THỰC TẬP SINH VÀ ĐIỀN THÔNG TIN MẪU
 function selectInternRole(button) {
-  // Đặt trạng thái active duy nhất cho nút Thực tập sinh
-  const buttons = document.querySelectorAll('.role-tabs .role-btn');
-  buttons.forEach(btn => btn.classList.remove('active'));
-  if (button) {
-    button.classList.add('active');
-  }
+  setActiveRoleTabStyle(button);
 
   // Điền thông tin tài khoản mẫu của Thực tập sinh
   const usernameInput = document.getElementById('username');
@@ -51,17 +54,12 @@ function selectInternRole(button) {
   if (usernameInput) usernameInput.value = 'intern@student.vn';
   if (passwordInput) passwordInput.value = '123456';
 
-  // Ẩn thông báo lỗi nếu có
   hideLoginError();
 }
 
 // 1.3. KHI BẤM NÚT "Admin": KÍCH HOẠT VAI TRÒ ADMIN VÀ ĐIỀN THÔNG TIN MẪU
 function selectAdminRole(button) {
-  const buttons = document.querySelectorAll('.role-tabs .role-btn');
-  buttons.forEach(btn => btn.classList.remove('active'));
-  if (button) {
-    button.classList.add('active');
-  }
+  setActiveRoleTabStyle(button);
 
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
@@ -281,7 +279,7 @@ async function handleLogin(event) {
           showLoginSuccessModal({
             name: displayName,
             role: 'Người hướng dẫn (Mentor)',
-            targetUrl: 'dashboard.html'
+            targetUrl: 'mentor.html'
           });
           return;
         } else if (role === 'INTERN' || role === 'Thực tập sinh') {
@@ -330,6 +328,27 @@ async function handleLogin(event) {
       name: "Nguyễn Thị Hoa",
       role: "HR Manager",
       targetUrl: 'dashboard.html'
+    });
+    return;
+  }
+
+  if (lowerUser === 'mentor@company.vn' || lowerUser.includes('mentor')) {
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userRole', 'Mentor');
+    localStorage.setItem('user', JSON.stringify({
+      id: 4,
+      mentor_id: 1,
+      name: "Nguyễn Anh Tuấn",
+      email: "mentor@company.vn",
+      role: "Mentor",
+      dept: "Phòng Phát triển Phần mềm",
+      position: "Tech Lead",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120"
+    }));
+    showLoginSuccessModal({
+      name: "Nguyễn Anh Tuấn",
+      role: "Người hướng dẫn (Mentor)",
+      targetUrl: 'mentor.html'
     });
     return;
   }
@@ -409,6 +428,12 @@ function checkAuthState() {
   // NẾU ĐÃ ĐĂNG NHẬP VÀ VAI TRÒ LÀ "HR"
   if (isLoggedIn && (userRole === 'HR' || userRole === 'HR Manager')) {
     window.location.href = 'dashboard.html';
+    return;
+  }
+
+  // NẾU ĐÃ ĐĂNG NHẬP VÀ VAI TRÒ LÀ "MENTOR"
+  if (isLoggedIn && (userRole === 'Mentor' || userRole === 'MENTOR')) {
+    window.location.href = 'mentor.html';
     return;
   }
 
