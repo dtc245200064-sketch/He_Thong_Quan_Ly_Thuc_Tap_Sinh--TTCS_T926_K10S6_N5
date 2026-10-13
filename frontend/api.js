@@ -395,6 +395,15 @@ async function apiCreateTask(data) {
   return await res.json();
 }
 
+async function apiUpdateTask(id, data) {
+  const res = await fetch(`${API_BASE_URL}/tasks/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
 async function apiUpdateTaskProgress(id, data) {
   const res = await fetch(`${API_BASE_URL}/tasks/${id}/progress`, {
     method: 'PUT',
@@ -429,6 +438,23 @@ async function apiSubmitWeeklyReport(data) {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function apiUpdateWeeklyReport(id, data) {
+  const res = await fetch(`${API_BASE_URL}/reports/weekly/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+async function apiDeleteWeeklyReport(id) {
+  const res = await fetch(`${API_BASE_URL}/reports/weekly/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
   });
   return await res.json();
 }

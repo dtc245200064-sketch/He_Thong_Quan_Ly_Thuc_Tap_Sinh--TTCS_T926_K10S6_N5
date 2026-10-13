@@ -41,10 +41,22 @@ exports.submitWeeklyReport = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ thông tin báo cáo tuần!' });
     }
 
-    // Tìm mentor tương ứng của TTS
-    const [internRows] = await db.query('SELECT mentor FROM interns WHERE id = ?', [intern_id]);
+    // Xác định ID thực tế trong bảng interns
+    let [internRows] = await db.query('SELECT id, mentor, user_id FROM interns WHERE id = ?', [intern_id]);
+    if (internRows.length === 0) {
+      [internRows] = await db.query('SELECT id, mentor, user_id FROM interns WHERE user_id = ?', [intern_id]);
+    }
+
+    if (internRows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Chưa tìm thấy hồ sơ thực tập sinh tương ứng trong hệ thống. Vui lòng tạo/duyệt hồ sơ TTS trước khi nộp báo cáo!'
+      });
+    }
+
+    const actualInternId = internRows[0].id;
     let mentorId = null;
-    if (internRows.length > 0 && internRows[0].mentor) {
+    if (internRows[0].mentor) {
       const [mentorRows] = await db.query('SELECT id FROM mentors WHERE name LIKE ? LIMIT 1', [`%${internRows[0].mentor}%`]);
       if (mentorRows.length > 0) mentorId = mentorRows[0].id;
     }
@@ -59,7 +71,7 @@ exports.submitWeeklyReport = async (req, res) => {
          issues_faced=VALUES(issues_faced), 
          plans_next_week=VALUES(plans_next_week), 
          status=VALUES(status)`,
-      [intern_id, mentorId, week_number, start_date || new Date().toISOString().slice(0, 10), end_date || new Date().toISOString().slice(0, 10), tasks_completed, issues_faced || '', plans_next_week || '', status]
+      [actualInternId, mentorId, week_number, start_date || new Date().toISOString().slice(0, 10), end_date || new Date().toISOString().slice(0, 10), tasks_completed, issues_faced || '', plans_next_week || '', status]
     );
 
     return res.status(201).json({
@@ -70,6 +82,61 @@ exports.submitWeeklyReport = async (req, res) => {
   } catch (error) {
     console.error('Lỗi nộp báo cáo tuần:', error);
     return res.status(500).json({ success: false, message: 'Lỗi server khi nộp báo cáo tuần', error: error.message });
+  }
+};
+
+// PUT /api/reports/weekly/:id: Cập nhật nội dung báo cáo tuần
+exports.updateWeeklyReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { week_number, start_date, end_date, tasks_completed, issues_faced, plans_next_week, is_draft } = req.body;
+
+    const [existing] = await db.query('SELECT * FROM weekly_reports WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy báo cáo tuần!' });
+    }
+
+    const current = existing[0];
+    const status = is_draft !== undefined ? (is_draft ? 'draft' : 'submitted') : current.status;
+
+    await db.query(
+      `UPDATE weekly_reports 
+       SET week_number = ?, start_date = ?, end_date = ?, tasks_completed = ?, issues_faced = ?, plans_next_week = ?, status = ?
+       WHERE id = ?`,
+      [
+        week_number !== undefined ? week_number : current.week_number,
+        start_date || current.start_date,
+        end_date || current.end_date,
+        tasks_completed !== undefined ? tasks_completed : current.tasks_completed,
+        issues_faced !== undefined ? issues_faced : current.issues_faced,
+        plans_next_week !== undefined ? plans_next_week : current.plans_next_week,
+        status,
+        id
+      ]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: is_draft ? 'Đã lưu bản nháp báo cáo tuần!' : 'Cập nhật báo cáo tuần thành công!'
+    });
+  } catch (error) {
+    console.error('Lỗi cập nhật báo cáo tuần:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi server khi cập nhật báo cáo tuần', error: error.message });
+  }
+};
+
+// DELETE /api/reports/weekly/:id: Xóa báo cáo tuần
+exports.deleteWeeklyReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await db.query('DELETE FROM weekly_reports WHERE id = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy báo cáo tuần để xóa!' });
+    }
+    return res.status(200).json({ success: true, message: 'Đã xóa báo cáo tuần thành công!' });
+  } catch (error) {
+    console.error('Lỗi xóa báo cáo tuần:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi server khi xóa báo cáo tuần', error: error.message });
   }
 };
 

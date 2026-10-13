@@ -38,7 +38,9 @@ const InternState = {
   status: 'Chưa hoàn thiện',
   rejectReason: '',
   rejectNote: '',
-  rolePermissions: null
+  rolePermissions: null,
+  progressTasks: [],
+  weeklyReports: []
 };
 
 // ==============================================================================
@@ -3214,6 +3216,15 @@ window.addEventListener('click', (e) => {
 // 7. KHỞI CHẠY KHI TẢI TRANG
 // ==============================================================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Dọn sạch cache cũ trong localStorage để đồng bộ 100% từ MySQL DB
+  try {
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('intern_progress_tasks_') || k.startsWith('intern_weekly_reports_')) {
+        localStorage.removeItem(k);
+      }
+    });
+  } catch (e) {}
+
   // 1. Phục hồi state tài liệu của tài khoản hiện tại
   loadDocsState();
 
@@ -3717,34 +3728,20 @@ function getInternUserId() {
 // ------------------------------------------------------------------------------
 // MODULE 1: TIẾN ĐỘ CÔNG VIỆC
 // ------------------------------------------------------------------------------
-function getProgressStorageKey() {
-  return `intern_progress_tasks_${getInternUserId()}`;
-}
-
 function getProgressTasks() {
-  try {
-    const raw = localStorage.getItem(getProgressStorageKey());
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveProgressTasks(tasks) {
-  try {
-    localStorage.setItem(getProgressStorageKey(), JSON.stringify(tasks));
-  } catch (e) {}
+  return InternState.progressTasks || [];
 }
 
 async function initProgressTab() {
+  const uStr = localStorage.getItem('user');
+  const u = uStr ? JSON.parse(uStr) : {};
+  const actualInternId = internProfileData.internId || internProfileData.id || u.internId || u.id;
+
   if (typeof apiGetTasks === 'function') {
     try {
-      const uStr = localStorage.getItem('user');
-      const u = uStr ? JSON.parse(uStr) : {};
-      const actualInternId = u.internId || u.id;
       const res = await apiGetTasks(actualInternId ? { intern_id: actualInternId } : {});
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-        const mapped = res.data.map(t => ({
+      if (res && res.success && Array.isArray(res.data)) {
+        InternState.progressTasks = res.data.map(t => ({
           id: String(t.id),
           name: t.title,
           date: t.deadline ? t.deadline.slice(0, 10) : new Date().toISOString().slice(0, 10),
@@ -3754,9 +3751,13 @@ async function initProgressTab() {
           nextPlan: t.intern_note || '',
           updatedAt: t.updated_at
         }));
-        saveProgressTasks(mapped);
+      } else {
+        InternState.progressTasks = [];
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Lỗi tải danh sách tiến độ công việc:', e);
+      InternState.progressTasks = [];
+    }
   }
   renderProgressList();
 }
@@ -3779,8 +3780,8 @@ function openProgressModal(taskId = null) {
   const nextPlanInput = document.getElementById('progressTaskNextPlan');
 
   if (taskId) {
-    const tasks = getProgressTasks();
-    const task = tasks.find(t => t.id === taskId);
+    const tasks = InternState.progressTasks || [];
+    const task = tasks.find(t => String(t.id) === String(taskId));
     if (task) {
       if (modalTitle) modalTitle.textContent = 'Cập nhật tiến độ';
       if (editIdInput) editIdInput.value = task.id;
@@ -3830,77 +3831,79 @@ async function handleSaveProgress(event) {
     return;
   }
 
-  // Cập nhật lên MySQL nếu có ID số
-  if (editId && !isNaN(Number(editId)) && typeof apiUpdateTaskProgress === 'function') {
-    try {
-      await apiUpdateTaskProgress(Number(editId), {
-        progress: percent,
-        intern_note: nextPlan || content
-      });
-    } catch (apiErr) {}
-  } else if (!editId && typeof apiCreateTask === 'function') {
-    try {
-      const uStr = localStorage.getItem('user');
-      const u = uStr ? JSON.parse(uStr) : {};
-      const internId = u.internId || u.id || 1;
-      await apiCreateTask({
-        intern_id: internId,
-        title: name,
-        deadline: date,
-        description: content
-      });
-    } catch (apiErr) {}
-  }
+  const uStr = localStorage.getItem('user');
+  const u = uStr ? JSON.parse(uStr) : {};
+  const internId = internProfileData.internId || internProfileData.id || u.internId || u.id;
 
-  let tasks = getProgressTasks();
-  if (editId) {
-    const idx = tasks.findIndex(t => t.id === editId);
-    if (idx !== -1) {
-      tasks[idx] = {
-        ...tasks[idx],
-        name,
-        date,
-        percent,
-        content,
-        blockers,
-        nextPlan,
-        updatedAt: new Date().toISOString()
-      };
+  try {
+    if (editId) {
+      if (typeof apiUpdateTask === 'function') {
+        const res = await apiUpdateTask(editId, {
+          title: name,
+          deadline: date,
+          progress: percent,
+          description: content,
+          intern_note: nextPlan || blockers
+        });
+        if (res && res.success) {
+          if (typeof showInternToast === 'function') showInternToast('Cập nhật tiến độ thành công!', 'success');
+        } else {
+          if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi cập nhật tiến độ', 'warning');
+        }
+      } else if (typeof apiUpdateTaskProgress === 'function') {
+        await apiUpdateTaskProgress(editId, {
+          progress: percent,
+          intern_note: nextPlan || blockers
+        });
+        if (typeof showInternToast === 'function') showInternToast('Cập nhật tiến độ thành công!', 'success');
+      }
+    } else {
+      if (typeof apiCreateTask === 'function') {
+        const res = await apiCreateTask({
+          intern_id: internId,
+          title: name,
+          deadline: date,
+          progress: percent,
+          description: content,
+          intern_note: nextPlan || blockers
+        });
+        if (res && res.success) {
+          addPortalNotification('Cập nhật tiến độ mới', `Bạn đã ghi nhận tiến độ công việc "${name}" đạt ${percent}%.`, 'info');
+          if (typeof showInternToast === 'function') showInternToast('Thêm cập nhật tiến độ thành công!', 'success');
+        } else {
+          if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi lưu tiến độ vào CSDL', 'warning');
+        }
+      }
     }
-    if (typeof showInternToast === 'function') showInternToast('Cập nhật tiến độ thành công!', 'success');
-  } else {
-    const newTask = {
-      id: 'task_' + Date.now(),
-      name,
-      date,
-      percent,
-      content,
-      blockers,
-      nextPlan,
-      createdAt: new Date().toISOString()
-    };
-    tasks.unshift(newTask);
-    addPortalNotification('Cập nhật tiến độ mới', `Bạn đã ghi nhận tiến độ công việc "${name}" đạt ${percent}%.`, 'info');
-    if (typeof showInternToast === 'function') showInternToast('Thêm cập nhật tiến độ thành công!', 'success');
+  } catch (err) {
+    console.error('Lỗi lưu tiến độ công việc:', err);
+    if (typeof showInternToast === 'function') showInternToast('Lỗi kết nối cơ sở dữ liệu!', 'error');
   }
 
-  saveProgressTasks(tasks);
   closeProgressModal();
-  renderProgressList();
+  await initProgressTab();
 }
 
-function deleteProgressTask(taskId) {
+async function deleteProgressTask(taskId) {
   if (!confirm('Bạn có chắc chắn muốn xóa tiến độ công việc này không?')) return;
-  let tasks = getProgressTasks();
-  tasks = tasks.filter(t => t.id !== taskId);
-  saveProgressTasks(tasks);
-  renderProgressList();
-  if (typeof showInternToast === 'function') showInternToast('Đã xóa tiến độ công việc!', 'info');
+  try {
+    if (typeof apiDeleteTask === 'function') {
+      const res = await apiDeleteTask(taskId);
+      if (res && res.success) {
+        if (typeof showInternToast === 'function') showInternToast('Đã xóa tiến độ công việc trong CSDL!', 'info');
+      } else {
+        if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi xóa công việc', 'warning');
+      }
+    }
+  } catch (err) {
+    console.error('Lỗi xóa task trong DB:', err);
+  }
+  await initProgressTab();
 }
 
 function renderProgressList() {
   const container = document.getElementById('progressTasksContainer');
-  const tasks = getProgressTasks();
+  const tasks = InternState.progressTasks || [];
 
   // Cập nhật 3 Thẻ thống kê (chuẩn hình ảnh 1: Tổng công việc, Đang thực hiện, Hoàn thành)
   const total = tasks.length;
@@ -4002,38 +4005,27 @@ function renderProgressList() {
 // ------------------------------------------------------------------------------
 // MODULE 2: BÁO CÁO TUẦN
 // ------------------------------------------------------------------------------
-function getReportsStorageKey() {
-  return `intern_weekly_reports_${getInternUserId()}`;
-}
-
 function getWeeklyReports() {
-  try {
-    const raw = localStorage.getItem(getReportsStorageKey());
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveWeeklyReports(reports) {
-  try {
-    localStorage.setItem(getReportsStorageKey(), JSON.stringify(reports));
-  } catch (e) {}
+  return InternState.weeklyReports || [];
 }
 
 async function initReportsTab() {
+  const uStr = localStorage.getItem('user');
+  const u = uStr ? JSON.parse(uStr) : {};
+  const actualInternId = internProfileData.internId || internProfileData.id || u.internId || u.id;
+
   if (typeof apiGetWeeklyReports === 'function') {
     try {
-      const uStr = localStorage.getItem('user');
-      const u = uStr ? JSON.parse(uStr) : {};
-      const actualInternId = u.internId || u.id;
       const res = await apiGetWeeklyReports(actualInternId ? { intern_id: actualInternId } : {});
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-        const mapped = res.data.map(r => ({
+      if (res && res.success && Array.isArray(res.data)) {
+        InternState.weeklyReports = res.data.map(r => ({
           id: String(r.id),
+          weekNumber: r.week_number,
           weekTitle: `Tuần ${r.week_number}`,
           workDone: r.tasks_completed,
           results: r.mentor_feedback ? `Phản hồi Mentor: ${r.mentor_feedback} (${r.mentor_rating || 0}/10)` : 'Đang chờ Mentor phản hồi',
+          mentorFeedback: r.mentor_feedback || '',
+          mentorRating: r.mentor_rating || null,
           learnings: '',
           difficulties: r.issues_faced || '',
           nextPlan: r.plans_next_week || '',
@@ -4041,9 +4033,13 @@ async function initReportsTab() {
           date: r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
           createdAt: r.submitted_at
         }));
-        saveWeeklyReports(mapped);
+      } else {
+        InternState.weeklyReports = [];
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Lỗi tải danh sách báo cáo tuần:', e);
+      InternState.weeklyReports = [];
+    }
   }
   renderReportsList();
 }
@@ -4060,8 +4056,8 @@ function openReportModal(reportId = null) {
   const nextPlanInput = document.getElementById('reportNextPlan');
 
   if (reportId) {
-    const reports = getWeeklyReports();
-    const rep = reports.find(r => r.id === reportId);
+    const reports = InternState.weeklyReports || [];
+    const rep = reports.find(r => String(r.id) === String(reportId));
     if (rep) {
       if (modalTitle) modalTitle.textContent = 'Chỉnh sửa báo cáo tuần';
       if (editIdInput) editIdInput.value = rep.id;
@@ -4118,85 +4114,82 @@ async function saveWeeklyReportProcess(status) {
   const weekMatch = weekTitle.match(/\d+/);
   const weekNumber = weekMatch ? parseInt(weekMatch[0], 10) : 1;
 
-  // Ghi nhận trực tiếp vào MySQL qua API
-  if (typeof apiSubmitWeeklyReport === 'function') {
-    try {
-      const uStr = localStorage.getItem('user');
-      const u = uStr ? JSON.parse(uStr) : {};
-      const internId = u.internId || u.id || 1;
-      await apiSubmitWeeklyReport({
-        intern_id: internId,
-        week_number: weekNumber,
-        tasks_completed: workDone,
-        issues_faced: difficulties,
-        plans_next_week: nextPlan,
-        is_draft: status === 'Bản nháp'
-      });
-    } catch (apiErr) {}
+  const uStr = localStorage.getItem('user');
+  const u = uStr ? JSON.parse(uStr) : {};
+  const internId = internProfileData.internId || internProfileData.id || u.internId || u.id;
+  const isDraft = status === 'Bản nháp';
+
+  try {
+    if (editId) {
+      if (typeof apiUpdateWeeklyReport === 'function') {
+        const res = await apiUpdateWeeklyReport(editId, {
+          week_number: weekNumber,
+          tasks_completed: workDone,
+          issues_faced: difficulties,
+          plans_next_week: nextPlan,
+          is_draft: isDraft
+        });
+        if (res && res.success) {
+          if (typeof showInternToast === 'function') {
+            showInternToast(isDraft ? 'Đã lưu bản nháp báo cáo tuần!' : 'Cập nhật báo cáo tuần thành công!', 'success');
+          }
+        } else {
+          if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi cập nhật báo cáo tuần', 'warning');
+        }
+      }
+    } else {
+      if (typeof apiSubmitWeeklyReport === 'function') {
+        const res = await apiSubmitWeeklyReport({
+          intern_id: internId,
+          week_number: weekNumber,
+          tasks_completed: workDone,
+          issues_faced: difficulties,
+          plans_next_week: nextPlan,
+          is_draft: isDraft
+        });
+        if (res && res.success) {
+          addPortalNotification(
+            isDraft ? 'Lưu bản nháp báo cáo tuần' : 'Đã nộp báo cáo tuần',
+            `Báo cáo "${weekTitle}" đã được ${status.toLowerCase()} thành công vào hệ thống.`,
+            isDraft ? 'info' : 'success'
+          );
+          if (typeof showInternToast === 'function') {
+            showInternToast(isDraft ? 'Đã lưu bản nháp báo cáo tuần!' : 'Nộp báo cáo tuần thành công!', 'success');
+          }
+        } else {
+          if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi lưu báo cáo tuần vào CSDL', 'warning');
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Lỗi gửi báo cáo tuần:', err);
+    if (typeof showInternToast === 'function') showInternToast('Lỗi kết nối cơ sở dữ liệu!', 'error');
   }
 
-  let reports = getWeeklyReports();
-  const dateFormatted = new Date().toLocaleDateString('vi-VN');
-
-  if (editId) {
-    const idx = reports.findIndex(r => r.id === editId);
-    if (idx !== -1) {
-      reports[idx] = {
-        ...reports[idx],
-        weekTitle,
-        workDone,
-        results,
-        learnings,
-        difficulties,
-        nextPlan,
-        status,
-        updatedAt: new Date().toISOString()
-      };
-    }
-    if (typeof showInternToast === 'function') {
-      showInternToast(status === 'Đã nộp' ? 'Đã nộp báo cáo tuần thành công!' : 'Đã lưu bản nháp báo cáo tuần!', 'success');
-    }
-  } else {
-    const newReport = {
-      id: 'rep_' + Date.now(),
-      weekTitle,
-      workDone,
-      results,
-      learnings,
-      difficulties,
-      nextPlan,
-      status,
-      date: dateFormatted,
-      createdAt: new Date().toISOString()
-    };
-    reports.unshift(newReport);
-    addPortalNotification(
-      status === 'Đã nộp' ? 'Đã nộp báo cáo tuần' : 'Lưu bản nháp báo cáo tuần',
-      `Báo cáo "${weekTitle}" đã được ${status.toLowerCase()} thành công.`,
-      status === 'Đã nộp' ? 'success' : 'info'
-    );
-    if (typeof showInternToast === 'function') {
-      showInternToast(status === 'Đã nộp' ? 'Nộp báo cáo tuần thành công!' : 'Đã lưu bản nháp báo cáo tuần!', 'success');
-    }
-  }
-
-  saveWeeklyReports(reports);
   closeReportModal();
-  renderReportsList();
+  await initReportsTab();
 }
 
-function deleteWeeklyReport(reportId) {
+async function deleteWeeklyReport(reportId) {
   if (!confirm('Bạn có chắc chắn muốn xóa báo cáo tuần này không?')) return;
-  let reports = getWeeklyReports();
-  reports = reports.filter(r => r.id !== reportId);
-  saveWeeklyReports(reports);
-  renderReportsList();
-  if (typeof showInternToast === 'function') showInternToast('Đã xóa báo cáo tuần!', 'info');
+  try {
+    if (typeof apiDeleteWeeklyReport === 'function') {
+      const res = await apiDeleteWeeklyReport(reportId);
+      if (res && res.success) {
+        if (typeof showInternToast === 'function') showInternToast('Đã xóa báo cáo tuần trong CSDL!', 'info');
+      } else {
+        if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi xóa báo cáo tuần', 'warning');
+      }
+    }
+  } catch (err) {
+    console.error('Lỗi xóa báo cáo tuần trong DB:', err);
+  }
+  await initReportsTab();
 }
 
 function openReportDetailModal(reportId) {
-  const reports = getWeeklyReports();
-  const rep = reports.find(r => r.id === reportId);
+  const reports = InternState.weeklyReports || [];
+  const rep = reports.find(r => String(r.id) === String(reportId));
   if (!rep) return;
 
   const modal = document.getElementById('reportDetailModalOverlay');
@@ -4253,7 +4246,7 @@ function closeReportDetailModal() {
 
 function renderReportsList() {
   const container = document.getElementById('weeklyReportsContainer');
-  const reports = getWeeklyReports();
+  const reports = InternState.weeklyReports || [];
   if (!container) return;
 
   if (reports.length === 0) {
