@@ -371,3 +371,19 @@ async function apiGetSystemEmails(email = '') {
 }
 
 
+
+// HR workflows: mentor list and dedicated assignment, no unrelated profile fields.
+async function apiGetMentors() {
+  const res = await fetch(`${API_BASE_URL}/interns/mentors`, { headers: getAuthHeaders() });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || 'Không tải được mentor');
+  return data.data;
+}
+async function apiAssignMentor(internId, mentorId) {
+  const res = await fetch(`${API_BASE_URL}/interns/${internId}/mentor`, {
+    method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify({ mentor_id: mentorId })
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || 'Không thể phân công mentor');
+  return data.data;
+}

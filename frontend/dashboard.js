@@ -62,6 +62,7 @@ function switchTab(tabName) {
     review: { tab: document.getElementById("reviewTab"), nav: document.getElementById("navReview") },
     interns: { tab: document.getElementById("internsTab"), nav: document.getElementById("navInterns") },
     attendance: { tab: document.getElementById("attendanceTab"), nav: document.getElementById("navAttendance") },
+    mentors: { tab: document.getElementById("mentorsTab"), nav: document.getElementById("navMentors") },
     programs: { tab: document.getElementById("programsTab"), nav: document.getElementById("navPrograms") }
   };
 
@@ -84,6 +85,8 @@ function switchTab(tabName) {
     filterData();
   } else if (tabName === "attendance") {
     renderAttendanceTab();
+  } else if (tabName === "mentors") {
+    HRWorkflows.loadMentors();
   } else if (tabName === "programs") {
     renderPrograms();
   }
@@ -1676,6 +1679,7 @@ async function openViewInternModal(id) {
         <i class="fa-solid fa-file-lines"></i>
         <span>Xem tài liệu đính kèm</span>
       </button>` : ''}
+      ${HRWorkflows.canManage() ? `<button type="button" class="btn-primary" onclick="closeModal('internDetailModal'); HRWorkflows.openAssignment(${intern.id})">Phân công / Đổi mentor</button>` : ''}
       ${canEdit ? `
       <button type="button" class="btn-primary" onclick="closeModal('internDetailModal'); openEditModal(${intern.id})">
         <i class="fa-solid fa-pen-to-square"></i>
@@ -3496,7 +3500,10 @@ async function loadAttendanceFromDB() {
           endDate: l.end_date.split('T')[0],
           days: l.days_count,
           reason: l.reason,
-          submittedAt: l.created_at ? new Date(l.created_at).toLocaleDateString('vi-VN') : '',
+          submittedAt: (l.submitted_at || l.created_at) ? new Date(l.submitted_at || l.created_at).toLocaleDateString('vi-VN') : '',
+          leaveType: l.leave_type,
+          reviewNote: l.review_note,
+          reviewedAt: l.reviewed_at ? new Date(l.reviewed_at).toLocaleString('vi-VN') : '',
           status: l.status === 'approved' ? 'Đã duyệt' : (l.status === 'rejected' ? 'Từ chối' : 'Chờ duyệt')
         }));
       } else {
@@ -3883,103 +3890,8 @@ async function applyAttendanceMark(status) {
 // ==========================================================================
 
 // Render danh sách Đơn nghỉ phép
-function renderLeaveRequests() {
-  const tbody = document.getElementById("leavesTableBody");
-  if (!tbody) return;
+function renderLeaveRequests() { HRWorkflows.renderLeaves(); }
 
-  const filterStatus = document.getElementById("leaveFilterStatus");
-  const statusFilterVal = filterStatus ? filterStatus.value.trim() : "";
-
-  let list = leaveRequests;
-  if (statusFilterVal) {
-    list = list.filter(item => item.status === statusFilterVal);
-  }
-
-  // Nếu không có đơn nghỉ phép nào (Để trống dữ liệu theo yêu cầu)
-  if (list.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" class="text-center py-5" style="color: #64748b;">
-          <i class="fa-regular fa-envelope-open" style="font-size: 32px; display: block; margin-bottom: 10px; color: #cbd5e1;"></i>
-          <span>Hiện tại chưa có đơn nghỉ phép nào.</span>
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = "";
-
-  list.forEach(leave => {
-    const tr = document.createElement("tr");
-
-    const formatDMY = (dStr) => {
-      if (!dStr) return "";
-      const p = dStr.split("-");
-      if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
-      return dStr;
-    };
-
-    const timeRangeStr = `${formatDMY(leave.startDate)}<br><span style="font-size: 11px; color: #94a3b8;">đến</span> ${formatDMY(leave.endDate)}`;
-
-    let statusBadgeClass = "leave-status-pending";
-    if (leave.status === "Đã duyệt") statusBadgeClass = "leave-status-approved";
-    else if (leave.status === "Từ chối") statusBadgeClass = "leave-status-rejected";
-
-    let actionsHTML = `
-      <div class="action-buttons-leave d-flex gap-2 justify-content-center">
-        <button type="button" class="btn-action-leave btn-leave-detail" onclick="openLeaveDetailModal(${leave.id})">
-          Xem chi tiết
-        </button>
-    `;
-
-    if (leave.status === "Chờ duyệt") {
-      actionsHTML += `
-        <button type="button" class="btn-action-leave btn-leave-approve" onclick="handleApproveLeave(${leave.id})">
-          Duyệt
-        </button>
-        <button type="button" class="btn-action-leave btn-leave-reject" onclick="handleRejectLeave(${leave.id})">
-          Từ chối
-        </button>
-      `;
-    }
-
-    actionsHTML += `</div>`;
-
-    tr.innerHTML = `
-      <td>
-        <strong>${leave.internName}</strong>
-      </td>
-      <td>
-        <span class="text-muted" style="font-size: 13px;">${leave.program || "Chương trình thực tập"}</span>
-      </td>
-      <td>
-        <div style="font-size: 13px; font-weight: 500;">${timeRangeStr}</div>
-      </td>
-      <td>
-        <strong>${leave.days} ngày</strong>
-      </td>
-      <td>
-        <span style="font-size: 13px; color: #475569;" title="${leave.reason}">
-          ${leave.reason && leave.reason.length > 28 ? leave.reason.substring(0, 28) + '...' : (leave.reason || '')}
-        </span>
-      </td>
-      <td>
-        <div style="font-size: 12px; color: #64748b;">${leave.submittedAt || ''}</div>
-      </td>
-      <td>
-        <span class="leave-status-badge ${statusBadgeClass}">${leave.status}</span>
-      </td>
-      <td class="text-center">
-        ${actionsHTML}
-      </td>
-    `;
-
-    tbody.appendChild(tr);
-  });
-}
-
-// Mở Modal Tạo đơn nghỉ phép mới
 function openCreateLeaveModal() {
   const internSelect = document.getElementById("leaveInternSelect");
   const startInput = document.getElementById("leaveStartDate");
@@ -4075,111 +3987,12 @@ function handleCreateLeaveSubmit(e) {
 }
 
 // Mở Modal Xem chi tiết đơn nghỉ phép
-function openLeaveDetailModal(leaveId) {
-  const leave = leaveRequests.find(l => l.id === leaveId);
-  if (!leave) return;
+function openLeaveDetailModal(id) { HRWorkflows.openLeave(id); }
 
-  const detailBody = document.getElementById("leaveDetailBody");
-  const detailFooter = document.getElementById("leaveDetailFooter");
-  if (!detailBody || !detailFooter) return;
+function handleApproveLeave(id) { HRWorkflows.openLeave(id, 'approved'); }
 
-  const formatDMY = (dStr) => {
-    if (!dStr) return "";
-    const p = dStr.split("-");
-    if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
-    return dStr;
-  };
+function handleRejectLeave(id) { HRWorkflows.openLeave(id, 'rejected'); }
 
-  let statusBadgeClass = "leave-status-pending";
-  if (leave.status === "Đã duyệt") statusBadgeClass = "leave-status-approved";
-  else if (leave.status === "Từ chối") statusBadgeClass = "leave-status-rejected";
-
-  detailBody.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 14px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
-        <div>
-          <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #1e293b;">${leave.internName}</h4>
-          <span style="font-size: 13px; color: #64748b;">${leave.program || "Chương trình thực tập"}</span>
-        </div>
-        <span class="leave-status-badge ${statusBadgeClass}">${leave.status}</span>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div style="background: #f8fafc; padding: 10px 14px; border-radius: 8px;">
-          <span style="font-size: 12px; color: #64748b; display: block;">Thời gian nghỉ:</span>
-          <strong style="font-size: 13px; color: #1e293b;">${formatDMY(leave.startDate)} → ${formatDMY(leave.endDate)}</strong>
-        </div>
-        <div style="background: #f8fafc; padding: 10px 14px; border-radius: 8px;">
-          <span style="font-size: 12px; color: #64748b; display: block;">Tổng số ngày:</span>
-          <strong style="font-size: 13px; color: #1e293b;">${leave.days} ngày</strong>
-        </div>
-      </div>
-
-      <div style="background: #f8fafc; padding: 12px 14px; border-radius: 8px;">
-        <span style="font-size: 12px; color: #64748b; display: block; margin-bottom: 4px;">Lý do nghỉ phép:</span>
-        <p style="margin: 0; font-size: 13px; color: #334155; line-height: 1.5;">${leave.reason}</p>
-      </div>
-
-      <div style="font-size: 12px; color: #94a3b8; text-align: right;">
-        Ngày nộp đơn: ${leave.submittedAt || "Không xác định"}
-      </div>
-    </div>
-  `;
-
-  let footerBtns = `<button type="button" class="btn-secondary" onclick="closeModal('leaveDetailModal')">Đóng</button>`;
-  if (leave.status === "Chờ duyệt") {
-    footerBtns += `
-      <button type="button" class="btn-danger" style="background: #ef4444; color: white; padding: 8px 16px; border-radius: 6px;" onclick="handleRejectLeave(${leave.id}); closeModal('leaveDetailModal');">Từ chối</button>
-      <button type="button" class="btn-primary" style="background: #10b981; padding: 8px 16px; border-radius: 6px;" onclick="handleApproveLeave(${leave.id}); closeModal('leaveDetailModal');">Duyệt đơn</button>
-    `;
-  }
-  detailFooter.innerHTML = footerBtns;
-
-  openModal("leaveDetailModal");
-}
-
-// Duyệt đơn nghỉ phép: Tự động cập nhật MySQL và đánh dấu trạng thái 'leave' (P) trên Bảng chấm công
-async function handleApproveLeave(leaveId) {
-  const leave = leaveRequests.find(l => l.id === leaveId);
-  if (!leave) return;
-
-  try {
-    if (typeof apiReviewLeave === 'function') {
-      await apiReviewLeave(leaveId, 'approved');
-    }
-    showToast(`Đã duyệt đơn nghỉ phép của ${leave.internName} và tự động cập nhật bảng chấm công (P)!`, "success");
-  } catch (err) {
-    console.error("Lỗi duyệt nghỉ phép trên MySQL:", err);
-    showToast("Không thể duyệt đơn nghỉ phép lúc này", "danger");
-  }
-
-  await loadAttendanceFromDB();
-  renderLeaveRequests();
-  renderAttendanceSheet();
-}
-
-// Từ chối đơn nghỉ phép: Cập nhật trạng thái trực tiếp lên MySQL Database
-async function handleRejectLeave(leaveId) {
-  const leave = leaveRequests.find(l => l.id === leaveId);
-  if (!leave) return;
-
-  try {
-    if (typeof apiReviewLeave === 'function') {
-      await apiReviewLeave(leaveId, 'rejected');
-    }
-    showToast(`Đã từ chối đơn nghỉ phép của ${leave.internName}`, "info");
-  } catch (err) {
-    console.error("Lỗi từ chối nghỉ phép trên MySQL:", err);
-    showToast("Không thể từ chối đơn nghỉ phép lúc này", "danger");
-  }
-
-  await loadAttendanceFromDB();
-  renderLeaveRequests();
-}
-
-// ==========================================================================
-// XUẤT BÁO CÁO CHẤM CÔNG (CSV VỚI UTF-8 BOM)
-// ==========================================================================
 function exportAttendanceReport() {
   if (currentAttDates.length === 0) {
     showToast("Không có khoảng ngày nào để xuất báo cáo!", "warning");

@@ -70,49 +70,32 @@ exports.createLeave = async (req, res) => {
 
 // PATCH /api/leaves/:id/review (HR duyệt hoặc từ chối)
 exports.reviewLeave = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const note = typeof req.body.review_note === 'string' ? req.body.review_note.trim() : '';
+  if (!['approved', 'rejected'].includes(status) || (status === 'rejected' && !note) || note.length > 1000) {
+    return res.status(400).json({ success: false, message: 'Chọn trạng thái hợp lệ; từ chối phải có lý do (tối đa 1000 ký tự)' });
+  }
+  let conn;
   try {
-    const { id } = req.params;
-    const { status, review_note } = req.body; // status: 'approved' | 'rejected'
-
-    if (!['approved', 'rejected'].includes(status)) {
-      return res.status(400).json({ success: false, message: 'Trạng thái không hợp lệ' });
-    }
-
-    const [existing] = await db.query('SELECT * FROM leave_requests WHERE id = ?', [id]);
-    if (existing.length === 0) {
-      return res.status(404).json({ success: false, message: 'Không tìm thấy đơn nghỉ phép' });
-    }
-
-    const leave = existing[0];
-    await db.query(`
-      UPDATE leave_requests
-      SET status = ?, review_note = ?, reviewed_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `, [status, review_note || null, id]);
-
-    // Nếu duyệt đơn -> Tự động đánh dấu ngày nghỉ (P) vào bảng attendance
+    conn = await db.getConnection(); await conn.beginTransaction();
+    const [rows] = await conn.query('SELECT * FROM leave_requests WHERE id = ? FOR UPDATE', [id]);
+    if (!rows.length) { await conn.rollback(); return res.status(404).json({ success: false, message: 'Không tìm thấy đơn nghỉ phép' }); }
+    const leave = rows[0];
+    if (leave.status !== 'pending') { await conn.rollback(); return res.status(409).json({ success: false, message: 'Đơn đã được xử lý. Hãy tải lại danh sách.' }); }
+    await conn.query('UPDATE leave_requests SET status = ?, review_note = ?, reviewed_at = CURRENT_TIMESTAMP WHERE id = ?', [status, note || null, id]);
     if (status === 'approved') {
-      let curr = new Date(leave.start_date);
-      const end = new Date(leave.end_date);
+      const curr = new Date(leave.start_date), end = new Date(leave.end_date);
+      if (!Number.isFinite(curr.getTime()) || !Number.isFinite(end.getTime()) || curr > end) throw new Error('Invalid leave dates');
       while (curr <= end) {
-        const y = curr.getFullYear();
-        const m = String(curr.getMonth() + 1).padStart(2, '0');
-        const d = String(curr.getDate()).padStart(2, '0');
-        const dateKey = `${y}-${m}-${d}`;
-
-        await db.query(`
-          INSERT INTO attendance (intern_id, date, status, notes)
-          VALUES (?, ?, 'leave', 'Nghỉ phép theo đơn duyệt')
-          ON DUPLICATE KEY UPDATE status = 'leave', notes = 'Nghỉ phép theo đơn duyệt'
-        `, [leave.intern_id, dateKey]);
-
-        curr.setDate(curr.getDate() + 1);
+        const date = `${curr.getFullYear()}-${String(curr.getMonth()+1).padStart(2,'0')}-${String(curr.getDate()).padStart(2,'0')}`;
+        await conn.query("INSERT INTO attendance (intern_id, date, status, notes) VALUES (?, ?, 'leave', 'Nghỉ phép theo đơn duyệt') ON DUPLICATE KEY UPDATE status = 'leave', notes = 'Nghỉ phép theo đơn duyệt'", [leave.intern_id, date]);
+        curr.setDate(curr.getDate()+1);
       }
     }
-
-    res.json({ success: true, message: `Đã ${status === 'approved' ? 'duyệt' : 'từ chối'} đơn nghỉ phép thành công` });
-  } catch (error) {
-    console.error('Lỗi xét duyệt đơn nghỉ phép:', error);
-    res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
-  }
+    await conn.commit(); res.json({ success: true, message: 'Đã xử lý đơn nghỉ phép' });
+  } catch (e) {
+    if (conn) await conn.rollback();
+    res.status(500).json({ success: false, message: 'Không thể xử lý đơn nghỉ phép' });
+  } finally { if (conn) conn.release(); }
 };

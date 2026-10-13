@@ -11,6 +11,7 @@
   <!-- Thư viện Font Awesome 6 Icons qua CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="hr-workflows.css">
   <script>
     // Kiểm tra phiên đăng nhập: HR Manager, Mentor hoặc Admin có thể truy cập dashboard
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -92,6 +93,7 @@
           <i class="fa-regular fa-calendar-days"></i>
           <span>Chương trình thực tập</span>
         </a>
+        <a href="javascript:void(0)" class="menu-item" id="navMentors" onclick="switchTab('mentors')"><i class="fa-solid fa-people-arrows"></i><span>Mentor & Phân công</span></a>
       </nav>
 
       <!-- Thông tin cá nhân cuối sidebar -->
@@ -458,6 +460,9 @@
 
         <!-- ================= VÙNG 2: ĐƠN NGHỈ PHÉP (HÌNH 2) ================= -->
         <div id="attendanceLeavesView" class="attendance-view-panel" style="display: none;">
+          <div id="leaveSummary" class="hr-summary" aria-live="polite"></div>
+          <div class="hr-toolbar"><label for="leaveSearch">Tìm đơn</label><input id="leaveSearch" class="form-control" placeholder="Tên TTS, phòng ban hoặc lý do" oninput="renderLeaveRequests()"><button class="btn-secondary" onclick="HRWorkflows.reloadLeaves()">Tải lại</button></div>
+          <p id="leaveMessage" role="status"></p>
           <div class="leaves-header-actions mb-3 d-flex justify-content-between align-items-center">
             <div class="leaves-filter-wrapper d-flex gap-2">
               <select id="leaveFilterStatus" class="form-control" title="Lọc trạng thái đơn nghỉ phép" aria-label="Lọc trạng thái đơn nghỉ phép" style="width: 170px;" onchange="renderLeaveRequests()">
@@ -467,10 +472,7 @@
                 <option value="Từ chối">Từ chối</option>
               </select>
             </div>
-            <button type="button" class="btn-primary btn-sm" onclick="openCreateLeaveModal()">
-              <i class="fa-solid fa-plus me-1"></i>
-              <span>Tạo đơn nghỉ phép</span>
-            </button>
+
           </div>
 
           <!-- Bảng đơn nghỉ phép (Mặc định để trống hoàn toàn 100%) -->
@@ -543,6 +545,11 @@
         </div>
       </section>
 
+      <section id="mentorsTab" class="tab-pane">
+        <header class="content-header"><div><h1 class="page-title">Mentor & Phân công</h1><p class="page-subtitle">Chọn người hướng dẫn và theo dõi thực tập sinh đang được phân công</p></div><button class="btn-secondary" onclick="HRWorkflows.loadMentors()">Tải lại</button></header>
+        <div class="hr-toolbar"><label for="mentorSearch">Tìm mentor</label><input id="mentorSearch" class="form-control" placeholder="Tên hoặc email mentor" oninput="HRWorkflows.renderMentors()"></div>
+        <p id="mentorMessage" role="status"></p><div id="mentorCards" class="hr-mentor-grid"></div>
+      </section>
     </main>
   </div>
 
@@ -1555,8 +1562,21 @@
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toastContainer" class="toast-container"></div>
 
+<div class="modal" id="mentorAssignModal" role="dialog" aria-modal="true" aria-labelledby="mentorAssignTitle">
+    <div class="modal-dialog"><form onsubmit="HRWorkflows.saveMentor(event)">
+      <div class="modal-header"><h3 id="mentorAssignTitle">Phân công mentor</h3><button type="button" class="btn-close" onclick="closeModal('mentorAssignModal')" aria-label="Đóng">&times;</button></div>
+      <div class="modal-body"><p id="mentorAssignContext"></p>
+        <div class="form-group"><label for="assignTts">Thực tập sinh *</label><select id="assignTts" class="form-control" required onchange="HRWorkflows.updateAssignment()"></select></div>
+        <p id="currentMentor"></p>
+        <div class="form-group"><label for="assignMentor">Mentor mới *</label><select id="assignMentor" class="form-control" required onchange="HRWorkflows.updateAssignment()"></select></div>
+        <p id="assignPreview" class="hr-notice"></p><p id="assignError" class="hr-error" role="alert"></p>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn-secondary" onclick="closeModal('mentorAssignModal')">Hủy</button><button id="assignSave" class="btn-primary" type="submit">Xác nhận phân công</button></div>
+    </form></div>
+  </div>
   <script src="api.js"></script>
   <script src="dashboard.js"></script>
+  <script src="hr-workflows.js"></script>
 </body>
 
 </html>

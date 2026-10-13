@@ -4,6 +4,11 @@ const internController = require('../controllers/intern.controller');
 const upload = require('../middleware/upload');
 const { authenticate, requirePermission } = require('../middleware/auth');
 
+const mentors = require('../controllers/mentor.controller');
+const hrOnly = require('../middleware/hr');
+router.get('/mentors', authenticate, hrOnly, mentors.list);
+router.patch('/:id/mentor', authenticate, hrOnly, mentors.assign);
+
 // 1. GET /api/interns (Xem danh sách thực tập sinh & ứng viên)
 router.get('/', authenticate, (req, res, next) => {
   if (req.user && (req.user.role === 'Thực tập sinh' || req.user.role === 'INTERN')) {
