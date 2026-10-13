@@ -67,9 +67,9 @@ function switchTab(tabName) {
     interns: { tab: document.getElementById("internsTab"), nav: document.getElementById("navInterns") },
     attendance: { tab: document.getElementById("attendanceTab"), nav: document.getElementById("navAttendance") },
     programs: { tab: document.getElementById("programsTab"), nav: document.getElementById("navPrograms") },
+    tasks: { tab: document.getElementById("tasksTab"), nav: document.getElementById("navTasks") },
     mentors: { tab: document.getElementById("mentorsTab"), nav: document.getElementById("navMentors") },
-    reports: { tab: document.getElementById("reportsTab"), nav: document.getElementById("navReports") },
-    tasks: { tab: document.getElementById("tasksTab"), nav: document.getElementById("navTasks") }
+    reports: { tab: document.getElementById("reportsTab"), nav: document.getElementById("navReports") }
   };
 
   Object.keys(tabs).forEach((key) => {
@@ -93,12 +93,12 @@ function switchTab(tabName) {
     renderAttendanceTab();
   } else if (tabName === "programs") {
     renderPrograms();
+  } else if (tabName === "tasks") {
+    initTasksTab();
   } else if (tabName === "mentors") {
     initMentorsTab();
   } else if (tabName === "reports") {
     renderReportsTab();
-  } else if (tabName === "tasks") {
-    initTasksTab();
   }
 }
 

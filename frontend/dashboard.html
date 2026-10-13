@@ -93,6 +93,12 @@
           <span>Chương trình thực tập</span>
         </a>
 
+        <!-- Công việc & Đánh giá (Sprint 3) -->
+        <a href="javascript:void(0)" class="menu-item" id="navTasks" onclick="switchTab('tasks')">
+          <i class="fa-solid fa-list-check"></i>
+          <span>Công việc & Đánh giá</span>
+        </a>
+
         <!-- Mentor & Phòng ban -->
         <a href="javascript:void(0)" class="menu-item" id="navMentors" onclick="switchTab('mentors')">
           <i class="fa-solid fa-briefcase"></i>
@@ -103,12 +109,6 @@
         <a href="javascript:void(0)" class="menu-item" id="navReports" onclick="switchTab('reports')">
           <i class="fa-solid fa-chart-column"></i>
           <span>Báo cáo & Thống kê</span>
-        </a>
-
-        <!-- Công việc & Đánh giá (Sprint 3) -->
-        <a href="javascript:void(0)" class="menu-item" id="navTasks" onclick="switchTab('tasks')">
-          <i class="fa-solid fa-list-check"></i>
-          <span>Công việc & Đánh giá</span>
         </a>
       </nav>
 
@@ -570,7 +570,118 @@
         </div>
       </section>
 
-      <!-- ==================== 6. TAB MENTOR & PHÒNG BAN ==================== -->
+      <!-- ==================== 6. TAB CÔNG VIỆC & ĐÁNH GIÁ (SPRINT 3: STT 15, 18, 19, 20, 35) ==================== -->
+      <section id="tasksTab" class="tab-pane">
+        <header class="content-header">
+          <div>
+            <h1 class="page-title">Công việc & Đánh giá</h1>
+            <p class="page-subtitle">Giao nhiệm vụ, phản hồi báo cáo tuần và đánh giá kết quả thực tập sinh</p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn-primary" onclick="openCreateTaskModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-plus"></i>
+              <span>Giao nhiệm vụ</span>
+            </button>
+            <button type="button" class="btn-primary" onclick="openCreateMeetingModal()" style="display: inline-flex; align-items: center; gap: 6px; background: #0284c7; border-color: #0284c7;">
+              <i class="fa-regular fa-calendar-plus"></i>
+              <span>Lịch họp & Gửi email</span>
+            </button>
+            <button type="button" class="btn-primary" onclick="openEvaluationModal()" style="display: inline-flex; align-items: center; gap: 6px; background: #16a34a; border-color: #16a34a;">
+              <i class="fa-solid fa-award"></i>
+              <span>Đánh giá TTS</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Thanh chuyển tab con: Nhiệm vụ | Báo cáo tuần | Đánh giá cuối kỳ -->
+        <div style="display: flex; gap: 12px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
+          <button type="button" class="btn-subtab active" id="btnTaskSubTabTasks" onclick="switchTaskSubTab('tasks')" style="padding: 8px 16px; border-radius: 8px; border: none; background: #0d6efd; color: #fff; font-weight: 600; cursor: pointer;">
+            <i class="fa-solid fa-list-check me-1"></i> Danh sách Nhiệm vụ
+          </button>
+          <button type="button" class="btn-subtab" id="btnTaskSubTabReports" onclick="switchTaskSubTab('reports')" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-weight: 600; cursor: pointer;">
+            <i class="fa-regular fa-file-lines me-1"></i> Báo cáo tuần & Phản hồi
+          </button>
+          <button type="button" class="btn-subtab" id="btnTaskSubTabEvals" onclick="switchTaskSubTab('evals')" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-weight: 600; cursor: pointer;">
+            <i class="fa-solid fa-chart-line me-1"></i> Tổng hợp Đánh giá cuối kỳ
+          </button>
+        </div>
+
+        <!-- VIEW 1: DANH SÁCH NHIỆM VỤ (STT 15, 16) -->
+        <div id="viewTaskSubTasks" style="display: block;">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>TIÊU ĐỀ NHIỆM VỤ</th>
+                  <th>THỰC TẬP SINH</th>
+                  <th>HẠN HOÀN THÀNH</th>
+                  <th>ĐỘ ƯU TIÊN</th>
+                  <th>TIẾN ĐỘ</th>
+                  <th>TRẠNG THÁI</th>
+                  <th style="text-align: right;">THAO TÁC</th>
+                </tr>
+              </thead>
+              <tbody id="tasksTableBody">
+                <!-- Render động từ dashboard.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- VIEW 2: BÁO CÁO TUẦN & PHẢN HỒI (STT 17, 18) -->
+        <div id="viewTaskSubReports" style="display: none;">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>TUẦN</th>
+                  <th>THỰC TẬP SINH</th>
+                  <th>CÔNG VIỆC HOÀN THÀNH</th>
+                  <th>KẾ HOẠCH TIẾP THEO</th>
+                  <th>TRẠNG THÁI</th>
+                  <th>ĐIỂM TUẦN</th>
+                  <th style="text-align: right;">THAO TÁC</th>
+                </tr>
+              </thead>
+              <tbody id="weeklyReportsTableBody">
+                <!-- Render động từ dashboard.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- VIEW 3: TỔNG HỢP ĐÁNH GIÁ CUỐI KỲ (STT 19, 20) -->
+        <div id="viewTaskSubEvals" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div style="font-size: 14px; color: #64748b;" id="evalSummaryText">Đang tải bảng điểm tổng kết...</div>
+            <button type="button" class="btn-secondary" onclick="exportEvaluationReport()" style="display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-download"></i>
+              <span>Xuất báo cáo đánh giá cuối kỳ</span>
+            </button>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>THỰC TẬP SINH</th>
+                  <th>TRƯỜNG / NGÀNH</th>
+                  <th>CHUYÊN MÔN (40%)</th>
+                  <th>KỶ LUẬT (30%)</th>
+                  <th>THÁI ĐỘ (30%)</th>
+                  <th>ĐIỂM TỔNG KẾT</th>
+                  <th>XẾP LOẠI</th>
+                  <th>NHẬN XÉT CỦA MENTOR</th>
+                </tr>
+              </thead>
+              <tbody id="evaluationsTableBody">
+                <!-- Render động từ dashboard.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 7. TAB MENTOR & PHÒNG BAN ==================== -->
       <section id="mentorsTab" class="tab-pane">
         <header class="content-header">
           <div>
@@ -738,7 +849,7 @@
         </div>
       </section>
 
-      <!-- ==================== 7. TAB BÁO CÁO & THỐNG KÊ ==================== -->
+      <!-- ==================== 8. TAB BÁO CÁO & THỐNG KÊ ==================== -->
       <section id="reportsTab" class="tab-pane">
         <!-- Header chính -->
         <header class="content-header reports-header">
@@ -903,117 +1014,6 @@
               </thead>
               <tbody id="reportTableBody">
                 <!-- Render động bởi renderReportTable -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== 8. TAB CÔNG VIỆC & ĐÁNH GIÁ (SPRINT 3: STT 15, 18, 19, 20, 35) ==================== -->
-      <section id="tasksTab" class="tab-pane">
-        <header class="content-header">
-          <div>
-            <h1 class="page-title">Công việc & Đánh giá</h1>
-            <p class="page-subtitle">Giao nhiệm vụ, phản hồi báo cáo tuần và đánh giá kết quả thực tập sinh</p>
-          </div>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button type="button" class="btn-primary" onclick="openCreateTaskModal()" style="display: inline-flex; align-items: center; gap: 6px;">
-              <i class="fa-solid fa-plus"></i>
-              <span>Giao nhiệm vụ</span>
-            </button>
-            <button type="button" class="btn-primary" onclick="openCreateMeetingModal()" style="display: inline-flex; align-items: center; gap: 6px; background: #0284c7; border-color: #0284c7;">
-              <i class="fa-regular fa-calendar-plus"></i>
-              <span>Lịch họp & Gửi email</span>
-            </button>
-            <button type="button" class="btn-primary" onclick="openEvaluationModal()" style="display: inline-flex; align-items: center; gap: 6px; background: #16a34a; border-color: #16a34a;">
-              <i class="fa-solid fa-award"></i>
-              <span>Đánh giá TTS</span>
-            </button>
-          </div>
-        </header>
-
-        <!-- Thanh chuyển tab con: Nhiệm vụ | Báo cáo tuần | Đánh giá cuối kỳ -->
-        <div style="display: flex; gap: 12px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
-          <button type="button" class="btn-subtab active" id="btnTaskSubTabTasks" onclick="switchTaskSubTab('tasks')" style="padding: 8px 16px; border-radius: 8px; border: none; background: #0d6efd; color: #fff; font-weight: 600; cursor: pointer;">
-            <i class="fa-solid fa-list-check me-1"></i> Danh sách Nhiệm vụ
-          </button>
-          <button type="button" class="btn-subtab" id="btnTaskSubTabReports" onclick="switchTaskSubTab('reports')" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-weight: 600; cursor: pointer;">
-            <i class="fa-regular fa-file-lines me-1"></i> Báo cáo tuần & Phản hồi
-          </button>
-          <button type="button" class="btn-subtab" id="btnTaskSubTabEvals" onclick="switchTaskSubTab('evals')" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-weight: 600; cursor: pointer;">
-            <i class="fa-solid fa-chart-line me-1"></i> Tổng hợp Đánh giá cuối kỳ
-          </button>
-        </div>
-
-        <!-- VIEW 1: DANH SÁCH NHIỆM VỤ (STT 15, 16) -->
-        <div id="viewTaskSubTasks" style="display: block;">
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>TIÊU ĐỀ NHIỆM VỤ</th>
-                  <th>THỰC TẬP SINH</th>
-                  <th>HẠN HOÀN THÀNH</th>
-                  <th>ĐỘ ƯU TIÊN</th>
-                  <th>TIẾN ĐỘ</th>
-                  <th>TRẠNG THÁI</th>
-                  <th style="text-align: right;">THAO TÁC</th>
-                </tr>
-              </thead>
-              <tbody id="tasksTableBody">
-                <!-- Render động từ dashboard.js -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- VIEW 2: BÁO CÁO TUẦN & PHẢN HỒI (STT 17, 18) -->
-        <div id="viewTaskSubReports" style="display: none;">
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>TUẦN</th>
-                  <th>THỰC TẬP SINH</th>
-                  <th>CÔNG VIỆC HOÀN THÀNH</th>
-                  <th>KẾ HOẠCH TIẾP THEO</th>
-                  <th>TRẠNG THÁI</th>
-                  <th>ĐIỂM TUẦN</th>
-                  <th style="text-align: right;">THAO TÁC</th>
-                </tr>
-              </thead>
-              <tbody id="weeklyReportsTableBody">
-                <!-- Render động từ dashboard.js -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- VIEW 3: TỔNG HỢP ĐÁNH GIÁ CUỐI KỲ (STT 19, 20) -->
-        <div id="viewTaskSubEvals" style="display: none;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <div style="font-size: 14px; color: #64748b;" id="evalSummaryText">Đang tải bảng điểm tổng kết...</div>
-            <button type="button" class="btn-secondary" onclick="exportEvaluationReport()" style="display: inline-flex; align-items: center; gap: 6px;">
-              <i class="fa-solid fa-download"></i>
-              <span>Xuất báo cáo đánh giá cuối kỳ</span>
-            </button>
-          </div>
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>THỰC TẬP SINH</th>
-                  <th>TRƯỜNG / NGÀNH</th>
-                  <th>CHUYÊN MÔN (40%)</th>
-                  <th>KỶ LUẬT (30%)</th>
-                  <th>THÁI ĐỘ (30%)</th>
-                  <th>ĐIỂM TỔNG KẾT</th>
-                  <th>XẾP LOẠI</th>
-                  <th>NHẬN XÉT CỦA MENTOR</th>
-                </tr>
-              </thead>
-              <tbody id="evaluationsTableBody">
-                <!-- Render động từ dashboard.js -->
               </tbody>
             </table>
           </div>
