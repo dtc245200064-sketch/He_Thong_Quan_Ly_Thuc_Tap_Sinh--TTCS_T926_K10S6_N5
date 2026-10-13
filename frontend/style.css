@@ -175,7 +175,7 @@ body {
   flex: 1;
   max-width: 480px;
   background: #ffffff;
-  padding: 44px 42px 30px;
+  padding: 48px 46px 32px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -188,25 +188,25 @@ body {
 
 /* Icon khóa phía trên */
 .lock-icon {
-  width: 58px;
-  height: 58px;
+  width: 56px;
+  height: 56px;
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border: 1px solid rgba(37, 99, 235, 0.18);
+  border: 1px solid rgba(37, 99, 235, 0.2);
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
-  box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.18);
   color: #2563eb;
 }
 
 .title {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
   color: #1e3a8a;
   text-align: center;
-  letter-spacing: 0.5px;
+  letter-spacing: -0.3px;
   margin-bottom: 6px;
 }
 

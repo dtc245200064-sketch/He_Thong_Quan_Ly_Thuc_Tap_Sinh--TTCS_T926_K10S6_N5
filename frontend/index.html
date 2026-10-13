@@ -93,14 +93,6 @@
           <h2 class="title">ĐĂNG NHẬP</h2>
           <p class="subtitle">Hệ thống Quản lý Thực tập sinh CodeGym</p>
 
-          <!-- Chọn nhanh vai trò tài khoản -->
-          <div class="role-tabs" style="display:flex; gap:6px; margin: 16px 0 18px; background:#f1f5f9; padding:4px; border-radius:10px;">
-            <button type="button" class="role-btn active" onclick="selectHRRole(this)" style="flex:1; padding:7px 4px; font-size:12px; font-weight:600; border:none; border-radius:7px; cursor:pointer; background:#fff; color:#1e293b; box-shadow:0 1px 3px rgba(0,0,0,0.1);">HR</button>
-            <button type="button" class="role-btn" onclick="selectMentorRole(this)" style="flex:1; padding:7px 4px; font-size:12px; font-weight:600; border:none; border-radius:7px; cursor:pointer; background:transparent; color:#64748b;">Mentor</button>
-            <button type="button" class="role-btn" onclick="selectInternRole(this)" style="flex:1; padding:7px 4px; font-size:12px; font-weight:600; border:none; border-radius:7px; cursor:pointer; background:transparent; color:#64748b;">Thực tập sinh</button>
-            <button type="button" class="role-btn" onclick="selectAdminRole(this)" style="flex:1; padding:7px 4px; font-size:12px; font-weight:600; border:none; border-radius:7px; cursor:pointer; background:transparent; color:#64748b;">Admin</button>
-          </div>
-
           <!-- Form đăng nhập -->
           <form id="loginForm" onsubmit="handleLogin(event)">
             <!-- Hộp hiển thị lỗi khi tài khoản / vai trò không hợp lệ -->
