@@ -73,7 +73,7 @@ exports.getUsers = async (req, res) => {
 // 2. POST /api/admin/users: Tạo tài khoản mới (User Story 39)
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, username, password, role, status = 'active' } = req.body;
+    const { name, email, username, password, role, status = 'active', mentor_id, mentor } = req.body;
 
     // Validate dữ liệu
     if (!name || !email || !username || !password || !role) {
@@ -125,20 +125,49 @@ exports.createUser = async (req, res) => {
 
     const newUserId = result.insertId;
 
-    // Nếu tạo tài khoản là Thực tập sinh, tự động liên kết hồ sơ đã có hoặc tạo mới
+    // Nếu tạo tài khoản là Thực tập sinh, tự động liên kết hồ sơ đã có hoặc tạo mới kèm Mentor (nếu được chọn)
     if (standardRole === 'Thực tập sinh' || standardRole === 'INTERN') {
       const [existingInterns] = await db.query(
         'SELECT id FROM interns WHERE email = ? OR name = ? ORDER BY id DESC LIMIT 1',
         [email.trim(), name.trim()]
       );
+
+      let assignedMentorId = mentor_id ? parseInt(mentor_id) : null;
+      let assignedMentorName = mentor && mentor.trim() ? mentor.trim() : null;
+
+      // Nếu có mentor_id nhưng chưa có tên mentor, tra cứu tên từ bảng mentors hoặc users
+      if (assignedMentorId && !assignedMentorName) {
+        const [mRows] = await db.query('SELECT name FROM mentors WHERE id = ?', [assignedMentorId]);
+        if (mRows.length > 0) {
+          assignedMentorName = mRows[0].name;
+        } else {
+          const [uRows] = await db.query('SELECT name FROM users WHERE id = ?', [assignedMentorId]);
+          if (uRows.length > 0) assignedMentorName = uRows[0].name;
+        }
+      }
+
       if (existingInterns.length > 0) {
-        await db.query('UPDATE interns SET user_id = ? WHERE id = ?', [newUserId, existingInterns[0].id]);
+        await db.query(
+          'UPDATE interns SET user_id = ?, mentor = COALESCE(?, mentor), mentor_id = COALESCE(?, mentor_id) WHERE id = ?',
+          [newUserId, assignedMentorName, assignedMentorId, existingInterns[0].id]
+        );
       } else {
         await db.query(
-          `INSERT INTO interns (user_id, name, email, school, major, dept, status) 
-           VALUES (?, ?, ?, 'Chưa cập nhật', 'Chưa cập nhật', 'Chưa phân bổ', 'Chưa hoàn thiện')`,
-          [newUserId, name.trim(), email.trim()]
+          `INSERT INTO interns (user_id, name, email, mentor, mentor_id, school, major, dept, status) 
+           VALUES (?, ?, ?, ?, ?, 'Chưa cập nhật', 'Chưa cập nhật', 'Chưa phân bổ', 'Chưa hoàn thiện')`,
+          [newUserId, name.trim(), email.trim(), assignedMentorName || 'Chưa phân công', assignedMentorId]
         );
+      }
+    }
+
+    // Nếu tạo tài khoản vai trò Mentor, tự động liên kết hồ sơ mentor nếu đã có
+    if (standardRole === 'Mentor' || standardRole === 'MENTOR') {
+      const [existingMentors] = await db.query(
+        'SELECT id FROM mentors WHERE email = ? OR user_id = ?',
+        [email.trim(), newUserId]
+      );
+      if (existingMentors.length > 0) {
+        await db.query('UPDATE mentors SET user_id = ? WHERE id = ?', [newUserId, existingMentors[0].id]);
       }
     }
 

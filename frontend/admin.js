@@ -300,12 +300,75 @@ function openCreateAccountModal() {
   const modal = document.getElementById('createAccountModal');
   const form = document.getElementById('createAccountForm');
   if (form) form.reset();
+  const mentorGroup = document.getElementById('newMentorGroup');
+  if (mentorGroup) mentorGroup.style.display = 'none';
   if (modal) modal.classList.add('show');
 }
 
 function closeCreateAccountModal() {
   const modal = document.getElementById('createAccountModal');
   if (modal) modal.classList.remove('show');
+}
+
+// Xử lý thay đổi vai trò trong modal tạo tài khoản
+async function handleRoleChangeInCreateModal() {
+  const roleSelect = document.getElementById('newRole');
+  const mentorGroup = document.getElementById('newMentorGroup');
+  if (!roleSelect || !mentorGroup) return;
+
+  if (roleSelect.value === 'Thực tập sinh') {
+    mentorGroup.style.display = 'block';
+    await loadMentorsForAdminDropdown();
+  } else {
+    mentorGroup.style.display = 'none';
+  }
+}
+
+// Tải danh sách Mentor đang hoạt động từ hệ thống
+async function loadMentorsForAdminDropdown() {
+  const select = document.getElementById('newMentorSelect');
+  if (!select) return;
+  select.innerHTML = '<option value="">-- Đang tải danh sách Mentor... --</option>';
+
+  try {
+    let mentors = [];
+    // 1. Ưu tiên lấy từ API /api/mentors
+    if (typeof apiGetMentors === 'function') {
+      const res = await apiGetMentors();
+      if (res && res.success && Array.isArray(res.data)) {
+        mentors = res.data.filter(m => m.status === 'active');
+      }
+    }
+
+    // 2. Nếu bảng mentors chưa có hồ sơ, lấy từ danh sách tài khoản User vai trò Mentor
+    if (mentors.length === 0 && typeof apiGetAdminUsers === 'function') {
+      const uRes = await apiGetAdminUsers({ role: 'Mentor', status: 'active' });
+      if (uRes && uRes.success && Array.isArray(uRes.users)) {
+        mentors = uRes.users.map(u => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          dept: 'Mentor hệ thống',
+          isUserOnly: true
+        }));
+      }
+    }
+
+    if (mentors.length === 0) {
+      select.innerHTML = '<option value="">-- Chưa có Mentor trong hệ thống (phân công sau) --</option>';
+      return;
+    }
+
+    let html = '<option value="">-- Chưa phân công (hoặc phân công sau) --</option>';
+    mentors.forEach(m => {
+      const deptInfo = m.dept ? ` (${m.dept})` : '';
+      html += `<option value="${m.id}" data-name="${encodeURIComponent(m.name)}">${m.name}${deptInfo} - ${m.email || ''}</option>`;
+    });
+    select.innerHTML = html;
+  } catch (err) {
+    console.warn('Lỗi tải danh sách Mentor cho Admin:', err);
+    select.innerHTML = '<option value="">-- Chưa phân công (hoặc phân công sau) --</option>';
+  }
 }
 
 // Xử lý submit form tạo tài khoản mới (User Story 39)
@@ -336,6 +399,20 @@ async function handleCreateAccount(event) {
     return;
   }
 
+  // Lấy thông tin Mentor nếu tạo tài khoản cho Thực tập sinh
+  let mentorId = null;
+  let mentorName = null;
+  if (role === 'Thực tập sinh') {
+    const mentorSelect = document.getElementById('newMentorSelect');
+    if (mentorSelect && mentorSelect.value) {
+      mentorId = mentorSelect.value;
+      const opt = mentorSelect.options[mentorSelect.selectedIndex];
+      if (opt && opt.getAttribute('data-name')) {
+        mentorName = decodeURIComponent(opt.getAttribute('data-name'));
+      }
+    }
+  }
+
   try {
     if (typeof apiCreateAdminUser === 'function') {
       const res = await apiCreateAdminUser({
@@ -344,7 +421,9 @@ async function handleCreateAccount(event) {
         username: username,
         password: password,
         role: role,
-        status: status
+        status: status,
+        mentor_id: mentorId,
+        mentor: mentorName
       });
 
       if (!res.success) {
@@ -875,6 +954,12 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       openLogoutModal();
     });
+  }
+
+  // 5.1. Bắt sự kiện thay đổi vai trò trong modal tạo tài khoản
+  const newRoleSelect = document.getElementById('newRole');
+  if (newRoleSelect) {
+    newRoleSelect.addEventListener('change', handleRoleChangeInCreateModal);
   }
 
   // 6. Nạp thông tin Admin đã đăng nhập

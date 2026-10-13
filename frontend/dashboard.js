@@ -799,7 +799,7 @@ function approveCandidate(candidate) {
       major: candidate.major,
       school: candidate.school,
       dept: candidate.dept || "Kỹ thuật phần mềm",
-      mentor: candidate.mentor || "Anh Tuấn",
+      mentor: candidate.mentor || "Chưa phân công",
       time: "01/10/2026 - 31/12/2026",
       status: "Đang thực tập"
     };
@@ -2677,7 +2677,7 @@ function initPrograms() {
           name: p.name,
           dept: p.dept,
           positions: `Thực tập sinh ${p.dept}`,
-          mentor: p.mentor_default || 'Nguyễn Anh Tuấn',
+          mentor: p.mentor_default || 'Chưa phân công',
           startDate: p.start_date ? p.start_date.split('T')[0] : '2026-07-01',
           endDate: p.end_date ? p.end_date.split('T')[0] : '2026-09-30',
           startDateFormatted: p.start_date ? new Date(p.start_date).toLocaleDateString('vi-VN') : '01/07/2026',
@@ -3351,11 +3351,8 @@ async function loadSystemMentors() {
     console.warn('Lỗi tải danh sách Mentor từ hệ thống:', e);
   }
 
-  // Nếu rỗng, fallback về tài khoản mentor mặc định từ cơ sở dữ liệu
   if (!systemMentors || systemMentors.length === 0) {
-    systemMentors = [
-      { id: 4, name: 'Nguyễn Anh Tuấn', email: 'mentor@company.vn', role: 'Mentor' }
-    ];
+    systemMentors = [];
   }
 
   populateMentorDropdowns();
@@ -3397,12 +3394,10 @@ function getAvailableMentors() {
     return [...new Set(fromSavedMentors)].filter(Boolean);
   }
   if (systemMentors && systemMentors.length > 0) {
-    return systemMentors.map(m => m.name);
+    return systemMentors.map(m => m.name).filter(Boolean).filter(m => m !== 'Chưa phân công' && m !== '—');
   }
   const fromInterns = Array.isArray(internList) ? internList.map(i => i.mentor) : [];
-  const defaults = ["Nguyễn Anh Tuấn", "Trần Minh Hoàng", "Lê Thị Thu Lan", "Phạm Quốc Cường"];
-  const all = [...fromInterns, ...defaults];
-  return [...new Set(all)].filter(Boolean).filter(m => m !== 'Chưa phân công' && m !== '—');
+  return [...new Set(fromInterns)].filter(Boolean).filter(m => m !== 'Chưa phân công' && m !== '—');
 }
 
 function openCreateProgramModal() {
@@ -3754,7 +3749,7 @@ async function handleAssignInternToCurrentProgram() {
   const periodText = prog.period || (prog.startDate && prog.endDate ? `${prog.startDate} - ${prog.endDate}` : '01/03/2026 - 31/05/2026');
   
   intern.dept = prog.dept;
-  intern.mentor = prog.mentor || intern.mentor || "Anh Tuấn";
+  intern.mentor = prog.mentor || intern.mentor || "Chưa phân công";
   intern.time = periodText;
   intern.status = "Đang thực tập";
 
@@ -3763,7 +3758,7 @@ async function handleAssignInternToCurrentProgram() {
     try {
       await apiUpdateIntern(internId, {
         dept: prog.dept,
-        mentor: prog.mentor || intern.mentor || "Anh Tuấn",
+        mentor: prog.mentor || intern.mentor || "Chưa phân công",
         startDate: prog.startDate || '2026-03-01',
         endDate: prog.endDate || '2026-05-31',
         status: "Đang thực tập"

@@ -9,11 +9,11 @@
 // Trạng thái dữ liệu phân hệ Mentor
 const MentorState = {
   currentMentor: {
-    id: 1,
-    name: 'Nguyễn Anh Tuấn',
-    email: 'mentor@company.vn',
-    dept: 'Phòng Phát triển Phần mềm',
-    position: 'Tech Lead',
+    id: null,
+    name: 'Người hướng dẫn',
+    email: '',
+    dept: 'Chưa phân bổ',
+    position: 'Mentor',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120'
   },
   interns: [],

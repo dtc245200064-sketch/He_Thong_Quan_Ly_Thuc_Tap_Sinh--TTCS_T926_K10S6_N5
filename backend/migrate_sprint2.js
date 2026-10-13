@@ -83,10 +83,10 @@ async function migrate() {
     if (pCount === 0) {
       await db.query(`
         INSERT INTO programs (name, dept, mentor_default, start_date, end_date, max_interns, status, description) VALUES
-        ('Chương trình thực tập Web Frontend React', 'Kỹ thuật phần mềm', 'Nguyễn Anh Tuấn', '2026-07-01', '2026-09-30', 15, 'active', 'Đào tạo và thực chiến ReactJS, Redux Toolkit, Tailwind CSS trên dự án thật.'),
-        ('Chương trình thực tập Backend NodeJS & Cloud', 'Kỹ thuật phần mềm', 'Nguyễn Anh Tuấn', '2026-08-01', '2026-10-31', 12, 'active', 'Xây dựng RESTful API, Microservices với Node.js, Express, MySQL và Docker.'),
-        ('Chương trình thực tập Tuyển dụng Nhân sự', 'Nhân sự', 'Nguyễn Thị Hoa', '2026-07-15', '2026-10-15', 8, 'active', 'Trải nghiệm quy trình sàng lọc hồ sơ ứng viên, phỏng vấn và quản lý dữ liệu nhân sự.'),
-        ('Chương trình thực tập Digital Marketing', 'Marketing', 'Chị Mai', '2026-09-01', '2026-11-30', 10, 'upcoming', 'Triển khai chiến dịch SEO, Social Media và Content Marketing cho CodeGym.')
+        ('Chương trình thực tập Web Frontend React', 'Kỹ thuật phần mềm', NULL, '2026-07-01', '2026-09-30', 15, 'active', 'Đào tạo và thực chiến ReactJS, Redux Toolkit, Tailwind CSS trên dự án thật.'),
+        ('Chương trình thực tập Backend NodeJS & Cloud', 'Kỹ thuật phần mềm', NULL, '2026-08-01', '2026-10-31', 12, 'active', 'Xây dựng RESTful API, Microservices với Node.js, Express, MySQL và Docker.'),
+        ('Chương trình thực tập Tuyển dụng Nhân sự', 'Nhân sự', NULL, '2026-07-15', '2026-10-15', 8, 'active', 'Trải nghiệm quy trình sàng lọc hồ sơ ứng viên, phỏng vấn và quản lý dữ liệu nhân sự.'),
+        ('Chương trình thực tập Digital Marketing', 'Marketing', NULL, '2026-09-01', '2026-11-30', 10, 'upcoming', 'Triển khai chiến dịch SEO, Social Media và Content Marketing cho CodeGym.')
       `);
       console.log('✅ Đã nạp 4 chương trình mẫu vào bảng programs');
     }

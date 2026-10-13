@@ -691,6 +691,22 @@
               </div>
             </div>
           </div>
+
+          <!-- Hàng 5: Phân công Mentor (Chỉ hiển thị khi vai trò là Thực tập sinh) -->
+          <div class="form-group" id="newMentorGroup" style="display: none; margin-top: 14px;">
+            <label class="form-label" for="newMentorSelect">
+              <i class="fa-solid fa-chalkboard-user me-1" style="color: var(--primary);"></i> Mentor hướng dẫn
+            </label>
+            <div class="custom-select-wrap">
+              <select id="newMentorSelect" class="form-control">
+                <option value="">-- Chưa phân công (hoặc phân công sau) --</option>
+              </select>
+              <i class="fa-solid fa-chevron-down select-arrow"></i>
+            </div>
+            <small class="form-hint" style="color: var(--gray-500); font-size: 12px; margin-top: 4px; display: block;">
+              Chọn người hướng dẫn từ danh sách Mentor đang hoạt động trong hệ thống.
+            </small>
+          </div>
         </div>
 
         <!-- Modal Footer -->
