@@ -364,14 +364,15 @@
                       <th>Tiêu đề nhiệm vụ</th>
                       <th>TTS phụ trách</th>
                       <th>Hạn chót</th>
-                      <th>Độ ưu tiên</th>
                       <th>Tiến độ</th>
+                      <th>Ngày cập nhật</th>
+                      <th>Phản hồi Mentor</th>
                       <th>Trạng thái</th>
                       <th style="text-align:right;">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody id="mentorTasksTableBody">
-                    <tr><td colspan="7" style="text-align:center; padding: 24px; color:#94a3b8;">Đang tải danh sách nhiệm vụ...</td></tr>
+                    <tr><td colspan="8" style="text-align:center; padding: 24px; color:#94a3b8;">Đang tải danh sách nhiệm vụ...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -741,6 +742,49 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="closeModal('createMeetingModal')">Hủy bỏ</button>
           <button type="submit" class="btn btn-primary"><i class="fa-solid fa-envelope-circle-check"></i> Lưu & Gửi Email tự động</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: PHẢN HỒI TIẾN ĐỘ NHIỆM VỤ (SCRUM-198)                    -->
+  <!-- ============================================================== -->
+  <div class="mentor-modal" id="taskFeedbackModal">
+    <div class="mentor-modal-box" style="max-width:540px;">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-comment-dots me-2 text-primary"></i>Phản hồi tiến độ nhiệm vụ</h3>
+        <button type="button" class="modal-close-btn" onclick="closeModal('taskFeedbackModal')">&times;</button>
+      </div>
+      <form id="taskFeedbackForm" onsubmit="handleSendTaskFeedback(event)">
+        <input type="hidden" id="feedbackTaskId" value="">
+        <div class="modal-body">
+          <div class="form-group mb-3">
+            <label class="form-label" style="font-weight:600;">Nhiệm vụ:</label>
+            <div id="feedbackTaskTitle" style="padding:8px 12px; background:var(--bg-main); border-radius:8px; border:1px solid var(--border-color); font-weight:600; color:var(--text-main);"></div>
+          </div>
+          <div style="display:flex; gap:16px; margin-bottom:12px;">
+            <div style="flex:1;">
+              <span style="font-size:12px; color:var(--text-muted);">Thực tập sinh:</span>
+              <div id="feedbackTaskIntern" style="font-weight:600;"></div>
+            </div>
+            <div style="flex:1;">
+              <span style="font-size:12px; color:var(--text-muted);">Tiến độ hiện tại:</span>
+              <div id="feedbackTaskProgress" style="font-weight:700; color:var(--primary);"></div>
+            </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <span style="font-size:12px; color:var(--text-muted);">Ngày cập nhật gần nhất:</span>
+            <div id="feedbackTaskDate" style="font-size:13px; color:var(--text-main); font-weight:500;"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="taskMentorFeedbackInput">Nội dung phản hồi / Nhận xét của Mentor <span style="color:#ef4444;">*</span></label>
+            <textarea class="form-control" id="taskMentorFeedbackInput" rows="4" placeholder="Nhập nhận xét, góp ý hoặc hướng dẫn tiếp theo cho thực tập sinh..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('taskFeedbackModal')">Hủy bỏ</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane me-1"></i> Gửi phản hồi</button>
         </div>
       </form>
     </div>

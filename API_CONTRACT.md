@@ -212,3 +212,47 @@
   }
 }
 ```
+
+---
+
+## 3. Module Quản lý nhiệm vụ & Cập nhật tiến độ (SCRUM-36 / SCRUM-198 - Mã Công Đức)
+
+### 3.1. Cập nhật tiến độ nhiệm vụ (Dành cho Thực tập sinh)
+- **Endpoint:** `PUT /api/tasks/:id/progress`
+- **Mô tả:** Thực tập sinh cập nhật phần trăm tiến độ, ngày cập nhật và mô tả nội dung thực hiện để mentor theo dõi.
+- **Request Body mẫu:**
+```json
+{
+  "progress": 75,
+  "progress_date": "2026-10-14",
+  "description": "Đã hoàn thành thiết kế cơ sở dữ liệu và tích hợp API",
+  "intern_note": "Gặp khó khăn ở cấu hình CORS nhưng đã giải quyết xong"
+}
+```
+- **Response 200 OK:**
+```json
+{
+  "success": true,
+  "message": "Cập nhật tiến độ nhiệm vụ thành công!"
+}
+```
+
+---
+
+### 3.2. Gửi phản hồi tiến độ nhiệm vụ (Dành cho Mentor)
+- **Endpoint:** `PUT /api/tasks/:id/feedback`
+- **Mô tả:** Mentor gửi nhận xét, chỉ dẫn và nội dung phản hồi về tiến độ công việc của thực tập sinh.
+- **Request Body mẫu:**
+```json
+{
+  "mentor_feedback": "Tiến độ rất tốt, đã kiểm tra code và chạy ổn định. Em tiếp tục làm module tiếp theo nhé!"
+}
+```
+- **Response 200 OK:**
+```json
+{
+  "success": true,
+  "message": "Gửi nội dung phản hồi thành công!"
+}
+```
+

@@ -433,11 +433,6 @@ function renderTasksView() {
   }
 
   tbody.innerHTML = MentorState.tasks.map(t => {
-    const priorityBadges = {
-      high: '<span class="badge badge-danger">Ưu tiên cao</span>',
-      medium: '<span class="badge badge-warning">Trung bình</span>',
-      low: '<span class="badge badge-secondary">Thấp</span>'
-    };
     const statusBadges = {
       todo: '<span class="badge badge-secondary">Cần làm</span>',
       in_progress: '<span class="badge badge-primary">Đang làm</span>',
@@ -445,27 +440,41 @@ function renderTasksView() {
     };
     const progress = Math.min(100, Math.max(0, parseInt(t.progress || 0)));
     const internName = t.intern_name || (MentorState.interns.find(i => i.id === t.intern_id)?.name) || `TTS #${t.intern_id}`;
+    const updateDate = t.progress_date ? formatDate(t.progress_date) : (t.updated_at ? formatDate(t.updated_at) : 'Chưa có');
+    const feedbackText = t.mentor_feedback || t.mentor_note || '';
 
     return `
       <tr>
         <td>
           <div style="font-weight:600; color:var(--text-main);">${escapeHtml(t.title)}</div>
-          <div style="font-size:12px; color:#64748b; max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+          <div style="font-size:12px; color:#64748b; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
             ${escapeHtml(t.description || 'Không có mô tả')}
           </div>
         </td>
         <td><strong>${escapeHtml(internName)}</strong></td>
         <td><i class="fa-regular fa-clock me-1 text-muted"></i> ${formatDate(t.deadline)}</td>
-        <td>${priorityBadges[t.priority] || priorityBadges.medium}</td>
         <td>
           <div class="progress-wrap">
             <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress}%;"></div></div>
-            <span class="progress-pct">${progress}%</span>
+            <span class="progress-pct" style="font-weight:700;">${progress}%</span>
           </div>
+        </td>
+        <td><span style="font-size:13px; font-weight:500; color:#475569;"><i class="fa-solid fa-calendar-check me-1 text-primary"></i>${updateDate}</span></td>
+        <td>
+          ${feedbackText ? `
+            <div style="max-width:220px; font-size:12px; color:#15803d; background:#f0fdf4; padding:4px 8px; border-radius:6px; border:1px solid #bbf7d0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(feedbackText)}">
+              <i class="fa-solid fa-comment-check me-1"></i>${escapeHtml(feedbackText)}
+            </div>
+          ` : `
+            <span style="font-size:12px; color:#94a3b8; font-style:italic;"><i class="fa-regular fa-comment me-1"></i>Chưa phản hồi</span>
+          `}
         </td>
         <td>${statusBadges[t.status] || statusBadges.todo}</td>
         <td style="text-align:right;">
           <div style="display:flex; justify-content:flex-end; gap:6px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="openTaskFeedbackModal(${t.id})" title="Gửi nội dung phản hồi cho TTS" style="font-size:12px; padding:4px 8px;">
+              <i class="fa-solid fa-comment-dots text-primary"></i> Phản hồi
+            </button>
             ${t.status !== 'done' ? `
               <button type="button" class="btn btn-success btn-sm btn-icon-only" onclick="updateTaskStatusQuick(${t.id}, 'done')" title="Đánh dấu hoàn thành">
                 <i class="fa-solid fa-check"></i>
@@ -591,6 +600,65 @@ async function deleteMentorTask(taskId) {
     }
   } catch (e) {
     console.error(e);
+  }
+}
+
+// Mở modal phản hồi tiến độ nhiệm vụ (SCRUM-198)
+function openTaskFeedbackModal(taskId) {
+  const task = MentorState.tasks.find(t => String(t.id) === String(taskId));
+  if (!task) return;
+
+  const internName = task.intern_name || (MentorState.interns.find(i => i.id === task.intern_id)?.name) || `TTS #${task.intern_id}`;
+
+  const idInput = document.getElementById('feedbackTaskId');
+  const titleEl = document.getElementById('feedbackTaskTitle');
+  const internEl = document.getElementById('feedbackTaskIntern');
+  const progressEl = document.getElementById('feedbackTaskProgress');
+  const dateEl = document.getElementById('feedbackTaskDate');
+  const feedbackInput = document.getElementById('taskMentorFeedbackInput');
+
+  if (idInput) idInput.value = task.id;
+  if (titleEl) titleEl.textContent = task.title;
+  if (internEl) internEl.textContent = internName;
+  if (progressEl) progressEl.textContent = `${task.progress || 0}%`;
+  if (dateEl) dateEl.textContent = task.progress_date ? formatDate(task.progress_date) : (task.updated_at ? formatDate(task.updated_at) : 'Chưa có cập nhật');
+  if (feedbackInput) feedbackInput.value = task.mentor_feedback || task.mentor_note || '';
+
+  openModal('taskFeedbackModal');
+}
+
+// Xử lý gửi nội dung phản hồi tiến độ cho TTS (SCRUM-198)
+async function handleSendTaskFeedback(event) {
+  event.preventDefault();
+  const taskId = document.getElementById('feedbackTaskId')?.value;
+  const feedback = document.getElementById('taskMentorFeedbackInput')?.value.trim();
+
+  if (!taskId || !feedback) {
+    showMentorToast('Vui lòng nhập nội dung phản hồi cho TTS!', 'warning');
+    return;
+  }
+
+  try {
+    if (typeof apiFeedbackTask === 'function') {
+      const res = await apiFeedbackTask(taskId, { mentor_feedback: feedback });
+      if (res && res.success) {
+        showMentorToast('Đã gửi nội dung phản hồi cho thực tập sinh thành công!', 'success');
+        closeModal('taskFeedbackModal');
+        await loadAllMentorData();
+        return;
+      }
+    } else if (typeof apiUpdateTask === 'function') {
+      const res = await apiUpdateTask(taskId, { mentor_feedback: feedback });
+      if (res && res.success) {
+        showMentorToast('Đã lưu nội dung phản hồi thành công!', 'success');
+        closeModal('taskFeedbackModal');
+        await loadAllMentorData();
+        return;
+      }
+    }
+  } catch (e) {
+    console.error('Lỗi gửi feedback task:', e);
+    showMentorToast('Lỗi kết nối khi gửi phản hồi!', 'error');
   }
 }
 
