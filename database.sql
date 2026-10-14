@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS mentors (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 10. BẢNG TASKS (STT 15, 16 - Giao nhiệm vụ & Cập nhật tiến độ)
+-- 10. BẢNG TASKS (STT 15, 16 - Giao nhiệm vụ & Cập nhật tiến độ - SCRUM-198)
 CREATE TABLE IF NOT EXISTS tasks (
     id INT AUTO_INCREMENT PRIMARY KEY,
     intern_id INT NOT NULL,
@@ -185,10 +185,13 @@ CREATE TABLE IF NOT EXISTS tasks (
     description TEXT DEFAULT NULL,
     deadline DATE DEFAULT NULL,
     progress INT DEFAULT 0,
+    progress_date DATE DEFAULT NULL,
     status ENUM('todo', 'in_progress', 'review', 'done', 'canceled') DEFAULT 'todo',
     priority ENUM('low', 'medium', 'high', 'urgent') DEFAULT 'medium',
+    mentor_feedback TEXT DEFAULT NULL,
     mentor_note TEXT DEFAULT NULL,
     intern_note TEXT DEFAULT NULL,
+    feedback_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (intern_id) REFERENCES interns(id) ON DELETE CASCADE,

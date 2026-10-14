@@ -22,7 +22,7 @@ async function migrateSprint3() {
     `);
     console.log('✅ 1. Bảng mentors đã sẵn sàng');
 
-    // 2. BẢNG TASKS (STT 15, 16 - Giao nhiệm vụ & Cập nhật tiến độ công việc)
+    // 2. BẢNG TASKS (STT 15, 16 - Giao nhiệm vụ & Cập nhật tiến độ công việc - SCRUM-198)
     await db.query(`
       CREATE TABLE IF NOT EXISTS tasks (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -32,17 +32,33 @@ async function migrateSprint3() {
         description TEXT DEFAULT NULL,
         deadline DATE DEFAULT NULL,
         progress INT DEFAULT 0,
+        progress_date DATE DEFAULT NULL,
         status ENUM('todo', 'in_progress', 'review', 'done', 'canceled') DEFAULT 'todo',
         priority ENUM('low', 'medium', 'high', 'urgent') DEFAULT 'medium',
+        mentor_feedback TEXT DEFAULT NULL,
         mentor_note TEXT DEFAULT NULL,
         intern_note TEXT DEFAULT NULL,
+        feedback_at TIMESTAMP NULL DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (intern_id) REFERENCES interns(id) ON DELETE CASCADE,
         FOREIGN KEY (mentor_id) REFERENCES mentors(id) ON DELETE SET NULL
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
-    console.log('✅ 2. Bảng tasks đã sẵn sàng');
+
+    // Tự động bổ sung các trường nếu bảng đã tồn tại từ trước (Idempotent Migration)
+    const [taskCols] = await db.query(`SHOW COLUMNS FROM tasks`);
+    const existingColNames = taskCols.map(c => c.Field);
+    if (!existingColNames.includes('progress_date')) {
+      await db.query(`ALTER TABLE tasks ADD COLUMN progress_date DATE DEFAULT NULL AFTER progress`);
+    }
+    if (!existingColNames.includes('mentor_feedback')) {
+      await db.query(`ALTER TABLE tasks ADD COLUMN mentor_feedback TEXT DEFAULT NULL AFTER priority`);
+    }
+    if (!existingColNames.includes('feedback_at')) {
+      await db.query(`ALTER TABLE tasks ADD COLUMN feedback_at TIMESTAMP NULL DEFAULT NULL AFTER intern_note`);
+    }
+    console.log('✅ 2. Bảng tasks đã sẵn sàng (đã chuẩn hóa các trường tiến độ, ngày cập nhật, nội dung phản hồi)');
 
     // 3. BẢNG WEEKLY_REPORTS (STT 17, 18 - Báo cáo tuần & Mentor phản hồi)
     await db.query(`
