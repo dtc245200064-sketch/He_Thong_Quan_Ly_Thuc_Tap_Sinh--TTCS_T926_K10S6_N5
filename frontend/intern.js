@@ -3699,24 +3699,16 @@ async function initProgressTab() {
     try {
       const res = await apiGetTasks(actualInternId ? { intern_id: actualInternId } : {});
       if (res && res.success && Array.isArray(res.data)) {
-        InternState.progressTasks = res.data.map(t => {
-          const updDate = t.progress_date ? t.progress_date.slice(0, 10) : (t.updated_at ? t.updated_at.slice(0, 10) : (t.deadline ? t.deadline.slice(0, 10) : new Date().toISOString().slice(0, 10)));
-          return {
-            id: String(t.id),
-            name: t.title,
-            date: updDate,
-            deadline: t.deadline ? t.deadline.slice(0, 10) : '',
-            progressDate: updDate,
-            percent: Number(t.progress) || 0,
-            content: t.description || '',
-            blockers: '',
-            nextPlan: t.intern_note || '',
-            mentorFeedback: t.mentor_feedback || t.mentor_note || '',
-            feedbackAt: t.feedback_at,
-            status: t.status,
-            updatedAt: t.updated_at
-          };
-        });
+        InternState.progressTasks = res.data.map(t => ({
+          id: String(t.id),
+          name: t.title,
+          date: t.deadline ? t.deadline.slice(0, 10) : new Date().toISOString().slice(0, 10),
+          percent: Number(t.progress) || 0,
+          content: t.description || '',
+          blockers: '',
+          nextPlan: t.intern_note || '',
+          updatedAt: t.updated_at
+        }));
       } else {
         InternState.progressTasks = [];
       }
@@ -3803,30 +3795,25 @@ async function handleSaveProgress(event) {
 
   try {
     if (editId) {
-      if (typeof apiUpdateTaskProgress === 'function') {
-        const res = await apiUpdateTaskProgress(editId, {
+      if (typeof apiUpdateTask === 'function') {
+        const res = await apiUpdateTask(editId, {
+          title: name,
+          deadline: date,
           progress: percent,
-          progress_date: date,
           description: content,
           intern_note: nextPlan || blockers
         });
         if (res && res.success) {
           if (typeof showInternToast === 'function') showInternToast('Cập nhật tiến độ thành công!', 'success');
-        } else if (typeof apiUpdateTask === 'function') {
-          const fallbackRes = await apiUpdateTask(editId, {
-            title: name,
-            deadline: date,
-            progress: percent,
-            progress_date: date,
-            description: content,
-            intern_note: nextPlan || blockers
-          });
-          if (fallbackRes && fallbackRes.success) {
-            if (typeof showInternToast === 'function') showInternToast('Cập nhật tiến độ thành công!', 'success');
-          } else {
-            if (typeof showInternToast === 'function') showInternToast(fallbackRes?.message || 'Lỗi cập nhật tiến độ', 'warning');
-          }
+        } else {
+          if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi cập nhật tiến độ', 'warning');
         }
+      } else if (typeof apiUpdateTaskProgress === 'function') {
+        await apiUpdateTaskProgress(editId, {
+          progress: percent,
+          intern_note: nextPlan || blockers
+        });
+        if (typeof showInternToast === 'function') showInternToast('Cập nhật tiến độ thành công!', 'success');
       }
     } else {
       if (typeof apiCreateTask === 'function') {
@@ -3835,7 +3822,6 @@ async function handleSaveProgress(event) {
           title: name,
           deadline: date,
           progress: percent,
-          progress_date: date,
           description: content,
           intern_note: nextPlan || blockers
         });
@@ -3927,9 +3913,8 @@ function renderProgressList() {
               <h5 class="progress-task-title">${escapeHtml(task.name)}</h5>
               ${statusBadge}
             </div>
-            <div class="text-muted small d-flex align-items-center gap-3 flex-wrap">
-              <span><i class="bi bi-calendar-check me-1 text-primary"></i><strong>Ngày cập nhật:</strong> ${escapeHtml(task.progressDate || task.date || 'Hôm nay')}</span>
-              ${task.deadline && task.deadline !== task.date ? `<span><i class="bi bi-hourglass-split me-1 text-warning"></i><strong>Hạn chót:</strong> ${escapeHtml(task.deadline)}</span>` : ''}
+            <div class="text-muted small">
+              <i class="bi bi-calendar3 me-1"></i>${escapeHtml(task.date || 'Chưa chọn ngày')}
             </div>
           </div>
           <div class="d-flex align-items-center gap-2">
@@ -3945,7 +3930,7 @@ function renderProgressList() {
         <div>
           <div class="d-flex justify-content-between align-items-center small fw-semibold text-secondary">
             <span>Tiến độ thực tế</span>
-            <span class="text-primary fw-bold">${task.percent || 0}%</span>
+            <span class="text-primary">${task.percent || 0}%</span>
           </div>
           <div class="progress-bar-wrap">
             <div class="progress-bar-fill" style="width: ${Math.min(100, Math.max(0, task.percent || 0))}%;"></div>
@@ -3968,24 +3953,6 @@ function renderProgressList() {
             <strong><i class="bi bi-arrow-right-circle text-primary me-1"></i>Kế hoạch tiếp theo:</strong> ${escapeHtml(task.nextPlan)}
           </div>
         ` : ''}
-
-        <!-- KHỐI HIỂN THỊ NỘI DUNG PHẢN HỒI TỪ MENTOR (SCRUM-198) -->
-        ${task.mentorFeedback ? `
-          <div class="mt-3 p-3 rounded" style="background: #f0fdf4; border: 1px solid #86efac;">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="fw-bold text-success" style="font-size: 13px;">
-                <i class="bi bi-chat-quote-fill me-1"></i>Nội dung phản hồi từ Mentor:
-              </span>
-              ${task.feedbackAt ? `<span class="badge bg-success text-white small" style="font-size:11px;">${new Date(task.feedbackAt).toLocaleDateString('vi-VN')}</span>` : ''}
-            </div>
-            <div class="text-dark small" style="line-height: 1.5;">${escapeHtml(task.mentorFeedback)}</div>
-          </div>
-        ` : `
-          <div class="mt-2 p-2 rounded bg-light text-muted small border border-dashed d-flex align-items-center gap-1">
-            <i class="bi bi-chat-dots text-secondary"></i>
-            <span>Chưa có nội dung phản hồi từ Mentor</span>
-          </div>
-        `}
       </div>
     `;
   });

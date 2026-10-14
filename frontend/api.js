@@ -421,15 +421,6 @@ async function apiDeleteTask(id) {
   return await res.json();
 }
 
-async function apiFeedbackTask(id, data) {
-  const res = await fetch(`${API_BASE_URL}/tasks/${id}/feedback`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data)
-  });
-  return await res.json();
-}
-
 // 28. Weekly Reports: GET /api/reports/weekly & POST /api/reports/weekly & PUT /api/reports/weekly/:id/feedback
 async function apiGetWeeklyReports(params = {}) {
   try {
