@@ -654,7 +654,7 @@ body {
     padding: 14px 12px;
   }
   .wrapper {
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
   }
   .banner {
     padding: 24px 18px 0;
