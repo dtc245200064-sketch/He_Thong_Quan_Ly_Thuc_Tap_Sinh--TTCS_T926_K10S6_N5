@@ -1015,3 +1015,34 @@ body {
 .page-title, .brand-logo-text, .slogan, .stat-value {
   color: var(--text) !important;
 }
+
+
+/* ==========================================================================
+   UNIFIED SIDEBAR RADII: Blocks (role, user, logout) -> lg, Menu items -> md
+   ========================================================================== */
+.sidebar .role-box,
+.portal-sidebar .sidebar-role-card,
+.mentor-sidebar .mentor-badge-box,
+.admin-sidebar .admin-badge-box,
+.sidebar .user-profile,
+.portal-sidebar .user-profile,
+.admin-sidebar .user-profile,
+.sidebar-footer-wrapper .user-profile,
+.sidebar .sidebar-logout,
+.portal-sidebar .sidebar-logout,
+.admin-sidebar .sidebar-logout,
+.mentor-sidebar .btn-sidebar-logout,
+.btn-logout {
+  border-radius: var(--radius-lg);
+}
+
+.sidebar .menu-item,
+.sidebar .menu-item.active,
+.portal-sidebar .sidebar-menu-btn,
+.portal-sidebar .sidebar-menu-btn.active,
+.mentor-sidebar .nav-item,
+.mentor-sidebar .nav-item.active,
+.admin-sidebar .nav-item,
+.admin-sidebar .nav-item.active {
+  border-radius: var(--radius-md);
+}
