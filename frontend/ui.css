@@ -1,7 +1,7 @@
 /**
  * CODEGYM INTERN MANAGEMENT - UI DESIGN SYSTEM TOKENS & SHARED STYLES
  * Style: Linear / Vercel / Raycast (Deep Modern Minimalist Glassmorphism)
- * Theme: Dark by default with tinted light theme
+ * Theme: Light theme duy nhất
  */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
@@ -194,9 +194,13 @@ h1, h2, h3, .page-title, .title, .slogan {
   color: var(--text);
 }
 
-.tabular-nums, .num, td.number, .badge, .count-badge, .code-text, .mono-data {
+.tabular-nums, .num, td.number, .badge, .count-badge {
   font-variant-numeric: tabular-nums;
+}
+
+.code-text, .mono-data {
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .small-label, .meta-label, .section-subtitle {
@@ -208,7 +212,7 @@ h1, h2, h3, .page-title, .title, .slogan {
 }
 
 /* ==========================================================================
-   BỀ MẶT KÍNH THẬT (REAL GLASSMORPHISM: 20px Radius, 1px Border, Top Highlight)
+   BỀ MẶT KÍNH THẬT (REAL GLASSMORPHISM: Radius theo token --radius-lg, 1px Border, Top Highlight)
    ========================================================================== */
 .card,
 .stat-card,
@@ -233,8 +237,8 @@ h1, h2, h3, .page-title, .title, .slogan {
 .panel:hover,
 .intern-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(99, 102, 241, 0.4);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), var(--accent-glow);
+  border-color: var(--border-strong);
+  box-shadow: 0 12px 28px -6px rgba(30, 45, 100, 0.12), 0 4px 12px -2px rgba(30, 45, 100, 0.06);
 }
 
 /* Spotlight Glow theo con trỏ chuột cho .glow-card */
@@ -560,7 +564,8 @@ th,
 .att-table th,
 .leaves-table th,
 .report-data-table th,
-.assign-sticky-header th {
+.assign-sticky-header th,
+.assign-intern-table th {
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;

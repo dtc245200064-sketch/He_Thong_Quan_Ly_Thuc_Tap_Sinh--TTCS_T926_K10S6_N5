@@ -6,7 +6,6 @@
 :root {
   --font-family: var(--font-sans);
 
-  --accent: var(--accent);
   --accent-2: #818cf8;
   --accent-hover: #4f46e5;
   --accent-soft: #eeeffc;
@@ -35,8 +34,6 @@
   --border-color: var(--border);
   --border-focus: var(--accent);
 
-  --shadow-sm: var(--shadow-sm);
-  --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-md);
 }
 

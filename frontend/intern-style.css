@@ -5,7 +5,6 @@
    ========================================================================== */
 
 :root {
-  --accent: var(--accent);
   --accent-2: #818cf8;
   --accent-hover: #4f46e5;
   --accent-soft: #eeeffc;

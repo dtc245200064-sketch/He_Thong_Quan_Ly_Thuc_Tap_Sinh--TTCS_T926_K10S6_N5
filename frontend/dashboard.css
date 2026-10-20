@@ -45,8 +45,6 @@
   --card-bg: var(--surface);
   --bg-light: var(--surface-2);
 
-  --shadow-sm: var(--shadow-sm);
-  --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-md);
   --shadow-xl: var(--shadow-md);
 }
@@ -5147,12 +5145,6 @@ body {
   box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
 }
 
-th {
-  background: transparent;
-  color: var(--text-3);
-  border-bottom: 1px solid var(--border-strong);
-}
-
 .modal-header, .modal-footer {
   background: transparent;
   border-color: var(--border);
@@ -5245,7 +5237,8 @@ th {
   background: var(--surface-2); color: var(--text); border-color: var(--border);
 }
 .btn-mark-status { background: var(--surface-2); color: var(--text); border-color: var(--border); }
-.assign-stats-group, .assign-sticky-header, .assign-sticky-header th { background: var(--surface-2); color: var(--text); }
+.assign-stats-group, .assign-sticky-header { background: var(--surface-2); color: var(--text); }
+.assign-sticky-header th { background: var(--surface-2); }
 .att-chip.chip-present { background: var(--success-soft); color: var(--success); border: 1px solid rgba(52, 211, 153, 0.3); }
 .att-chip.chip-leave { background: var(--accent-soft); color: var(--accent); border: 1px solid rgba(99, 102, 241, 0.3); }
 .att-chip.chip-late { background: var(--warning-soft); color: var(--warning); border: 1px solid rgba(251, 191, 36, 0.3); }
