@@ -10,10 +10,10 @@
 :root {
   --font-family: var(--font-sans);
   
-  --accent: #60a5fa;
+  --accent: var(--accent);
   --accent-2: #818cf8;
-  --accent-hover: #3b82f6;
-  --accent-soft: #eff6ff;
+  --accent-hover: #4f46e5;
+  --accent-soft: #eeeffc;
   --accent-2-soft: #eef2ff;
   --accent-glow: 0 0 0 1px rgba(96, 165, 250, 0.35), 0 8px 30px rgba(96, 165, 250, 0.2);
 
@@ -431,27 +431,6 @@ body {
   user-select: none;
 }
 
-.btn-primary {
-  background-color: var(--primary);
-  color: #ffffff;
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
-}
-
-.btn-primary:hover {
-  background-color: var(--primary-hover);
-}
-
-.btn-secondary {
-  background-color: var(--surface);
-  color: var(--text-body);
-  border-color: var(--border-input);
-}
-
-.btn-secondary:hover {
-  background-color: var(--bg-page);
-  border-color: var(--border);
-}
-
 .btn-sm {
   padding: 6px 14px;
   font-size: 12.5px;
@@ -761,11 +740,6 @@ body {
 
 .data-table th {
   padding: 14px 24px;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   white-space: nowrap;
 }
 
@@ -1056,11 +1030,6 @@ body {
 
 .permission-table th {
   padding: 14px 18px;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--text-muted);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
 }
 
 .permission-table .th-feature {
@@ -1595,21 +1564,8 @@ body {
   border-color: var(--border);
 }
 
-th {
-  background: transparent;
-  color: var(--text-3);
-}
-
 .modal-header, .modal-footer {
   background: transparent;
-}
-
-.admin-sidebar .menu-item.active,
-.admin-sidebar .nav-link.active,
-.nav-item.active {
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid rgba(96, 165, 250, 0.35);
 }
 
 .sidebar-logout {

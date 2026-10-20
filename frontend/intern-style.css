@@ -5,11 +5,11 @@
    ========================================================================== */
 
 :root {
-  --accent: #14b8a6;
-  --accent-2: #38bdf8;
-  --accent-hover: #0d9488;
-  --accent-soft: #e6f7f5;
-  --accent-2-soft: #e0f2fe;
+  --accent: var(--accent);
+  --accent-2: #818cf8;
+  --accent-hover: #4f46e5;
+  --accent-soft: #eeeffc;
+  --accent-2-soft: #eef2ff;
   --accent-glow: 0 0 0 1px rgba(20, 184, 166, 0.35), 0 8px 30px rgba(20, 184, 166, 0.2);
 
   --sidebar-bg: var(--surface);
@@ -2492,14 +2492,8 @@ body {
 }
 
 .modern-table th {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--text-2);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
-  background: var(--surface-2);
   white-space: nowrap;
 }
 
@@ -2513,68 +2507,6 @@ body {
 
 .modern-table tbody tr:hover td {
   background-color: #fafcff;
-}
-
-/* Badges trạng thái chấm công */
-.badge-status-ontime {
-  background: var(--success-soft);
-  color: #10b981;
-  font-weight: 600;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: var(--radius-lg);
-  display: inline-block;
-}
-
-.badge-status-late {
-  background: #fffbeb;
-  color: #f59e0b;
-  font-weight: 600;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: var(--radius-lg);
-  display: inline-block;
-}
-
-.badge-status-nocheckout {
-  background: var(--danger-soft);
-  color: #ef4444;
-  font-weight: 600;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: var(--radius-lg);
-  display: inline-block;
-}
-
-/* Badges trạng thái hợp đồng */
-.badge-contract-pending {
-  background: #fefce8;
-  color: #ca8a04;
-  font-weight: 600;
-  font-size: 12px;
-  padding: 4px 12px;
-  border-radius: var(--radius-lg);
-  display: inline-block;
-}
-
-.badge-contract-approved {
-  background: var(--success-soft);
-  color: #10b981;
-  font-weight: 600;
-  font-size: 12px;
-  padding: 4px 12px;
-  border-radius: var(--radius-lg);
-  display: inline-block;
-}
-
-.badge-contract-rejected {
-  background: var(--danger-soft);
-  color: #ef4444;
-  font-weight: 600;
-  font-size: 12px;
-  padding: 4px 12px;
-  border-radius: var(--radius-lg);
-  display: inline-block;
 }
 
 /* Nút Xem hợp đồng */
@@ -3096,10 +3028,11 @@ body {
 }
 
 .progress-metric-val {
-  font-size: 32px;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
   color: var(--text);
-  line-height: 1;
+  line-height: 1.1;
 }
 
 /* Card lớn chứa nội dung các Tab */
@@ -3430,11 +3363,6 @@ body {
   border: 1px solid rgba(20, 184, 166, 0.25);
 }
 
-th {
-  background: transparent;
-  color: var(--text-3);
-}
-
 td {
   color: var(--text);
 }
@@ -3444,14 +3372,6 @@ td {
 .modal-overlay.show,
 .modal-overlay.active {
   background-color: rgba(15, 23, 42, 0.45);
-}
-
-.sidebar .nav-link.active,
-.sidebar a.active,
-.sidebar-menu-btn.active {
-  background: #e6f7f5;
-  color: #0d9488;
-  border: 1px solid rgba(20, 184, 166, 0.35);
 }
 
 .sidebar-logout {

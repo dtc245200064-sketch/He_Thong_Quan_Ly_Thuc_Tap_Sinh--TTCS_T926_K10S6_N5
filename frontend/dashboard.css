@@ -503,10 +503,11 @@ body {
 }
 
 .stat-number {
-  font-size: 28px;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
   color: var(--text-main);
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .text-amber {
@@ -690,46 +691,6 @@ body {
 }
 
 /* Buttons */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background-color: var(--primary);
-  color: #ffffff;
-  border: none;
-  border-radius: var(--radius-md);
-  padding: 10px 18px;
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
-  font-family: inherit;
-}
-
-.btn-primary:hover {
-  background-color: var(--primary-hover);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
-}
-
-.btn-secondary {
-  background-color: var(--surface);
-  border: 1px solid var(--border-color);
-  color: var(--text-2);
-  border-radius: var(--radius-md);
-  padding: 9px 18px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-
-.btn-secondary:hover {
-  background-color: var(--surface-2);
-  border-color: var(--border);
-}
-
 .btn-success {
   display: inline-flex;
   align-items: center;
@@ -788,12 +749,7 @@ body {
 }
 
 .data-table thead th {
-  background-color: var(--surface-2);
   padding: 13px 18px;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--text-2);
-  letter-spacing: 0.5px;
   border-bottom: 1px solid var(--border-color);
   white-space: nowrap;
 }
@@ -878,71 +834,6 @@ body {
   background-color: var(--surface-2);
   color: var(--text-2);
   display: inline-block;
-}
-
-/* Status Badges */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: var(--radius-lg);
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.status-badge::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.status-pending {
-  background-color: var(--amber-light);
-  color: var(--amber-text);
-  border: 1px solid #fde68a;
-}
-.status-pending::before {
-  background-color: #d97706;
-}
-
-.status-active {
-  background-color: var(--success-light);
-  color: var(--success-text);
-  border: 1px solid #a7f3d0;
-}
-.status-active::before {
-  background-color: #059669;
-}
-
-.status-approved {
-  background-color: var(--accent-soft);
-  color: #1e40af;
-  border: 1px solid #bfdbfe;
-}
-.status-approved::before {
-  background-color: var(--accent);
-}
-
-.status-rejected {
-  background-color: var(--danger-light);
-  color: var(--danger-text);
-  border: 1px solid #fecaca;
-}
-.status-rejected::before {
-  background-color: #dc2626;
-}
-
-.status-finished {
-  background-color: var(--purple-light);
-  color: var(--purple-text);
-  border: 1px solid #ddd6fe;
-}
-.status-finished::before {
-  background-color: #7c3aed;
 }
 
 /* Document icon chip in table */
@@ -3272,11 +3163,7 @@ body {
 }
 
 .att-table th {
-  background-color: var(--surface-2);
   padding: 12px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-2);
   text-align: center;
   border-bottom: 1.5px solid #e2e8f0;
   white-space: nowrap;
@@ -3363,19 +3250,13 @@ body {
 }
 
 .leaves-table th {
-  background-color: var(--surface-2);
   padding: 14px 16px;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--text-2);
-  text-transform: uppercase;
   border-bottom: 1.5px solid #e2e8f0;
-  letter-spacing: 0.3px;
 }
 
 .leaves-table td {
   padding: 16px;
-  border$1: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   font-size: 13.5px;
   vertical-align: middle;
 }
@@ -3706,14 +3587,8 @@ body {
 }
 
 .modern-table thead th {
-  background: var(--surface);
-  color: var(--text-2);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   padding: 10px 14px;
-  border$1: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
@@ -4330,11 +4205,6 @@ body {
 
 .assign-sticky-header th {
   padding: 12px 14px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-2);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
   border-bottom: 1px solid var(--border);
   text-align: left;
   background: var(--surface-2);
@@ -5097,20 +4967,14 @@ body {
 }
 
 .report-data-table th {
-  background: var(--surface-2);
-  color: var(--text-2);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
   padding: 14px 16px;
-  border$1: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
 .report-data-table td {
   padding: 14px 16px;
-  border$1: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   font-size: 13.5px;
   color: var(--text);
   vertical-align: middle;

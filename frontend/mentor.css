@@ -6,11 +6,11 @@
 :root {
   --font-family: var(--font-sans);
 
-  --accent: #a78bfa;
-  --accent-2: #f0abfc;
-  --accent-hover: #9333ea;
-  --accent-soft: #f3effe;
-  --accent-2-soft: #fae8ff;
+  --accent: var(--accent);
+  --accent-2: #818cf8;
+  --accent-hover: #4f46e5;
+  --accent-soft: #eeeffc;
+  --accent-2-soft: #eef2ff;
   --accent-glow: 0 0 0 1px rgba(167, 139, 250, 0.35), 0 8px 30px rgba(167, 139, 250, 0.2);
 
   --primary: var(--accent);
@@ -451,10 +451,11 @@ body {
 }
 
 .stat-value {
-  font-size: 26px;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
   color: var(--text-main);
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 .stat-label {
@@ -542,17 +543,6 @@ body {
   text-decoration: none;
 }
 
-.btn-primary {
-  background: var(--primary);
-  color: #ffffff;
-  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.25);
-}
-
-.btn-primary:hover {
-  background: var(--primary-hover);
-  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.35);
-}
-
 .btn-success {
   background: var(--success);
   color: #ffffff;
@@ -605,13 +595,6 @@ body {
 }
 
 .data-table th {
-  background: var(--surface-2);
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-family: var(--font-sans);
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-color);
   text-align: left;
@@ -656,24 +639,6 @@ body {
   font-size: 12px;
   color: var(--text-muted);
 }
-
-/* Badges */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: var(--radius-full);
-}
-
-.badge-success { background: var(--success-light); color: #065f46; }
-.badge-warning { background: var(--warning-light); color: #92400e; }
-.badge-danger { background: var(--danger-light); color: #991b1b; }
-.badge-info { background: var(--info-light); color: #075985; }
-.badge-primary { background: var(--primary-light); color: var(--primary-dark); }
-.badge-secondary { background: var(--surface-2); color: var(--text-2); }
 
 /* Progress bar in table */
 .progress-wrap {
@@ -1032,21 +997,8 @@ textarea.form-control {
   border: 1px solid rgba(167, 139, 250, 0.25);
 }
 
-th {
-  background: transparent;
-  color: var(--text-3);
-}
-
 .modal-header, .modal-footer {
   background: transparent;
-}
-
-.mentor-sidebar .nav-item.active a,
-.mentor-sidebar .nav-item.active,
-.nav-item.active {
-  background: #f3effe;
-  color: #7c3aed;
-  border: 1px solid rgba(167, 139, 250, 0.35);
 }
 
 .sidebar-logout {
