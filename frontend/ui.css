@@ -7,31 +7,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 :root {
-  /* Dark theme mặc định (Linear / Vercel / Raycast) */
-  --bg: #0a0e1a;
-  --bg-2: #0f1424;
-  --surface: rgba(255, 255, 255, 0.035);
-  --surface-solid: #111729;
-  --surface-2: rgba(255, 255, 255, 0.06);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.14);
-  --text: #e7eaf3;
-  --text-2: #a3adc2;
-  --text-3: #6b7592;
+  /* Light theme duy nhất (Clean, Modern, Tinted Glassmorphism) */
+  --bg: #f4f6fb;
+  --bg-2: #eaeff8;
+  --surface: #ffffff;
+  --surface-solid: #ffffff;
+  --surface-2: #eef2fa;
+  --border: rgba(20, 30, 70, 0.12);
+  --border-strong: rgba(20, 30, 70, 0.20);
+  --text: #2d3748;
+  --text-2: #4a5568;
+  --text-3: #718096;
 
   /* Accent tokens (Default HR: Indigo #6366f1 / Cyan #22d3ee) */
   --accent: #6366f1;
   --accent-2: #22d3ee;
-  --accent-soft: rgba(99, 102, 241, 0.14);
-  --accent-glow: 0 0 0 1px rgba(99, 102, 241, 0.35), 0 8px 30px rgba(99, 102, 241, 0.18);
+  --accent-soft: #eeeffc;
+  --accent-glow: 0 0 0 1px rgba(99, 102, 241, 0.25), 0 8px 24px rgba(99, 102, 241, 0.12);
 
   /* Semantic Feedback */
-  --success: #34d399;
-  --warning: #fbbf24;
-  --danger: #f87171;
-  --success-soft: rgba(52, 211, 153, 0.14);
-  --warning-soft: rgba(251, 191, 36, 0.14);
-  --danger-soft: rgba(248, 113, 113, 0.14);
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --success-soft: #eafaf1;
+  --warning-soft: #fef8e7;
+  --danger-soft: #fdeeee;
 
   /* Geometry & Shadows */
   --radius-xs: 6px;    /* tag nhỏ, checkbox */
@@ -40,7 +40,7 @@
   --radius-lg: 16px;   /* card, panel, modal */
   --radius-xl: 24px;   /* khung đăng nhập, hero */
   --radius-full: 999px;/* pill, chip */
-  --shadow-md: 0 18px 40px -18px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 18px 40px -18px rgba(30, 45, 100, 0.14);
   --blur: saturate(150%) blur(18px);
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --dur-fast: 150ms;
@@ -52,40 +52,6 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 
-[data-theme="light"] {
-  --bg: #f4f6fb;
-  --bg-2: #eaeff8;
-  --surface: #ffffff;
-  --surface-solid: #ffffff;
-  --surface-2: #eef2fa;
-  --border: rgba(20, 30, 70, 0.12);
-  --border-strong: rgba(20, 30, 70, 0.20);
-  --text: #2d3748;
-  --text-2: #4a5568;
-  --text-3: #718096;
-  --accent-soft: #eeeffc;
-  --success-soft: #eafaf1;
-  --warning-soft: #fef8e7;
-  --danger-soft: #fdeeee;
-  --shadow-md: 0 18px 40px -18px rgba(30, 45, 100, 0.14);
-}
-
-[data-theme="light"] .modal,
-[data-theme="light"] .modal-overlay,
-[data-theme="light"] .ui-modal-backdrop {
-  background: rgba(15, 23, 42, 0.45) !important;
-}
-
-[data-theme="light"] .card,
-[data-theme="light"] .stat-card,
-[data-theme="light"] .panel,
-[data-theme="light"] .table-container,
-[data-theme="light"] .modal-box,
-[data-theme="light"] .modal-dialog,
-[data-theme="light"] .ui-modal-box {
-  background-color: var(--surface-solid) !important;
-}
-
 /* ==========================================================================
    GLOBAL RESET & BASE
    ========================================================================== */
@@ -94,9 +60,6 @@
 }
 
 html {
-  color-scheme: dark;
-}
-html[data-theme="light"] {
   color-scheme: light;
 }
 
@@ -133,7 +96,7 @@ body {
 .aurora-1 {
   width: 580px;
   height: 580px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.28) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.14) 0%, transparent 70%);
   top: -120px;
   left: -100px;
   animation: aurora-float-1 28s ease-in-out infinite alternate;
@@ -142,7 +105,7 @@ body {
 .aurora-2 {
   width: 520px;
   height: 520px;
-  background: radial-gradient(circle, rgba(34, 211, 238, 0.24) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.12) 0%, transparent 70%);
   bottom: -100px;
   right: -100px;
   animation: aurora-float-2 32s ease-in-out infinite alternate;
@@ -151,7 +114,7 @@ body {
 .aurora-3 {
   width: 480px;
   height: 480px;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.22) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.10) 0%, transparent 70%);
   top: 35%;
   left: 45%;
   animation: aurora-float-3 26s ease-in-out infinite alternate;
@@ -161,26 +124,11 @@ body {
   position: absolute;
   inset: 0;
   background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(rgba(20, 30, 70, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 30, 70, 0.04) 1px, transparent 1px);
   background-size: 32px 32px;
   mask-image: radial-gradient(circle at 50% 50%, black 40%, transparent 85%);
   -webkit-mask-image: radial-gradient(circle at 50% 50%, black 40%, transparent 85%);
-}
-
-[data-theme="light"] .aurora-1 {
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.14) 0%, transparent 70%);
-}
-[data-theme="light"] .aurora-2 {
-  background: radial-gradient(circle, rgba(34, 211, 238, 0.12) 0%, transparent 70%);
-}
-[data-theme="light"] .aurora-3 {
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.10) 0%, transparent 70%);
-}
-[data-theme="light"] .aurora-grid {
-  background-image: 
-    linear-gradient(rgba(20, 30, 70, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(20, 30, 70, 0.04) 1px, transparent 1px);
 }
 
 @keyframes aurora-float-1 {
@@ -214,18 +162,10 @@ h1, h2, h3, .page-title, .title, .slogan {
 .header-left h1,
 .welcome-text h1,
 .page-title {
-  background-image: linear-gradient(180deg, #ffffff 15%, var(--text-2) 100%);
+  background-image: linear-gradient(180deg, var(--text) 20%, var(--text-2) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: var(--text) !important;
-}
-
-[data-theme="light"] .text-gradient,
-[data-theme="light"] .page-header h1,
-[data-theme="light"] .header-left h1,
-[data-theme="light"] .welcome-text h1,
-[data-theme="light"] .page-title {
-  background-image: linear-gradient(180deg, var(--text) 20%, var(--text-2) 100%);
 }
 
 .stat-value, .stat-number, .stat-card .value {
@@ -264,26 +204,13 @@ h1, h2, h3, .page-title, .title, .slogan {
 .intern-card,
 .detail-card,
 .widget-card {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.02)) !important;
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 40px -18px rgba(0, 0, 0, 0.6) !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.65)) !important;
+  border: 1px solid rgba(20, 30, 70, 0.10) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 18px 40px -18px rgba(30, 45, 100, 0.12) !important;
   backdrop-filter: var(--blur) !important;
   -webkit-backdrop-filter: var(--blur) !important;
   border-radius: var(--radius-lg);
   transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
-}
-
-[data-theme="light"] .card,
-[data-theme="light"] .stat-card,
-[data-theme="light"] .panel,
-[data-theme="light"] .box,
-[data-theme="light"] .table-container,
-[data-theme="light"] .intern-card,
-[data-theme="light"] .detail-card,
-[data-theme="light"] .widget-card {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.65)) !important;
-  border: 1px solid rgba(20, 30, 70, 0.10) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 18px 40px -18px rgba(30, 45, 100, 0.12) !important;
 }
 
 .card:hover,
@@ -323,21 +250,11 @@ aside.sidebar,
 .portal-sidebar,
 .mentor-sidebar,
 .admin-sidebar {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.02)) !important;
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.70)) !important;
+  border: 1px solid rgba(20, 30, 70, 0.11) !important;
   border-radius: var(--radius-xl);
   backdrop-filter: var(--blur) !important;
   -webkit-backdrop-filter: var(--blur) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 20px 45px -15px rgba(0, 0, 0, 0.7) !important;
-}
-
-[data-theme="light"] .sidebar,
-[data-theme="light"] aside.sidebar,
-[data-theme="light"] .portal-sidebar,
-[data-theme="light"] .mentor-sidebar,
-[data-theme="light"] .admin-sidebar {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.70)) !important;
-  border: 1px solid rgba(20, 30, 70, 0.11) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 20px 45px -15px rgba(30, 45, 100, 0.12) !important;
 }
 
@@ -423,18 +340,10 @@ aside.sidebar,
 .topbar,
 header.header,
 .navbar {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-  backdrop-filter: var(--blur) !important;
-  -webkit-backdrop-filter: var(--blur) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 32px rgba(0, 0, 0, 0.3) !important;
-}
-
-[data-theme="light"] .topbar,
-[data-theme="light"] header.header,
-[data-theme="light"] .navbar {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.70)) !important;
   border-bottom: 1px solid rgba(20, 30, 70, 0.10) !important;
+  backdrop-filter: var(--blur) !important;
+  -webkit-backdrop-filter: var(--blur) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 32px rgba(30, 45, 100, 0.08) !important;
 }
 
@@ -771,223 +680,7 @@ tbody tr td {
   transition: opacity var(--dur) var(--ease), visibility var(--dur) var(--ease);
 }
 
-.modal.active,
-.modal.show,
-.mentor-modal.active,
-.mentor-modal.show,
-.modal-overlay.active,
-.modal-overlay.show,
-.custom-modal-overlay.active,
-.login-success-overlay.active,
-.review-modal-overlay.active {
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
-
-.modal .modal-box,
-.modal .modal-content,
-.modal .modal-dialog,
-.mentor-modal .mentor-modal-box,
-.custom-modal-overlay .custom-modal-box,
-.modal-backdrop .login-success-box,
-.review-modal-overlay .review-modal-box {
-  background: var(--surface-solid) !important;
-  border: 1px solid var(--border-strong) !important;
-  border-radius: var(--radius-lg);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 25px 60px -15px rgba(0, 0, 0, 0.7) !important;
-  transform: scale(0.96) translateY(6px);
-  transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease);
-}
-
-.modal.active .modal-box,
-.modal.active .modal-content,
-.modal.active .modal-dialog,
-.mentor-modal.active .mentor-modal-box,
-.custom-modal-overlay.active .custom-modal-box,
-.modal-backdrop.active .login-success-box,
-.review-modal-overlay.active .review-modal-box {
-  transform: scale(1) translateY(0) !important;
-}
-
-.modal-header,
-.modal-footer {
-  background: transparent !important;
-  border-color: var(--border) !important;
-}
-
-/* ==========================================================================
-   AVATAR / ẢNH LỖI (FALLBACK CHỐNG CHỮ ALT TRẮNG XẤU)
-   ========================================================================== */
-img {
-  text-indent: -9999px;
-}
-img:not([src]), img[src=""], img[src="#"], img:empty {
-  background: var(--surface-2);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font-size: 0;
-}
-
-.avatar, .user-avatar, .intern-avatar, .mentor-avatar {
-  border-radius: 50%;
-  border: 2px solid rgba(99, 102, 241, 0.35);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
-}
-
-/* ==========================================================================
-   TOASTS (Glassmorphism, Slim Timer Line at Bottom)
-   ========================================================================== */
-#toastContainer, .toast-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 999999;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.toast {
-  background: var(--surface-solid) !important;
-  border: 1px solid var(--border-strong) !important;
-  border-radius: var(--radius-md);
-  backdrop-filter: var(--blur) !important;
-  -webkit-backdrop-filter: var(--blur) !important;
-  color: var(--text) !important;
-  box-shadow: var(--shadow-md) !important;
-  padding: 14px 18px !important;
-  position: relative;
-  overflow: hidden;
-}
-
-.toast::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 2px;
-  width: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  animation: toast-timer 3s linear forwards;
-}
-
-@keyframes toast-timer {
-  from { width: 100%; }
-  to { width: 0%; }
-}
-
-/* ==========================================================================
-   THEME TOGGLE BUTTON COMPONENT
-   ========================================================================== */
-.ui-theme-toggle {
-  background: var(--surface-2);
-  border: 1px solid var(--border-strong);
-  color: var(--text);
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-md);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all var(--dur-fast) var(--ease);
-  font-size: 15px;
-}
-
-.ui-theme-toggle:hover {
-  background: var(--surface);
-  border-color: var(--accent);
-  box-shadow: var(--accent-glow);
-  transform: translateY(-1px);
-}
-
-/* ==========================================================================
-   SKELETON SHIMMER & SCROLLBAR
-   ========================================================================== */
-@keyframes ui-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.ui-skeleton {
-  background: linear-gradient(90deg, var(--surface-2) 25%, var(--border-strong) 50%, var(--surface-2) 75%);
-  background-size: 200% 100%;
-  animation: ui-shimmer 1.5s infinite;
-  border-radius: var(--radius-sm);
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: var(--radius-full);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-3);
-}
-
-/* Fallback for browsers without backdrop-filter */
-@supports not (backdrop-filter: blur(1px)) {
-  .card, .stat-card, .sidebar, .topbar, .modal-box, .ui-modal-box, .toast {
-    background: var(--surface-solid) !important;
-  }
-}
-
-/* ==========================================================================
-   PREFERS-REDUCED-MOTION (ACCESSIBILITY MANDATORY)
-   ========================================================================== */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation: none !important;
-    transition: none !important;
-    scroll-behavior: auto !important;
-  }
-  .aurora-blob {
-    animation: none !important;
-  }
-}
-
-
-
-
-/* ==========================================================================
-   GLOBAL GLASS, ISLAND-FREE & HIGH CONTRAST MASTER OVERRIDES
-   ========================================================================== */
-body {
-  background-color: var(--bg) !important;
-}
-
-.app-layout, .app-container, .main-content, .content-area, .page-wrapper, .dashboard-wrapper {
-  background-color: var(--bg) !important;
-}
-
-.sidebar, .admin-sidebar, .mentor-sidebar {
-  background-color: var(--surface-solid) !important;
-}
-
-.topbar, .mentor-header {
-  background-color: var(--surface-solid) !important;
-}
-
-/* Modals: strictly transparent when inactive, dark backdrop only when active/shown */
-.modal, .modal-backdrop, .ui-modal-backdrop, .modal-overlay, .mentor-modal {
-  background-color: transparent !important;
-}
 .modal.active, .modal.show, .modal-backdrop.active, .ui-modal-backdrop.active, .modal-overlay.active, .mentor-modal.active {
-  background-color: rgba(5, 8, 16, 0.78) !important;
-}
-[data-theme="light"] .modal.active,
-[data-theme="light"] .modal.show,
-[data-theme="light"] .modal-backdrop.active,
-[data-theme="light"] .ui-modal-backdrop.active,
-[data-theme="light"] .modal-overlay.active,
-[data-theme="light"] .mentor-modal.active {
   background-color: rgba(15, 23, 42, 0.45) !important;
 }
 

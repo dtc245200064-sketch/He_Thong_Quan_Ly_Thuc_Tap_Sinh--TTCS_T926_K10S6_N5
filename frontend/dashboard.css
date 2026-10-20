@@ -7,7 +7,8 @@
   --accent: #6366f1;
   --accent-2: #22d3ee;
   --accent-hover: #4f46e5;
-  --accent-soft: rgba(99, 102, 241, 0.16);
+  --accent-soft: #eeeffc;
+  --accent-2-soft: #e0f9fc;
   --accent-glow: 0 0 0 1px rgba(99, 102, 241, 0.35), 0 8px 30px rgba(99, 102, 241, 0.2);
 
   --primary: var(--accent);
@@ -1708,19 +1709,20 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  border: none;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
   padding: 6px 12px;
   border-radius: var(--radius-xs);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all var(--dur-fast) var(--ease);
 }
 
 .btn-pdf-tool:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--surface-solid);
+  border-color: var(--border-strong);
 }
 
 .pdf-page-scroll {
@@ -5373,52 +5375,32 @@ th {
 
 
 
-/* HR DASHBOARD LIGHT THEME & CONTRAST FIXES */
+/* HR DASHBOARD LIGHT THEME */
 .modal:not(.active) {
   background-color: transparent !important;
 }
 .modal.active {
-  background-color: rgba(5, 8, 16, 0.78) !important;
-}
-[data-theme="light"] .modal.active {
   background-color: rgba(15, 23, 42, 0.45) !important;
 }
 
-[data-theme="light"] {
-  --accent-soft: #eeeffc;
-  --accent-2-soft: #e0f9fc;
-  --success-soft: #eafaf1;
-  --warning-soft: #fef8e7;
-  --danger-soft: #fdeeee;
-}
-
 .menu-item.active {
-  background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(99, 102, 241, 0.05) 100%) !important;
-  color: var(--text) !important;
-  border: 1px solid rgba(99, 102, 241, 0.35) !important;
-}
-[data-theme="light"] .menu-item.active {
   background: #eeeffc !important;
   color: #4f46e5 !important;
-  border-color: rgba(99, 102, 241, 0.35) !important;
+  border: 1px solid rgba(99, 102, 241, 0.35) !important;
 }
 
 .sidebar-logout {
-  background: var(--danger-soft) !important;
-  color: var(--danger) !important;
-}
-[data-theme="light"] .sidebar-logout {
   background: #fdeeee !important;
   color: #dc2626 !important;
 }
 
-[data-theme="light"] .stat-sub-badge.warning { background: #fef8e7 !important; color: #d97706 !important; }
-[data-theme="light"] .stat-sub-badge.success { background: #eafaf1 !important; color: #059669 !important; }
-[data-theme="light"] .stat-sub-badge.default { background: #eeeffc !important; color: #4f46e5 !important; }
-[data-theme="light"] .btn-pdf-tool { background: var(--surface-2) !important; color: var(--text) !important; }
+.stat-sub-badge.warning { background: #fef8e7 !important; color: #d97706 !important; }
+.stat-sub-badge.success { background: #eafaf1 !important; color: #059669 !important; }
+.stat-sub-badge.default { background: #eeeffc !important; color: #4f46e5 !important; }
+.btn-pdf-tool { background: var(--surface-2) !important; color: var(--text) !important; }
 
 .page-title {
   color: var(--text) !important;
 }
 
-[data-theme="light"] .avatar-assign-mentor { background: #f3effe !important; color: #7c3aed !important; }
+.avatar-assign-mentor { background: #f3effe !important; color: #7c3aed !important; }
