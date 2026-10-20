@@ -63,11 +63,27 @@ async function getTransporter() {
   return testTransporter;
 }
 
+// B24: Hàm escape ký tự đặc biệt để chống XSS/HTML Injection trong email template
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 /**
  * Gửi email thông báo kết quả xét duyệt hồ sơ thực tập sinh (User Story 8)
  */
 async function sendReviewResultEmail({ to, candidateName, status, reason, note }) {
   const isApproved = status === 'approved' || status === 'Đã duyệt';
+  const safeName = escapeHtml(candidateName || 'Ứng viên');
+  const safeTo = escapeHtml(to || '');
+  const safeReason = escapeHtml(reason || '');
+  const safeNote = escapeHtml(note || '');
+
   const subject = isApproved
     ? `[CodeGym] Chúc mừng! Hồ sơ thực tập của bạn đã được phê duyệt`
     : `[CodeGym] Thông báo kết quả xét duyệt hồ sơ thực tập`;
@@ -100,7 +116,7 @@ async function sendReviewResultEmail({ to, candidateName, status, reason, note }
           <p>Phòng Đào tạo & Quản lý Nhân sự Doanh nghiệp</p>
         </div>
         <div class="email-body">
-          <p>Kính gửi bạn <b>${candidateName || 'Ứng viên'}</b>,</p>
+          <p>Kính gửi bạn <b>${safeName}</b>,</p>
           
           <div class="status-badge">
             ${isApproved ? '✓ HỒ SƠ ĐÃ ĐƯỢC DUYỆT' : '✕ HỒ SƠ CHƯA ĐẠT YÊU CẦU'}
@@ -113,11 +129,11 @@ async function sendReviewResultEmail({ to, candidateName, status, reason, note }
           </p>
 
           <div class="info-card">
-            <div class="info-row"><span class="info-label">Ứng viên:</span> <span class="info-value">${candidateName || '—'}</span></div>
-            <div class="info-row"><span class="info-label">Email:</span> <span class="info-value">${to || '—'}</span></div>
+            <div class="info-row"><span class="info-label">Ứng viên:</span> <span class="info-value">${safeName}</span></div>
+            <div class="info-row"><span class="info-label">Email:</span> <span class="info-value">${safeTo}</span></div>
             <div class="info-row"><span class="info-label">Kết quả xét duyệt:</span> <span class="info-value" style="color: ${isApproved ? '#16a34a' : '#dc2626'}">${isApproved ? 'Đã duyệt (Trúng tuyển)' : 'Từ chối'}</span></div>
-            ${!isApproved && reason ? `<div class="info-row"><span class="info-label">Lý do:</span> <span class="info-value">${reason}</span></div>` : ''}
-            ${note ? `<div class="info-row"><span class="info-label">Ghi chú từ HR:</span> <span class="info-value">${note}</span></div>` : ''}
+            ${!isApproved && safeReason ? `<div class="info-row"><span class="info-label">Lý do:</span> <span class="info-value">${safeReason}</span></div>` : ''}
+            ${safeNote ? `<div class="info-row"><span class="info-label">Ghi chú từ HR:</span> <span class="info-value">${safeNote}</span></div>` : ''}
           </div>
 
           ${isApproved ? `
@@ -213,7 +229,17 @@ async function getEmailHistory(recipientEmail = '') {
 
 // Gửi email thông báo lịch họp tự động cho thực tập sinh (STT 35)
 async function sendMeetingEmail({ to, internName, meetingTitle, meetingDate, startTime, endTime, location, link, hostName, notes }) {
-  const subject = `[THÔNG BÁO LỊCH HỌP] ${meetingTitle} - Hệ thống Quản lý Thực tập sinh CodeGym`;
+  const safeName = escapeHtml(internName || 'Thực tập sinh');
+  const safeTitle = escapeHtml(meetingTitle || '');
+  const safeStartTime = escapeHtml(startTime || '');
+  const safeEndTime = escapeHtml(endTime || '');
+  const safeDate = escapeHtml(meetingDate || '');
+  const safeLocation = escapeHtml(location || 'Văn phòng CodeGym');
+  const safeHost = escapeHtml(hostName || 'Mentor / HR');
+  const safeNotes = escapeHtml(notes || '');
+  const safeLink = (link && (link.startsWith('http://') || link.startsWith('https://'))) ? escapeHtml(link) : '';
+
+  const subject = `[THÔNG BÁO LỊCH HỌP] ${safeTitle} - Hệ thống Quản lý Thực tập sinh CodeGym`;
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
       <div style="background-color: #0d6efd; color: #ffffff; padding: 20px; text-align: center;">
@@ -221,15 +247,15 @@ async function sendMeetingEmail({ to, internName, meetingTitle, meetingDate, sta
         <p style="margin: 5px 0 0; opacity: 0.9; font-size: 14px;">Hệ thống Đào tạo & Quản lý CodeGym</p>
       </div>
       <div style="padding: 24px;">
-        <p>Xin chào <strong>${internName || 'Thực tập sinh'}</strong>,</p>
+        <p>Xin chào <strong>${safeName}</strong>,</p>
         <p>Bạn có một lịch họp mới được sắp xếp trên hệ thống. Dưới đây là thông tin chi tiết:</p>
         <div style="background-color: #f8fafc; border-left: 4px solid #0d6efd; padding: 16px; margin: 20px 0; border-radius: 0 4px 4px 0;">
-          <p style="margin: 0 0 8px;">📅 <strong>Chủ đề cuộc họp:</strong> ${meetingTitle}</p>
-          <p style="margin: 0 0 8px;">⏰ <strong>Thời gian:</strong> ${startTime} - ${endTime}, ngày <strong>${meetingDate}</strong></p>
-          <p style="margin: 0 0 8px;">📍 <strong>Địa điểm / Hình thức:</strong> ${location || 'Online Meet'}</p>
-          ${link ? `<p style="margin: 0 0 8px;">🔗 <strong>Đường dẫn tham gia:</strong> <a href="${link}" target="_blank" style="color: #0d6efd;">${link}</a></p>` : ''}
-          <p style="margin: 0 0 8px;">👤 <strong>Người chủ trì:</strong> ${hostName || 'Mentor / HR'}</p>
-          ${notes ? `<p style="margin: 0;">📝 <strong>Ghi chú:</strong> ${notes}</p>` : ''}
+          <p style="margin: 0 0 8px;">📅 <strong>Chủ đề cuộc họp:</strong> ${safeTitle}</p>
+          <p style="margin: 0 0 8px;">⏰ <strong>Thời gian:</strong> ${safeStartTime} - ${safeEndTime}, ngày <strong>${safeDate}</strong></p>
+          <p style="margin: 0 0 8px;">📍 <strong>Địa điểm / Hình thức:</strong> ${safeLocation}</p>
+          ${safeLink ? `<p style="margin: 0 0 8px;">🔗 <strong>Đường dẫn tham gia:</strong> <a href="${safeLink}" target="_blank" style="color: #0d6efd;">${safeLink}</a></p>` : ''}
+          <p style="margin: 0 0 8px;">👤 <strong>Người chủ trì:</strong> ${safeHost}</p>
+          ${safeNotes ? `<p style="margin: 0;">📝 <strong>Ghi chú:</strong> ${safeNotes}</p>` : ''}
         </div>
         <p style="font-size: 13px; color: #64748b;">Vui lòng sắp xếp thời gian tham gia đúng giờ và chuẩn bị nội dung báo cáo theo yêu cầu.</p>
       </div>
@@ -274,5 +300,6 @@ async function sendMeetingEmail({ to, internName, meetingTitle, meetingDate, sta
 module.exports = {
   sendReviewResultEmail,
   getEmailHistory,
-  sendMeetingEmail
+  sendMeetingEmail,
+  escapeHtml
 };
