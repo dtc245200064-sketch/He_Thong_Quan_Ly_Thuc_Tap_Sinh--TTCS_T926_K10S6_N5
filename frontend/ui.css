@@ -585,15 +585,15 @@ table {
 }
 
 th {
-  font-size: 11px !important;
+  font-size: 12px !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
+  letter-spacing: 0.04em !important;
   color: var(--text-3) !important;
   border: none !important;
   background: transparent !important;
   padding: 10px 16px !important;
   font-weight: 600 !important;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans) !important;
 }
 
 tbody tr {
