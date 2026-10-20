@@ -4,39 +4,43 @@
    ============================================================================== */
 
 :root {
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --primary-light: #e0e7ff;
-  --primary-dark: #3730a3;
-  --success: #10b981;
-  --success-light: #d1fae5;
-  --warning: #f59e0b;
-  --warning-light: #fef3c7;
-  --danger: #ef4444;
-  --danger-light: #fee2e2;
-  --info: #0ea5e9;
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-soft: #f5f3ff;
+
+  --primary: var(--accent);
+  --primary-hover: var(--accent-hover);
+  --primary-light: var(--accent-soft);
+  --primary-dark: #5b21b6;
+  --success: #16a34a;
+  --success-light: var(--success-soft, #ecfdf3);
+  --warning: #d97706;
+  --warning-light: var(--warning-soft, #fff7e6);
+  --danger: #dc2626;
+  --danger-light: var(--danger-soft, #fef2f2);
+  --info: #0284c7;
   --info-light: #e0f2fe;
-  
-  --bg-body: #f8fafc;
-  --bg-sidebar: #0f172a;
-  --bg-card: #ffffff;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
-  --text-light: #94a3b8;
-  --border-color: #e2e8f0;
-  --border-focus: #818cf8;
-  
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+
+  --bg-body: var(--bg, #f6f7f9);
+  --bg-sidebar: var(--surface, #ffffff);
+  --bg-card: var(--surface, #ffffff);
+  --text-main: var(--text, #111827);
+  --text-muted: var(--text-2, #4b5563);
+  --text-light: var(--text-3, #9ca3af);
+  --border-color: var(--border, #e5e7eb);
+  --border-focus: var(--accent);
+
+  --shadow-sm: var(--shadow-sm, 0 1px 2px rgba(16, 24, 40, 0.04));
+  --shadow-md: var(--shadow-md, 0 4px 16px rgba(16, 24, 40, 0.08));
+  --shadow-lg: var(--shadow-md, 0 4px 16px rgba(16, 24, 40, 0.08));
+  --shadow-xl: 0 12px 32px rgba(16, 24, 40, 0.12);
+
+  --radius-sm: var(--radius-sm, 8px);
+  --radius-md: var(--radius-md, 12px);
+  --radius-lg: var(--radius-lg, 16px);
   --radius-full: 9999px;
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --transition: all 0.2s ease-in-out;
+  --transition: all var(--dur-fast, 150ms) var(--ease, ease);
 }
 
 * {
@@ -68,7 +72,7 @@ body {
 .mentor-sidebar {
   width: 270px;
   background-color: var(--bg-sidebar);
-  color: #f8fafc;
+  color: var(--text-main);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -76,13 +80,13 @@ body {
   bottom: 0;
   left: 0;
   z-index: 100;
-  transition: transform 0.3s ease;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  transition: transform var(--dur, 220ms) var(--ease, ease);
+  border-right: 1px solid var(--border-color);
 }
 
 .sidebar-header {
   padding: 24px 20px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .brand-logo {
@@ -92,33 +96,32 @@ body {
 }
 
 .logo-badge {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: var(--accent);
   color: #fff;
-  font-weight: 800;
-  font-size: 14px;
-  padding: 6px 10px;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 5px 10px;
   border-radius: var(--radius-sm);
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4);
+  box-shadow: var(--shadow-sm);
 }
 
 .logo-title {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-main);
   letter-spacing: -0.2px;
 }
 
 /* Mentor Role Badge */
 .mentor-badge-box {
   margin: 16px 20px 8px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  background: var(--surface-2, #f1f3f6);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
 .mentor-badge-subtitle {
@@ -144,9 +147,9 @@ body {
 }
 
 .role-text {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--text-main);
 }
 
 /* Navigation */
@@ -167,12 +170,12 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 14px;
-  color: #94a3b8;
+  padding: 10px 12px;
+  color: var(--text-muted);
   text-decoration: none;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   transition: var(--transition);
   position: relative;
 }
@@ -185,8 +188,8 @@ body {
 }
 
 .nav-item:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-main);
+  background: var(--surface-2, #f1f3f6);
 }
 
 .nav-item:hover i {
@@ -194,10 +197,14 @@ body {
 }
 
 .nav-item.active {
-  color: #ffffff;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: none;
   font-weight: 600;
+}
+
+.nav-item.active i {
+  color: var(--accent);
 }
 
 .nav-badge {
@@ -212,12 +219,12 @@ body {
 
 /* Sidebar Footer */
 .sidebar-footer {
-  padding: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px 16px;
+  border-top: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(0, 0, 0, 0.15);
+  background: transparent;
 }
 
 .mentor-profile-info {
@@ -232,7 +239,7 @@ body {
   height: 38px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #6366f1;
+  border: 1.5px solid var(--border-color);
 }
 
 .profile-texts {
@@ -244,7 +251,7 @@ body {
 .profile-name {
   font-size: 13px;
   font-weight: 600;
-  color: #f1f5f9;
+  color: var(--text-main);
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -688,7 +695,7 @@ body {
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #6366f1, #10b981);
+  background: var(--accent);
   border-radius: 99px;
   transition: width 0.3s ease;
 }
@@ -767,33 +774,43 @@ body {
 .mentor-modal {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(17, 24, 39, 0.45);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 1000;
-  display: none;
+  display: flex !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
   align-items: center;
   justify-content: center;
   padding: 20px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--dur, 220ms) var(--ease, ease), visibility var(--dur, 220ms) var(--ease, ease);
 }
 
 .mentor-modal.active {
-  display: flex;
   opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .mentor-modal-box {
-  background: #ffffff;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--shadow-md);
   width: 100%;
   max-width: 620px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(0.96) translateY(4px);
+  transition: transform var(--dur, 220ms) var(--ease, ease);
+}
+
+.mentor-modal.active .mentor-modal-box {
+  transform: scale(1) translateY(0);
 }
 
 @keyframes modalScaleUp {
@@ -947,13 +964,58 @@ textarea.form-control {
 
 /* Responsive */
 @media (max-width: 992px) {
-  .mentor-sidebar {
-    transform: translateX(-100%);
+  .mentor-wrapper {
+    flex-direction: column;
   }
-  .mentor-sidebar.open {
-    transform: translateX(0);
+  .mentor-sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px;
+    transform: none;
   }
   .mentor-main {
     margin-left: 0;
+    min-height: auto;
+  }
+  .sidebar-nav ul {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .sidebar-nav ul li {
+    flex: 1 1 calc(50% - 6px);
+  }
+  .page-container {
+    padding: 20px 16px;
+  }
+  .mentor-topbar {
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 576px) {
+  .sidebar-nav ul li {
+    flex: 1 1 100%;
+  }
+  .mentor-modal {
+    padding: 10px;
+  }
+  .mentor-modal-box {
+    max-width: 100%;
+    border-radius: var(--radius-md);
+  }
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 16px;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-row-2 {
+    grid-template-columns: 1fr;
   }
 }
