@@ -553,7 +553,7 @@ body {
 
 .overview-card .table-container {
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .overview-header {
@@ -763,7 +763,7 @@ body {
   padding: 14px 18px;
   font-size: 13px;
   color: var(--text);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   vertical-align: middle;
 }
 
@@ -854,7 +854,7 @@ body {
   border-radius: var(--radius-xs);
   background-color: var(--surface-2);
   color: var(--text-2);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -1241,7 +1241,7 @@ body {
   font-weight: 600;
   color: var(--primary);
   background-color: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
@@ -1285,7 +1285,7 @@ body {
   padding: 5px 10px;
   background-color: var(--surface-2);
   border-radius: var(--radius-xs);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   font-size: 11.5px;
   transition: all 0.2s ease;
 }
@@ -1456,7 +1456,7 @@ body {
 
 .info-item {
   background-color: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 10px 14px;
 }
@@ -1551,8 +1551,8 @@ body {
   color: var(--primary);
   border-bottom-color: var(--primary);
   background-color: var(--surface);
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
+  border-top-left-radius: var(--radius-sm);
+  border-top-right-radius: var(--radius-sm);
 }
 
 .pdf-viewer-container {
@@ -1679,7 +1679,7 @@ body {
   color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   padding-bottom: 6px;
   margin-bottom: 12px;
 }
@@ -1765,7 +1765,7 @@ body {
 .profile-section {
   margin-bottom: 18px;
   padding-bottom: 16px;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
 }
 
 .profile-section:last-child {
@@ -2034,7 +2034,7 @@ body {
   border-radius: var(--radius-xl);
   text-align: center;
   box-shadow: 0 25px 60px rgba(15, 23, 42, 0.18);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   animation: modalPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -2402,7 +2402,7 @@ body {
   padding: 6px 14px;
   background-color: var(--surface-2);
   color: var(--text);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
@@ -2474,7 +2474,7 @@ body {
   align-items: flex-start;
   padding: 14px 18px;
   background-color: var(--surface-2);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   margin-top: 10px;
   gap: 16px;
@@ -2508,7 +2508,7 @@ body {
 }
 
 .sched-notify-card {
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 14px 18px;
   margin-top: 14px;
@@ -2594,7 +2594,7 @@ body {
 
 .btn-sched-cancel {
   background-color: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   color: var(--text-2);
   border-radius: var(--radius-sm);
   padding: 9px 24px;
@@ -2630,7 +2630,7 @@ body {
 /* Thẻ hoạt động trong Lịch trình dự kiến khi có dữ liệu */
 .sched-activity-item {
   background-color: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 14px 16px;
   transition: all 0.18s ease;
@@ -2769,7 +2769,7 @@ body {
   margin-top: 22px;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
 }
 
 .form-section-subtitle {
@@ -2836,7 +2836,7 @@ body {
   gap: 16px;
   padding: 13px 16px;
   background-color: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   transition: all 0.15s ease;
 }
@@ -2927,7 +2927,7 @@ body {
 .stage-add-form {
   padding: 14px 16px;
   background-color: var(--surface-2);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   margin-bottom: 12px;
 }
@@ -2942,7 +2942,7 @@ body {
 .btn-stage-cancel {
   padding: 6px 14px;
   background: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-xs);
   font-size: 12.5px;
   color: var(--text-2);
@@ -2968,7 +2968,7 @@ body {
 .btn-modal-cancel {
   padding: 8px 22px;
   background: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
@@ -3108,7 +3108,7 @@ body {
   gap: 9px;
   padding: 8px 16px;
   background-color: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 500;
@@ -3200,7 +3200,7 @@ body {
 
 .att-table td {
   padding: 14px 10px;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   text-align: center;
   font-size: 13px;
   vertical-align: middle;
@@ -3357,7 +3357,7 @@ body {
   gap: 12px;
   padding: 10px 14px;
   background-color: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 13.5px;
   font-weight: 600;
@@ -3452,7 +3452,7 @@ body {
   display: flex;
   gap: 20px;
   align-items: center;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   margin-bottom: 12px;
   padding-bottom: 0;
 }
@@ -3528,7 +3528,7 @@ body {
 .mentor-compact-select {
   width: 100%;
   height: 34px;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-xs);
   font-size: 12.5px;
   color: var(--text);
@@ -3565,7 +3565,7 @@ body {
   width: 100%;
   height: 34px;
   padding: 0 12px;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-xs);
   font-size: 12.5px;
   color: var(--text);
@@ -3592,9 +3592,9 @@ body {
 /* ==================== MENTOR COMPACT TABLE ==================== */
 .mentor-table-wrapper {
   background: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: none;
 }
 
@@ -3652,7 +3652,7 @@ body {
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
 }
 
 .mentor-compact-info {
@@ -3835,7 +3835,7 @@ body {
   align-items: center;
   gap: 8px;
   height: 34px;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-xs);
   padding: 0 12px;
   background-color: var(--surface);
@@ -3944,7 +3944,7 @@ body {
 .dept-metric-pill.metric-zero {
   background: var(--surface-2);
   color: var(--text-2);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
 }
 
 /* Icon & màu sắc thống kê */
@@ -4154,7 +4154,7 @@ body {
   width: 100%;
   height: 40px;
   padding: 0 14px 0 38px;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 13px;
   color: var(--text);
@@ -4180,7 +4180,7 @@ body {
   width: 100%;
   height: 40px;
   padding: 0 32px 0 14px;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 13px;
   color: var(--text);
@@ -4202,11 +4202,10 @@ body {
 .assign-table-container {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  overflow: hidden;
   background: var(--surface);
   max-height: 360px;
   min-height: 200px;
-  overflow-y: auto;
+  overflow: auto;
 }
 
 .assign-intern-table {
@@ -4234,7 +4233,7 @@ body {
 }
 
 .assign-intern-table tbody tr {
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   transition: background-color 0.15s ease;
 }
 
@@ -4307,7 +4306,7 @@ body {
 
 .btn-cancel-assign {
   background: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   color: var(--text-2);
   border-radius: var(--radius-sm);
   font-size: 13.5px;
@@ -4518,7 +4517,7 @@ body {
 /* Khung 1: Bộ lọc báo cáo */
 .report-filter-card {
   background: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 22px 24px;
   margin-bottom: 24px;
@@ -4566,7 +4565,7 @@ body {
   width: 100%;
   height: 42px;
   padding: 0 14px;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 14px;
   color: var(--text);
@@ -4590,7 +4589,7 @@ body {
 
 .btn-report-reset {
   padding: 8px 24px;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   border-radius: var(--radius-sm);
@@ -4632,7 +4631,7 @@ body {
 
 .report-stat-card {
   background: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 18px 22px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
@@ -4689,7 +4688,7 @@ body {
 
 .report-chart-card {
   background: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 22px 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
@@ -4714,7 +4713,7 @@ body {
   align-items: flex-end;
   justify-content: space-around;
   padding: 10px 10px 0 10px;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   margin-bottom: 14px;
   position: relative;
 }
@@ -4907,7 +4906,7 @@ body {
 
 .report-bottom-stat-card {
   background: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 20px 22px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
@@ -4947,7 +4946,7 @@ body {
 /* Khung 5: Danh sách kết quả chi tiết */
 .report-detail-card {
   background: var(--surface);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 22px 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
@@ -4974,7 +4973,7 @@ body {
 .report-table-responsive {
   overflow-x: auto;
   width: 100%;
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
 
@@ -5045,7 +5044,7 @@ body {
 .report-grade-badge.grade-pending {
   background: var(--surface-2);
   color: var(--text-2);
-  border$1: 1px solid var(--border);
+  border: 1px solid var(--border);
 }
 
 .empty-report-state {
