@@ -51,36 +51,6 @@ const authenticate = async (req, res, next) => {
       }
     }
 
-    // Fallback: nếu frontend truyền x-user-role hoặc x-user-id
-    const headerRole = req.headers['x-user-role'];
-    const headerUserId = req.headers['x-user-id'];
-    if (headerRole || headerUserId) {
-      let query = 'SELECT id, name, email, username, role, avatar, phone, status FROM users WHERE ';
-      let params = [];
-      if (headerUserId) {
-        query += 'id = ? LIMIT 1';
-        params.push(headerUserId);
-      } else {
-        query += 'role = ? LIMIT 1';
-        params.push(normalizeRole(headerRole));
-      }
-      const [users] = await db.query(query, params);
-      if (users.length > 0) {
-        const user = users[0];
-        if (user.status === 'locked') {
-          return res.status(403).json({
-            success: false,
-            code: 'ACCOUNT_LOCKED',
-            message: 'Tài khoản của bạn đã bị khóa!'
-          });
-        }
-        user.role = normalizeRole(user.role);
-        req.user = user;
-        return next();
-      }
-    }
-
-    // Nếu không có bất kỳ thông tin xác thực nào
     return res.status(401).json({
       success: false,
       code: 'UNAUTHORIZED',

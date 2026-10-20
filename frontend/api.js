@@ -15,7 +15,7 @@ function getAuthHeaders() {
     headers['Authorization'] = `Bearer ${token}`;
   }
   if (role) {
-    headers['x-user-role'] = role;
+    // headers['x-user-role'] removed (B01)
   }
   return headers;
 }
@@ -108,7 +108,7 @@ async function apiUploadDocument(internId, docType, file) {
   const role = localStorage.getItem('userRole');
   const headers = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  if (role) headers['x-user-role'] = role;
+  if (role) // headers['x-user-role'] removed (B01)
 
   const res = await fetch(`${API_BASE_URL}/interns/${internId}/documents`, {
     method: 'POST',
@@ -133,7 +133,7 @@ async function apiDeleteDocument(internId, docType) {
   const role = localStorage.getItem('userRole');
   const headers = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  if (role) headers['x-user-role'] = role;
+  if (role) // headers['x-user-role'] removed (B01)
 
   const res = await fetch(`${API_BASE_URL}/interns/${internId}/documents/${docType}`, {
     method: 'DELETE',
