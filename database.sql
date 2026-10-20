@@ -62,14 +62,15 @@ CREATE TABLE IF NOT EXISTS documents (
     id INT AUTO_INCREMENT PRIMARY KEY,
     intern_id INT NOT NULL,
     doc_name VARCHAR(255) NOT NULL,
-    doc_type ENUM('CV', 'APPLICATION_LETTER', 'TRANSCRIPT', 'OTHER') NOT NULL DEFAULT 'CV',
+    doc_type ENUM('CV', 'APPLICATION_LETTER', 'TRANSCRIPT', 'CONTRACT', 'OTHER') NOT NULL DEFAULT 'CV',
     file_url VARCHAR(255) NOT NULL,
     file_size VARCHAR(50) DEFAULT NULL,
     review_status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
     reject_reason VARCHAR(255) DEFAULT NULL,
     reject_note TEXT DEFAULT NULL,
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (intern_id) REFERENCES interns(id) ON DELETE CASCADE
+    FOREIGN KEY (intern_id) REFERENCES interns(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_intern_doctype (intern_id, doc_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 5. BẢNG PROGRAMS (QUẢN LÝ CHƯƠNG TRÌNH THỰC TẬP THEO PHÒNG BAN - SPRINT 2)
@@ -83,6 +84,7 @@ CREATE TABLE IF NOT EXISTS programs (
     max_interns INT DEFAULT 10,
     status ENUM('active', 'upcoming', 'completed') DEFAULT 'active',
     description TEXT DEFAULT NULL,
+    schedule JSON DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -117,6 +119,16 @@ CREATE TABLE IF NOT EXISTS attendance (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (intern_id) REFERENCES interns(id) ON DELETE CASCADE,
     UNIQUE KEY unique_intern_date (intern_id, date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- 8.1. BẢNG DEPARTMENTS (QUẢN LÝ PHÒNG BAN)
+CREATE TABLE IF NOT EXISTS departments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 8. BẢNG LEAVE_REQUESTS (ĐĂNG KÝ VÀ XÉT DUYỆT NGHỈ PHÉP - SPRINT 2)
@@ -212,7 +224,8 @@ CREATE TABLE IF NOT EXISTS weekly_reports (
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     reviewed_at TIMESTAMP NULL DEFAULT NULL,
     FOREIGN KEY (intern_id) REFERENCES interns(id) ON DELETE CASCADE,
-    FOREIGN KEY (mentor_id) REFERENCES mentors(id) ON DELETE SET NULL
+    FOREIGN KEY (mentor_id) REFERENCES mentors(id) ON DELETE SET NULL,
+    UNIQUE KEY uq_intern_week (intern_id, week_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 12. BẢNG EVALUATIONS (STT 19, 20 - Đánh giá kỹ năng & thái độ)
@@ -247,6 +260,20 @@ CREATE TABLE IF NOT EXISTS meetings (
     notes TEXT DEFAULT NULL,
     email_sent BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- 13.1. BẢNG SYSTEM_EMAILS (NHẬT KÝ VÀ LỊCH SỬ GỬI EMAIL TỰ ĐỘNG)
+CREATE TABLE IF NOT EXISTS system_emails (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    recipient_email VARCHAR(150) NOT NULL,
+    recipient_name VARCHAR(100) DEFAULT NULL,
+    subject VARCHAR(255) NOT NULL,
+    email_type ENUM('approved', 'rejected', 'contract', 'meeting', 'general') DEFAULT 'general',
+    content TEXT NOT NULL,
+    preview_url VARCHAR(255) DEFAULT NULL,
+    status ENUM('sent', 'failed') DEFAULT 'sent',
+    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 14. BẢNG INAPP_NOTIFICATIONS (STT 36 - Thông báo ứng dụng cho TTS)
@@ -298,9 +325,17 @@ CREATE TABLE IF NOT EXISTS intern_schedules (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Cấu hình tích hợp hệ thống mặc định (Core Integrations)
+
+INSERT INTO departments (code, name, description) VALUES
+('KTPM', 'Phòng Phát triển Phần mềm', 'Phụ trách phát triển và bảo trì các hệ thống phần mềm'),
+('NS', 'Phòng Nhân sự', 'Tuyển dụng, đào tạo và quản lý nhân sự, thực tập sinh'),
+('MKT', 'Phòng Marketing', 'Truyền thông thương hiệu và tiếp thị sản phẩm'),
+('DA', 'Phòng Đào tạo', 'Quản lý chất lượng đào tạo và chương trình học')
+ON DUPLICATE KEY UPDATE name=VALUES(name);
+
 INSERT INTO system_integrations (id, integration_type, name, endpoint_url, api_key, status, last_sync_at, sync_frequency, config_data) VALUES
-(1, 'hrm', 'Hệ thống Quản lý Nhân sự HRM Core', 'https://hrm.codegym.vn/api/v1/sync', 'hrm_live_key_99882233', 'connected', NOW(), 'Hàng ngày 00:00', '{"autoSync": true, "syncFields": ["employees", "interns", "contracts"]}'),
-(2, 'qr_card_attendance', 'Máy chấm công Quét mã QR & Thẻ từ Hikvision', 'https://access.codegym.vn/device/gate-01', 'att_device_sec_771144', 'connected', NOW(), 'Thời gian thực (Webhook)', '{"autoCheckIn": true, "toleranceMinutes": 15, "cameraActive": true}')
+(1, 'hrm', 'Hệ thống Quản lý Nhân sự HRM Core', 'https://hrm.codegym.vn/api/v1/sync', 'hrm_sample_key_9988', 'connected', NOW(), 'Hàng ngày 00:00', '{"autoSync": true, "syncFields": ["employees", "interns", "contracts"]}'),
+(2, 'qr_card_attendance', 'Máy chấm công Quét mã QR & Thẻ từ Hikvision', 'https://access.codegym.vn/device/gate-01', 'att_device_sample_key_7711', 'connected', NOW(), 'Thời gian thực (Webhook)', '{"autoCheckIn": true, "toleranceMinutes": 15, "cameraActive": true}')
 ON DUPLICATE KEY UPDATE name=VALUES(name);
 
 
