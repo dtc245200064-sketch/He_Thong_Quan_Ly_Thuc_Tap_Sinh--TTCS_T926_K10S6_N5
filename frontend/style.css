@@ -520,7 +520,7 @@ body {
 .modal-icon.success-icon {
   width: 56px;
   height: 56px;
-  border-radius: var(--radius-md);
+  border-radius: 50%;
   background: var(--success-soft) !important;
   color: var(--success) !important;
   display: flex;
@@ -535,7 +535,7 @@ body {
 .modal-icon.info-icon {
   width: 56px;
   height: 56px;
-  border-radius: var(--radius-md);
+  border-radius: 50%;
   background: var(--accent-soft) !important;
   color: var(--accent) !important;
   display: flex;

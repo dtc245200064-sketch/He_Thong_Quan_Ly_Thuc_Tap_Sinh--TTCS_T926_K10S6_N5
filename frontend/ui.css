@@ -320,6 +320,7 @@ h1, h2, h3, .page-title, .title, .slogan {
    ========================================================================== */
 .sidebar,
 aside.sidebar,
+.portal-sidebar,
 .mentor-sidebar,
 .admin-sidebar {
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.02)) !important;
@@ -332,6 +333,7 @@ aside.sidebar,
 
 [data-theme="light"] .sidebar,
 [data-theme="light"] aside.sidebar,
+[data-theme="light"] .portal-sidebar,
 [data-theme="light"] .mentor-sidebar,
 [data-theme="light"] .admin-sidebar {
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.70)) !important;
