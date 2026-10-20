@@ -1,6 +1,5 @@
 const db = require('../config/db');
 
-// Hàm giải quyết intern_id (nếu truyền user_id thì tự động tìm id của thực tập sinh trong bảng interns)
 async function resolveInternId(internIdOrUserId) {
   if (!internIdOrUserId) return null;
   const [internCheck] = await db.query('SELECT id FROM interns WHERE id = ?', [internIdOrUserId]);
@@ -24,11 +23,17 @@ exports.getLeaves = async (req, res) => {
     `;
     const params = [];
 
-    if (intern_id) {
+    // Bảo vệ quyền xem: TTS chỉ thấy đơn của mình (B04)
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      const myInternId = req.user.internId || (await resolveInternId(req.user.id));
+      sql += ' AND (l.intern_id = ? OR i.user_id = ?)';
+      params.push(myInternId, req.user.id);
+    } else if (intern_id) {
       const resolvedId = await resolveInternId(intern_id);
       sql += ' AND (l.intern_id = ? OR i.user_id = ?)';
       params.push(resolvedId, intern_id);
     }
+
     if (status) {
       sql += ' AND l.status = ?';
       params.push(status);
@@ -47,18 +52,53 @@ exports.getLeaves = async (req, res) => {
 exports.createLeave = async (req, res) => {
   try {
     const { intern_id, leave_type, start_date, end_date, reason } = req.body;
-    if (!intern_id || !start_date || !end_date || !reason) {
-      return res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ thông tin xin nghỉ phép' });
+
+    let targetInternId = null;
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      targetInternId = req.user.internId || (await resolveInternId(req.user.id));
+    } else {
+      if (!intern_id) {
+        return res.status(400).json({ success: false, message: 'Vui lòng cung cấp intern_id' });
+      }
+      targetInternId = await resolveInternId(intern_id);
     }
 
-    const resolvedId = await resolveInternId(intern_id);
-    const diffTime = Math.abs(new Date(end_date) - new Date(start_date));
-    const days_count = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    if (!targetInternId || !start_date || !end_date || !reason || !reason.trim()) {
+      return res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ thông tin xin nghỉ phép (ngày bắt đầu, kết thúc và lý do)' });
+    }
+
+    const start = new Date(start_date);
+    const end = new Date(end_date);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({ success: false, message: 'Định dạng ngày tháng không hợp lệ (YYYY-MM-DD)' });
+    }
+
+    // Chặn end_date < start_date (B14)
+    if (end < start) {
+      return res.status(400).json({ success: false, message: 'Ngày kết thúc nghỉ phép không được nhỏ hơn ngày bắt đầu!' });
+    }
+
+    const diffDays = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    // Kiểm tra trùng hoặc chồng lấn khoảng thời gian nghỉ phép (B14)
+    const [overlap] = await db.query(`
+      SELECT id FROM leave_requests 
+      WHERE intern_id = ? 
+        AND status != 'rejected'
+        AND NOT (end_date < ? OR start_date > ?)
+    `, [targetInternId, start_date, end_date]);
+
+    if (overlap.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bạn đã có đơn nghỉ phép trùng hoặc chồng lấn với khoảng thời gian đã chọn!'
+      });
+    }
 
     const [result] = await db.query(`
       INSERT INTO leave_requests (intern_id, leave_type, start_date, end_date, days_count, reason, status)
       VALUES (?, ?, ?, ?, ?, ?, 'pending')
-    `, [resolvedId, leave_type || 'Việc cá nhân', start_date, end_date, days_count, reason]);
+    `, [targetInternId, leave_type || 'Việc cá nhân', start_date, end_date, diffDays, reason.trim()]);
 
     const [created] = await db.query('SELECT * FROM leave_requests WHERE id = ?', [result.insertId]);
     res.status(201).json({ success: true, message: 'Gửi đơn nghỉ phép thành công', data: created[0] });
@@ -75,7 +115,7 @@ exports.reviewLeave = async (req, res) => {
     const { status, review_note } = req.body; // status: 'approved' | 'rejected'
 
     if (!['approved', 'rejected'].includes(status)) {
-      return res.status(400).json({ success: false, message: 'Trạng thái không hợp lệ' });
+      return res.status(400).json({ success: false, message: 'Trạng thái xét duyệt không hợp lệ (chỉ chấp nhận approved hoặc rejected)' });
     }
 
     const [existing] = await db.query('SELECT * FROM leave_requests WHERE id = ?', [id]);
@@ -84,35 +124,56 @@ exports.reviewLeave = async (req, res) => {
     }
 
     const leave = existing[0];
+    const previousStatus = leave.status;
+
     await db.query(`
       UPDATE leave_requests
       SET status = ?, review_note = ?, reviewed_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `, [status, review_note || null, id]);
 
-    // Nếu duyệt đơn -> Tự động đánh dấu ngày nghỉ (P) vào bảng attendance
+    // Tạo danh sách các ngày trong khoảng nghỉ
+    const startObj = new Date(leave.start_date);
+    const endObj = new Date(leave.end_date);
+    const dateList = [];
+    let cur = new Date(startObj);
+    while (cur <= endObj) {
+      dateList.push(cur.toISOString().slice(0, 10));
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    // Nếu duyệt đơn -> Đánh dấu ngày nghỉ (P) vào attendance, nhưng KHÔNG đè lên ngày đã đi làm 'present' (B14)
     if (status === 'approved') {
-      let curr = new Date(leave.start_date);
-      const end = new Date(leave.end_date);
-      while (curr <= end) {
-        const y = curr.getFullYear();
-        const m = String(curr.getMonth() + 1).padStart(2, '0');
-        const d = String(curr.getDate()).padStart(2, '0');
-        const dateKey = `${y}-${m}-${d}`;
-
+      for (const dStr of dateList) {
+        const [attRow] = await db.query('SELECT status FROM attendance WHERE intern_id = ? AND date = ?', [leave.intern_id, dStr]);
+        if (attRow.length === 0) {
+          await db.query(`
+            INSERT INTO attendance (intern_id, date, status, notes)
+            VALUES (?, ?, 'leave', 'Nghỉ phép có phép')
+          `, [leave.intern_id, dStr]);
+        } else if (attRow[0].status !== 'present' && attRow[0].status !== 'late') {
+          await db.query(`
+            UPDATE attendance SET status = 'leave', notes = 'Nghỉ phép có phép'
+            WHERE intern_id = ? AND date = ?
+          `, [leave.intern_id, dStr]);
+        }
+      }
+    } else if (status === 'rejected' && previousStatus === 'approved') {
+      // Nếu đổi từ duyệt sang từ chối -> Gỡ bỏ các dòng attendance 'leave' đã tự động sinh (B14)
+      for (const dStr of dateList) {
         await db.query(`
-          INSERT INTO attendance (intern_id, date, status, notes)
-          VALUES (?, ?, 'leave', 'Nghỉ phép theo đơn duyệt')
-          ON DUPLICATE KEY UPDATE status = 'leave', notes = 'Nghỉ phép theo đơn duyệt'
-        `, [leave.intern_id, dateKey]);
-
-        curr.setDate(curr.getDate() + 1);
+          DELETE FROM attendance 
+          WHERE intern_id = ? AND date = ? AND status = 'leave'
+        `, [leave.intern_id, dStr]);
       }
     }
 
-    res.json({ success: true, message: `Đã ${status === 'approved' ? 'duyệt' : 'từ chối'} đơn nghỉ phép thành công` });
+    res.json({
+      success: true,
+      message: status === 'approved' ? 'Đã duyệt đơn nghỉ phép' : 'Đã từ chối đơn nghỉ phép'
+    });
   } catch (error) {
-    console.error('Lỗi xét duyệt đơn nghỉ phép:', error);
+    console.error('Lỗi xét duyệt nghỉ phép:', error);
     res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
   }
 };

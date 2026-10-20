@@ -1,36 +1,20 @@
 const db = require('../config/db');
 
-// Hàm giải quyết intern_id linh hoạt (hỗ trợ intern_id, user_id, email, username)
 async function resolveInternId(internIdOrUserId) {
   if (!internIdOrUserId) return null;
-  
-  // 1. Kiểm tra trực tiếp bảng interns theo id
   const [internCheck] = await db.query('SELECT id FROM interns WHERE id = ?', [internIdOrUserId]);
   if (internCheck.length > 0) return internCheck[0].id;
 
-  // 2. Kiểm tra theo user_id
   const [userCheck] = await db.query('SELECT id FROM interns WHERE user_id = ?', [internIdOrUserId]);
   if (userCheck.length > 0) return userCheck[0].id;
-
-  // 3. Kiểm tra nếu là email hoặc username từ bảng users
-  const [userEmailCheck] = await db.query('SELECT id, email FROM users WHERE id = ? OR email = ? OR username = ?', [internIdOrUserId, internIdOrUserId, internIdOrUserId]);
-  if (userEmailCheck.length > 0) {
-    const u = userEmailCheck[0];
-    const [internByUser] = await db.query('SELECT id FROM interns WHERE user_id = ? OR email = ?', [u.id, u.email]);
-    if (internByUser.length > 0) return internByUser[0].id;
-  }
-
-  // 4. Kiểm tra theo email trong bảng interns
-  const [internEmailCheck] = await db.query('SELECT id FROM interns WHERE email = ?', [internIdOrUserId]);
-  if (internEmailCheck.length > 0) return internEmailCheck[0].id;
 
   return internIdOrUserId;
 }
 
-// GET /api/contracts (Lấy danh sách hợp đồng, hỗ trợ intern_id, user_id, email)
+// GET /api/contracts
 exports.getContracts = async (req, res) => {
   try {
-    const { intern_id, user_id, email, status } = req.query;
+    const { intern_id, status } = req.query;
     let sql = `
       SELECT c.*, 
              DATE_FORMAT(c.confirmed_at, '%d/%m/%Y %H:%i') as confirmed_at_formatted,
@@ -42,18 +26,17 @@ exports.getContracts = async (req, res) => {
     `;
     const params = [];
 
-    if (intern_id || user_id || email) {
-      const targetId = intern_id || user_id;
-      const resolvedId = await resolveInternId(targetId);
-      sql += ` AND (
-        c.intern_id = ? 
-        OR i.id = ? 
-        OR i.user_id = ? 
-        OR (? IS NOT NULL AND i.email = ?)
-        OR (? IS NOT NULL AND i.user_id IN (SELECT id FROM users WHERE email = ? OR username = ?))
-      )`;
-      params.push(resolvedId, targetId || 0, targetId || 0, email || null, email || '', email || null, email || '', email || '');
+    // Bảo vệ quyền xem: TTS chỉ thấy hợp đồng của chính mình (B04)
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      const myInternId = req.user.internId || (await resolveInternId(req.user.id));
+      sql += ' AND (c.intern_id = ? OR i.user_id = ?)';
+      params.push(myInternId, req.user.id);
+    } else if (intern_id) {
+      const resolvedId = await resolveInternId(intern_id);
+      sql += ' AND (c.intern_id = ? OR i.user_id = ?)';
+      params.push(resolvedId, intern_id);
     }
+
     if (status) {
       sql += ' AND c.status = ?';
       params.push(status);
@@ -85,7 +68,16 @@ exports.createContract = async (req, res) => {
     }
 
     if (!intern_id || !code || !title) {
-      return res.status(400).json({ success: false, message: 'Thiếu thông tin hợp đồng bắt buộc' });
+      return res.status(400).json({ success: false, message: 'Thiếu thông tin hợp đồng bắt buộc (intern_id, code, title)' });
+    }
+
+    // Chặn ghi đè âm thầm mã hợp đồng (B09)
+    const [existingCode] = await db.query('SELECT id, status FROM contracts WHERE code = ?', [code.trim()]);
+    if (existingCode.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Mã hợp đồng "${code}" đã tồn tại trong hệ thống! Vui lòng sử dụng mã hợp đồng duy nhất.`
+      });
     }
 
     const resolvedId = await resolveInternId(intern_id);
@@ -93,19 +85,9 @@ exports.createContract = async (req, res) => {
     const [result] = await db.query(`
       INSERT INTO contracts (intern_id, code, title, company, dept, period, file_name, file_url, status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
-      ON DUPLICATE KEY UPDATE 
-        title = VALUES(title), 
-        company = VALUES(company), 
-        dept = VALUES(dept), 
-        period = VALUES(period), 
-        file_name = IFNULL(VALUES(file_name), file_name), 
-        file_url = IFNULL(VALUES(file_url), file_url), 
-        status = 'pending', 
-        reject_reason = NULL, 
-        confirmed_at = NULL
-    `, [resolvedId, code, title, company || 'Hệ thống Đào tạo CodeGym Việt Nam', dept || 'Phòng Phát triển Phần mềm', period || null, file_name || null, file_url || null]);
+    `, [resolvedId, code.trim(), title.trim(), company || 'Hệ thống Đào tạo CodeGym Việt Nam', dept || 'Phòng Phát triển Phần mềm', period || null, file_name || null, file_url || null]);
 
-    // Đồng bộ vào bảng documents để document_count và trình xem tài liệu được tính đầy đủ
+    // Đồng bộ vào bảng documents
     if (file_url) {
       await db.query(`
         INSERT INTO documents (intern_id, doc_name, doc_type, file_url, file_size, review_status)
@@ -117,7 +99,7 @@ exports.createContract = async (req, res) => {
       `, [resolvedId, file_name || 'Hop_Dong_Thuc_Tap.pdf', file_url]);
     }
 
-    const [created] = await db.query('SELECT * FROM contracts WHERE code = ?', [code]);
+    const [created] = await db.query('SELECT * FROM contracts WHERE id = ?', [result.insertId]);
     res.status(201).json({ success: true, message: 'Tạo hợp đồng thành công và đã gửi cho thực tập sinh', data: created[0] });
   } catch (error) {
     console.error('Lỗi tạo hợp đồng:', error);
@@ -125,7 +107,7 @@ exports.createContract = async (req, res) => {
   }
 };
 
-// PATCH /api/contracts/:id/confirm (TTS xác nhận hoặc từ chối ký kết)
+// PATCH /api/contracts/:id/confirm (TTS xác nhận ký hoặc từ chối hợp đồng)
 exports.confirmContract = async (req, res) => {
   try {
     const { id } = req.params;
@@ -135,20 +117,38 @@ exports.confirmContract = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Trạng thái không hợp lệ' });
     }
 
+    const [contractRows] = await db.query('SELECT * FROM contracts WHERE id = ? OR code = ? LIMIT 1', [id, id]);
+    if (contractRows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy hợp đồng' });
+    }
+
+    const contract = contractRows[0];
+
+    // Kiểm tra quyền sở hữu IDOR: TTS chỉ được ký hợp đồng của chính mình (B04)
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      const myInternId = req.user.internId || (await resolveInternId(req.user.id));
+      if (contract.intern_id !== myInternId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xác nhận hợp đồng của thực tập sinh khác!'
+        });
+      }
+    }
+
     const rejectReasonText = (status === 'rejected') ? (reason || 'Từ chối không nêu lý do') : null;
 
     await db.query(`
       UPDATE contracts
       SET status = ?, confirmed_at = CURRENT_TIMESTAMP, reject_reason = ?
-      WHERE id = ? OR code = ?
-    `, [status, rejectReasonText, id, id]);
+      WHERE id = ?
+    `, [status, rejectReasonText, contract.id]);
 
     // Đồng bộ trạng thái sang documents table
     await db.query(`
       UPDATE documents
       SET review_status = ?, reject_reason = ?
-      WHERE intern_id = (SELECT intern_id FROM contracts WHERE id = ? OR code = ? LIMIT 1) AND doc_type = 'CONTRACT'
-    `, [status, rejectReasonText, id, id]);
+      WHERE intern_id = ? AND doc_type = 'CONTRACT'
+    `, [status, rejectReasonText, contract.intern_id]);
 
     res.json({
       success: true,
@@ -160,17 +160,18 @@ exports.confirmContract = async (req, res) => {
   }
 };
 
-// DELETE /api/contracts/:id (Xóa hợp đồng)
+// DELETE /api/contracts/:id (Xóa hợp đồng - B09 chỉ xóa theo ID hợp đồng)
 exports.deleteContract = async (req, res) => {
   try {
     const { id } = req.params;
-    const resolvedId = await resolveInternId(id);
-    await db.query('DELETE FROM contracts WHERE id = ? OR intern_id = ? OR code = ?', [id, resolvedId, id]);
+    // B09: Chỉ xóa đúng hợp đồng theo ID, KHÔNG dùng OR intern_id
+    const [result] = await db.query('DELETE FROM contracts WHERE id = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy hợp đồng để xóa' });
+    }
     res.json({ success: true, message: 'Đã xóa hợp đồng thành công' });
   } catch (error) {
     console.error('Lỗi xóa hợp đồng:', error);
     res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
   }
 };
-
-

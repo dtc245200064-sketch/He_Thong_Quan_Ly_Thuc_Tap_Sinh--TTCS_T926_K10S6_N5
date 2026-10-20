@@ -1,9 +1,26 @@
+const path = require('path');
+const fs = require('fs');
 const db = require('../config/db');
 const emailService = require('../services/email.service');
 
 // ==============================================================================
 // INTERN CONTROLLER (QUẢN LÝ THỰC TẬP SINH & HỒ SƠ TÀI LIỆU VỚI MYSQL)
 // ==============================================================================
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function parseDateString(dateVal) {
+  if (!dateVal) return null;
+  if (typeof dateVal === 'string' && dateVal.includes('/')) {
+    const [d, m, y] = dateVal.split('/');
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  } else if (typeof dateVal === 'string' && dateVal.match(/^\d{4}-\d{2}-\d{2}/)) {
+    return dateVal.substring(0, 10);
+  } else {
+    const dObj = new Date(dateVal);
+    return !isNaN(dObj.getTime()) ? dObj.toISOString().split('T')[0] : null;
+  }
+}
 
 // 1. GET /api/interns (Lấy danh sách thực tập sinh & ứng viên, có tìm kiếm & lọc)
 exports.getInterns = async (req, res) => {
@@ -91,12 +108,12 @@ exports.getInterns = async (req, res) => {
   }
 };
 
-// 2. POST /api/interns (Thêm mới một thực tập sinh)
+// 2. POST /api/interns (Thêm mới một thực tập sinh - B20)
 exports.createIntern = async (req, res) => {
   try {
     const {
       name, email, phone, school, major, dept, mentor,
-      position, startDate, endDate, status, gpa, skills, bio, projects,
+      position, startDate, start_date, endDate, end_date, status, gpa, skills, bio, projects,
       birthDate, birth_date, course, faculty
     } = req.body;
 
@@ -107,33 +124,40 @@ exports.createIntern = async (req, res) => {
       });
     }
 
-    const internStatus = status || 'Chờ xét duyệt';
-    let sDate = null;
-    let eDate = null;
-    if (startDate) {
-      if (typeof startDate === 'string' && startDate.includes('/')) {
-        const [d, m, y] = startDate.split('/');
-        sDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-      } else if (typeof startDate === 'string' && startDate.match(/^\d{4}-\d{2}-\d{2}/)) {
-        sDate = startDate.substring(0, 10);
-      } else {
-        const dObj = new Date(startDate);
-        sDate = !isNaN(dObj.getTime()) ? dObj.toISOString().split('T')[0] : null;
-      }
+    // B20: Kiểm tra định dạng email hợp lệ
+    if (email && email.trim() && !EMAIL_REGEX.test(email.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Định dạng email không hợp lệ!'
+      });
     }
-    if (endDate) {
-      if (typeof endDate === 'string' && endDate.includes('/')) {
-        const [d, m, y] = endDate.split('/');
-        eDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-      } else if (typeof endDate === 'string' && endDate.match(/^\d{4}-\d{2}-\d{2}/)) {
-        eDate = endDate.substring(0, 10);
-      } else {
-        const dObj = new Date(endDate);
-        eDate = !isNaN(dObj.getTime()) ? dObj.toISOString().split('T')[0] : null;
+
+    // B20: Kiểm tra thang điểm GPA (0.0 - 4.0)
+    if (gpa !== undefined && gpa !== null && String(gpa).trim() !== '') {
+      const gpaNum = parseFloat(gpa);
+      if (isNaN(gpaNum) || gpaNum < 0 || gpaNum > 4) {
+        return res.status(400).json({
+          success: false,
+          message: 'Điểm GPA không hợp lệ! GPA phải là số trong khoảng từ 0.0 đến 4.0.'
+        });
       }
     }
 
-    const finalBirthDate = birthDate || birth_date || null;
+    const sDate = parseDateString(startDate || start_date);
+    const eDate = parseDateString(endDate || end_date);
+
+    // B20: Kiểm tra ngày kết thúc >= ngày bắt đầu
+    if (sDate && eDate) {
+      if (new Date(eDate).getTime() < new Date(sDate).getTime()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu!'
+        });
+      }
+    }
+
+    const internStatus = status || 'Chờ xét duyệt';
+    const finalBirthDate = parseDateString(birthDate || birth_date);
 
     // Tự động liên kết tài khoản users nếu đã có tài khoản với email tương ứng
     let linkedUserId = null;
@@ -141,6 +165,42 @@ exports.createIntern = async (req, res) => {
       const [existingUsers] = await db.query('SELECT id FROM users WHERE email = ? LIMIT 1', [email.trim()]);
       if (existingUsers.length > 0) {
         linkedUserId = existingUsers[0].id;
+      }
+    }
+
+    // Kiểm tra xem đã có hồ sơ cho email hoặc linkedUserId này chưa (tránh trùng lặp hồ sơ TTS)
+    if ((email && email.trim()) || linkedUserId) {
+      const [existingInterns] = await db.query(
+        'SELECT id FROM interns WHERE (email = ? AND email != "") OR (user_id IS NOT NULL AND user_id = ?) LIMIT 1',
+        [email ? email.trim() : '', linkedUserId]
+      );
+      if (existingInterns.length > 0) {
+        const existingId = existingInterns[0].id;
+        await db.query(`
+          UPDATE interns SET
+            user_id = COALESCE(?, user_id),
+            name = ?, email = ?, phone = ?, school = ?, major = ?, dept = ?, mentor = ?, position = ?,
+            start_date = ?, end_date = ?, status = ?, gpa = ?, skills = ?, bio = ?, projects = ?,
+            birth_date = ?, course = ?, faculty = ?
+          WHERE id = ?
+        `, [
+          linkedUserId, name, email || '', phone || '', school, major, dept,
+          mentor || 'Chưa phân công', position || 'Thực tập sinh',
+          sDate, eDate, internStatus, gpa || '', skills || '', bio || '', projects || '',
+          finalBirthDate, course || null, faculty || null, existingId
+        ]);
+
+        return res.status(201).json({
+          success: true,
+          message: 'Cập nhật hồ sơ thực tập sinh thành công!',
+          data: {
+            id: existingId,
+            name, email, phone, school, major, dept,
+            mentor: mentor || 'Chưa phân công',
+            position: position || 'Thực tập sinh',
+            status: internStatus
+          }
+        });
       }
     }
 
@@ -200,53 +260,65 @@ exports.createIntern = async (req, res) => {
   }
 };
 
-// 3. PUT /api/interns/:id (Chỉnh sửa thông tin thực tập sinh)
+// 3. PUT /api/interns/:id (Chỉnh sửa thông tin thực tập sinh - B20)
 exports.updateIntern = async (req, res) => {
   try {
     const { id } = req.params;
     const {
       name, email, phone, school, major, dept, mentor,
-      position, startDate, endDate, status, gpa, skills, bio, projects,
+      position, startDate, start_date, endDate, end_date, status, gpa, skills, bio, projects,
       birthDate, birth_date, course, faculty
     } = req.body;
 
     // Kiểm tra xem thực tập sinh có tồn tại không (hỗ trợ cả id và user_id)
-    const [existing] = await db.query('SELECT id, user_id FROM interns WHERE id = ? OR user_id = ? LIMIT 1', [id, id]);
+    const [existing] = await db.query('SELECT * FROM interns WHERE id = ? OR user_id = ? LIMIT 1', [id, id]);
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
         message: `Không tìm thấy thực tập sinh với ID = ${id}`
       });
     }
-    const targetId = existing[0].id;
-    const targetUserId = existing[0].user_id;
+    const current = existing[0];
+    const targetId = current.id;
+    const targetUserId = current.user_id;
 
-    let sDate = null;
-    let eDate = null;
-    if (startDate) {
-      if (typeof startDate === 'string' && startDate.includes('/')) {
-        const [d, m, y] = startDate.split('/');
-        sDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-      } else if (typeof startDate === 'string' && startDate.match(/^\d{4}-\d{2}-\d{2}/)) {
-        sDate = startDate.substring(0, 10);
-      } else {
-        const dObj = new Date(startDate);
-        sDate = !isNaN(dObj.getTime()) ? dObj.toISOString().split('T')[0] : null;
-      }
-    }
-    if (endDate) {
-      if (typeof endDate === 'string' && endDate.includes('/')) {
-        const [d, m, y] = endDate.split('/');
-        eDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-      } else if (typeof endDate === 'string' && endDate.match(/^\d{4}-\d{2}-\d{2}/)) {
-        eDate = endDate.substring(0, 10);
-      } else {
-        const dObj = new Date(endDate);
-        eDate = !isNaN(dObj.getTime()) ? dObj.toISOString().split('T')[0] : null;
+    // B20: Kiểm tra email nếu có
+    if (email !== undefined && email !== null && email.trim() !== '') {
+      if (!EMAIL_REGEX.test(email.trim())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Định dạng email không hợp lệ!'
+        });
       }
     }
 
-    const finalBirthDate = birthDate !== undefined ? birthDate : (birth_date !== undefined ? birth_date : null);
+    // B20: Kiểm tra GPA nếu có
+    if (gpa !== undefined && gpa !== null && String(gpa).trim() !== '') {
+      const gpaNum = parseFloat(gpa);
+      if (isNaN(gpaNum) || gpaNum < 0 || gpaNum > 4) {
+        return res.status(400).json({
+          success: false,
+          message: 'Điểm GPA không hợp lệ! GPA phải là số trong khoảng từ 0.0 đến 4.0.'
+        });
+      }
+    }
+
+    const sDate = (startDate !== undefined || start_date !== undefined) ? parseDateString(startDate || start_date) : undefined;
+    const eDate = (endDate !== undefined || end_date !== undefined) ? parseDateString(endDate || end_date) : undefined;
+
+    // B20: Kiểm tra ngày kết thúc >= ngày bắt đầu
+    const effectiveSDate = sDate !== undefined ? sDate : (current.start_date ? current.start_date.toISOString().split('T')[0] : null);
+    const effectiveEDate = eDate !== undefined ? eDate : (current.end_date ? current.end_date.toISOString().split('T')[0] : null);
+    if (effectiveSDate && effectiveEDate) {
+      if (new Date(effectiveEDate).getTime() < new Date(effectiveSDate).getTime()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu!'
+        });
+      }
+    }
+
+    const finalBirthDate = (birthDate !== undefined || birth_date !== undefined) ? parseDateString(birthDate || birth_date) : undefined;
 
     await db.query(
       `UPDATE interns SET 
@@ -258,14 +330,14 @@ exports.updateIntern = async (req, res) => {
         dept = COALESCE(?, dept),
         mentor = COALESCE(?, mentor),
         position = COALESCE(?, position),
-        start_date = CASE WHEN ? IS NOT NULL THEN ? ELSE start_date END,
-        end_date = CASE WHEN ? IS NOT NULL THEN ? ELSE end_date END,
+        start_date = CASE WHEN ? = 1 THEN ? ELSE start_date END,
+        end_date = CASE WHEN ? = 1 THEN ? ELSE end_date END,
         status = COALESCE(?, status),
         gpa = COALESCE(?, gpa),
         skills = COALESCE(?, skills),
         bio = COALESCE(?, bio),
         projects = COALESCE(?, projects),
-        birth_date = COALESCE(?, birth_date),
+        birth_date = CASE WHEN ? = 1 THEN ? ELSE birth_date END,
         course = COALESCE(?, course),
         faculty = COALESCE(?, faculty)
        WHERE id = ?`,
@@ -278,13 +350,14 @@ exports.updateIntern = async (req, res) => {
         dept !== undefined ? dept : null,
         mentor !== undefined ? mentor : null,
         position !== undefined ? position : null,
-        sDate, sDate, eDate, eDate,
+        sDate !== undefined ? 1 : 0, sDate !== undefined ? sDate : null,
+        eDate !== undefined ? 1 : 0, eDate !== undefined ? eDate : null,
         status !== undefined ? status : null,
         gpa !== undefined ? gpa : null,
         skills !== undefined ? skills : null,
         bio !== undefined ? bio : null,
         projects !== undefined ? projects : null,
-        finalBirthDate,
+        finalBirthDate !== undefined ? 1 : 0, finalBirthDate !== undefined ? finalBirthDate : null,
         course !== undefined ? course : null,
         faculty !== undefined ? faculty : null,
         targetId
@@ -364,7 +437,7 @@ exports.getInternDocuments = async (req, res) => {
         name: c.name || 'Hop_Dong_Thuc_Tap.pdf',
         type: 'CONTRACT',
         fileUrl: c.fileUrl,
-        size: c.size || 'Tài liệu hợp đồng',
+        size: 'Tài liệu hợp đồng',
         reviewStatus: c.reviewStatus,
         rejectReason: c.rejectReason,
         uploadedAt: c.uploadedAt,
@@ -414,11 +487,38 @@ exports.getInternDocuments = async (req, res) => {
   }
 };
 
-// 5. PATCH /api/interns/:id/documents/status (Duyệt hoặc từ chối hồ sơ tài liệu)
+// 5. PATCH /api/interns/:id/documents/status (Duyệt hoặc từ chối hồ sơ tài liệu - B12)
 exports.updateDocumentStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, note, rejectReason } = req.body; // status: "approved" | "rejected"
+
+    // B12: Kiểm tra tính hợp lệ của status
+    if (!status || (status !== 'approved' && status !== 'rejected')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Trạng thái không hợp lệ! Chỉ chấp nhận "approved" hoặc "rejected".'
+      });
+    }
+
+    const reason = (rejectReason || note || '').trim();
+    // B12: Bắt buộc cung cấp lý do khi từ chối hồ sơ
+    if (status === 'rejected' && !reason) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp lý do từ chối hồ sơ!'
+      });
+    }
+
+    const [internRows] = await db.query('SELECT * FROM interns WHERE id = ? OR user_id = ? LIMIT 1', [id, id]);
+    if (internRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Không tìm thấy thực tập sinh với ID = ${id}`
+      });
+    }
+    const intern = internRows[0];
+    const actualInternId = intern.id;
 
     // Cập nhật trạng thái tài liệu
     await db.query(
@@ -427,56 +527,57 @@ exports.updateDocumentStatus = async (req, res) => {
         reject_reason = ?,
         reject_note = ?
        WHERE intern_id = ?`,
-      [status || 'pending', rejectReason || null, note || null, id]
+      [status, status === 'rejected' ? reason : null, note || null, actualInternId]
     );
 
     // Cập nhật trạng thái tổng thể của thực tập sinh tương ứng
-    const newInternStatus = status === 'approved' ? 'Đang thực tập' : (status === 'rejected' ? 'Đã từ chối' : 'Chờ xét duyệt');
+    const newInternStatus = status === 'approved' ? 'Đang thực tập' : 'Đã từ chối';
     await db.query(
       `UPDATE interns SET 
         status = ?,
         reject_reason = ?,
         reject_note = ?
        WHERE id = ?`,
-      [newInternStatus, rejectReason || null, note || null, id]
+      [newInternStatus, status === 'rejected' ? reason : null, note || null, actualInternId]
     );
 
-    // Gửi email thông báo kết quả xét duyệt đến ứng viên (User Story 8)
-    let candidateEmail = '';
-    let candidateName = '';
+    // B12: Gửi email thông báo kết quả xét duyệt đến ứng viên
     let emailResult = null;
-    try {
-      const [candRows] = await db.query('SELECT name, email FROM interns WHERE id = ?', [id]);
-      if (candRows.length > 0) {
-        candidateEmail = candRows[0].email;
-        candidateName = candRows[0].name;
+    let emailSent = false;
+    const candidateEmail = intern.email;
+    const candidateName = intern.name;
+
+    if (candidateEmail && candidateEmail.trim()) {
+      try {
         emailResult = await emailService.sendReviewResultEmail({
           to: candidateEmail,
           candidateName: candidateName,
           status: status,
-          reason: rejectReason || '',
+          reason: reason,
           note: note || ''
         });
-        console.log(`📧 [SYSTEM EMAIL] Đã gửi email thông báo kết quả xét duyệt (${newInternStatus}) đến ứng viên: ${candidateName} <${candidateEmail}>`);
+        emailSent = emailResult ? !!emailResult.success : false;
+        console.log(`📧 [SYSTEM EMAIL] Đã gửi email kết quả (${newInternStatus}) đến: ${candidateName} <${candidateEmail}> - Kết quả: ${emailSent}`);
+      } catch (e) {
+        console.warn('⚠️ Lỗi gửi email thông báo kết quả xét duyệt:', e.message);
+        emailSent = false;
       }
-    } catch (e) {
-      console.warn('⚠️ Lỗi gửi email thông báo kết quả xét duyệt:', e.message);
     }
 
     return res.status(200).json({
       success: true,
       message: status === 'approved' 
-        ? `Duyệt hồ sơ thành công! Hệ thống đã gửi email thông báo kết quả đến ${candidateEmail || 'ứng viên'}.` 
-        : `Đã từ chối hồ sơ! Hệ thống đã gửi email thông báo kết quả đến ${candidateEmail || 'ứng viên'}.`,
-      emailSent: true,
-      emailRecipient: candidateEmail,
+        ? `Duyệt hồ sơ thành công! ${emailSent ? `Đã gửi email thông báo kết quả đến ${candidateEmail}.` : ''}` 
+        : `Đã từ chối hồ sơ! ${emailSent ? `Đã gửi email thông báo kết quả đến ${candidateEmail}.` : ''}`,
+      emailSent: emailSent,
+      emailRecipient: candidateEmail || '',
       previewUrl: emailResult ? emailResult.previewUrl : null,
       data: {
-        internId: Number(id),
+        internId: Number(actualInternId),
         reviewStatus: status,
         status: newInternStatus,
         emailNotification: {
-          sent: true,
+          sent: emailSent,
           to: candidateEmail,
           candidate: candidateName,
           result: newInternStatus,
@@ -497,7 +598,7 @@ exports.updateDocumentStatus = async (req, res) => {
   }
 };
 
-// 6. POST /api/interns/:id/documents (Tải lên file tài liệu CV, đơn xin thực tập)
+// 6. POST /api/interns/:id/documents (Tải lên file tài liệu CV, đơn xin thực tập - B13)
 exports.uploadDocument = async (req, res) => {
   try {
     const internId = req.params.id || req.body.internId;
@@ -511,11 +612,27 @@ exports.uploadDocument = async (req, res) => {
     }
 
     if (!internId) {
+      if (req.file.path && fs.existsSync(req.file.path)) {
+        try { fs.unlinkSync(req.file.path); } catch (e) {}
+      }
       return res.status(400).json({
         success: false,
         message: 'Thiếu thông tin internId!'
       });
     }
+
+    // B13: Tìm ID chính xác trong bảng interns. Nếu không tìm thấy, XÓA file tải lên và trả về 404 (Không tạo intern giả)
+    const [internRows] = await db.query('SELECT id FROM interns WHERE id = ? OR user_id = ? LIMIT 1', [internId, internId]);
+    if (internRows.length === 0) {
+      if (req.file.path && fs.existsSync(req.file.path)) {
+        try { fs.unlinkSync(req.file.path); } catch (e) {}
+      }
+      return res.status(404).json({
+        success: false,
+        message: `Không tìm thấy thực tập sinh với ID = ${internId}!`
+      });
+    }
+    const targetInternId = internRows[0].id;
 
     // Định dạng dung lượng hiển thị
     const bytes = req.file.size;
@@ -529,33 +646,26 @@ exports.uploadDocument = async (req, res) => {
     const fileUrl = `/uploads/${req.file.filename}`;
     let originalName = req.file.originalname;
     try {
-      // Sửa lỗi mã hóa ký tự tiếng Việt (UTF-8 bị parse thành latin1 từ multipart-form)
       originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
     } catch (e) {}
 
     const type = docType || (originalName.toLowerCase().includes('cv') ? 'CV' : 'APPLICATION_LETTER');
 
-    // Tìm ID chính xác trong bảng interns (hỗ trợ cả intern_id và user_id)
-    let [internRows] = await db.query('SELECT id FROM interns WHERE id = ? OR user_id = ? LIMIT 1', [internId, internId]);
-    let targetInternId = internRows.length > 0 ? internRows[0].id : null;
-
-    if (!targetInternId) {
-      // Nếu chưa có, tìm thông tin user để tự động tạo hồ sơ thực tập sinh tương ứng
-      const [userRows] = await db.query('SELECT * FROM users WHERE id = ?', [internId]);
-      const u = userRows.length > 0 ? userRows[0] : null;
-      const uName = u ? u.name : 'Thực tập sinh';
-      const uEmail = u ? u.email : 'intern@student.vn';
-      const uPhone = u ? u.phone : '';
-
-      const [newIntern] = await db.query(
-        `INSERT INTO interns (user_id, name, email, phone, school, major, dept, status)
-         VALUES (?, ?, ?, ?, 'Đại học Bách Khoa', 'CNTT', 'Kỹ thuật phần mềm', 'Chờ xét duyệt')`,
-        [u ? u.id : null, uName, uEmail, uPhone]
-      );
-      targetInternId = newIntern.insertId;
+    // B13: Xóa file vật lý cũ của tài liệu cùng loại nếu có trước khi cập nhật file mới
+    const [oldDocs] = await db.query(
+      'SELECT file_url FROM documents WHERE intern_id = ? AND doc_type = ?',
+      [targetInternId, type]
+    );
+    if (oldDocs.length > 0) {
+      oldDocs.forEach(d => {
+        if (d.file_url) {
+          const oldPath = path.join(__dirname, '..', d.file_url);
+          if (fs.existsSync(oldPath)) {
+            try { fs.unlinkSync(oldPath); } catch (e) {}
+          }
+        }
+      });
     }
-
-    // Xóa bản ghi tài liệu cũ cùng loại để cập nhật file mới
     await db.query('DELETE FROM documents WHERE intern_id = ? AND doc_type = ?', [targetInternId, type]);
 
     // Lưu thông tin file vào bảng documents trong MySQL
@@ -565,9 +675,9 @@ exports.uploadDocument = async (req, res) => {
       [targetInternId, originalName, type, fileUrl, sizeStr]
     );
 
-    // Khi có file tải lên: Cập nhật trạng thái của intern thành 'Chờ xét duyệt' nếu đang là 'Chưa hoàn thiện'
+    // B13: Khi tải lên lại hồ sơ (kể cả sau khi bị từ chối), chuyển trạng thái thực tập sinh về 'Chờ xét duyệt'
     await db.query(
-      "UPDATE interns SET status = 'Chờ xét duyệt' WHERE id = ? AND (status = 'Chưa hoàn thiện' OR status = '' OR status IS NULL)",
+      "UPDATE interns SET status = 'Chờ xét duyệt' WHERE id = ? AND (status = 'Chưa hoàn thiện' OR status = 'Đã từ chối' OR status = '' OR status IS NULL)",
       [targetInternId]
     );
 
@@ -595,17 +705,41 @@ exports.uploadDocument = async (req, res) => {
   }
 };
 
-// 7. DELETE /api/interns/:id (Xóa thực tập sinh khỏi Database)
+// 7. DELETE /api/interns/:id (Xóa thực tập sinh khỏi Database và dọn dẹp file - B20)
 exports.deleteIntern = async (req, res) => {
   try {
     const { id } = req.params;
-    const [result] = await db.query('DELETE FROM interns WHERE id = ?', [id]);
-    if (result.affectedRows === 0) {
+    const [existing] = await db.query('SELECT id FROM interns WHERE id = ?', [id]);
+    if (existing.length === 0) {
       return res.status(404).json({
         success: false,
         message: `Không tìm thấy thực tập sinh với ID = ${id}`
       });
     }
+
+    // B20: Xóa các file vật lý của tài liệu và hợp đồng gắn với thực tập sinh
+    const [docs] = await db.query('SELECT file_url FROM documents WHERE intern_id = ?', [id]);
+    const [contracts] = await db.query('SELECT file_url FROM contracts WHERE intern_id = ?', [id]);
+    [...docs, ...contracts].forEach(item => {
+      if (item && item.file_url) {
+        const filePath = path.join(__dirname, '..', item.file_url);
+        if (fs.existsSync(filePath)) {
+          try { fs.unlinkSync(filePath); } catch (e) {}
+        }
+      }
+    });
+
+    // Xóa các bản ghi liên quan trong các bảng con
+    await db.query('DELETE FROM documents WHERE intern_id = ?', [id]);
+    await db.query('DELETE FROM contracts WHERE intern_id = ?', [id]);
+    await db.query('DELETE FROM attendance WHERE intern_id = ?', [id]);
+    await db.query('DELETE FROM leaves WHERE intern_id = ?', [id]);
+    await db.query('DELETE FROM tasks WHERE intern_id = ?', [id]);
+    await db.query('DELETE FROM reports WHERE intern_id = ?', [id]);
+    await db.query('DELETE FROM evaluations WHERE intern_id = ?', [id]);
+
+    const [result] = await db.query('DELETE FROM interns WHERE id = ?', [id]);
+
     return res.status(200).json({
       success: true,
       message: 'Đã xóa thực tập sinh thành công khỏi cơ sở dữ liệu!'
@@ -620,7 +754,7 @@ exports.deleteIntern = async (req, res) => {
   }
 };
 
-// 8. DELETE /api/interns/:id/documents/:docType (Xóa tài liệu CV hoặc đơn xin thực tập)
+// 8. DELETE /api/interns/:id/documents/:docType (Xóa tài liệu CV hoặc đơn xin thực tập - B13)
 exports.deleteDocument = async (req, res) => {
   try {
     const { id, docType } = req.params;
@@ -646,8 +780,6 @@ exports.deleteDocument = async (req, res) => {
     );
 
     if (docs.length > 0) {
-      const fs = require('fs');
-      const path = require('path');
       docs.forEach(doc => {
         if (doc.file_url) {
           const filePath = path.join(__dirname, '..', doc.file_url);
@@ -714,5 +846,3 @@ exports.getEmailHistory = async (req, res) => {
     });
   }
 };
-
-

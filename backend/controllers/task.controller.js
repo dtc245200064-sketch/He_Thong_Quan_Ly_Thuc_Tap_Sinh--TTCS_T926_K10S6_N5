@@ -13,14 +13,26 @@ exports.getTasks = async (req, res) => {
     `;
     const params = [];
 
-    if (intern_id) {
-      query += ` AND t.intern_id = ?`;
-      params.push(intern_id);
+    // Bảo vệ quyền xem (B04)
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      const myInternId = req.user.internId || -1;
+      query += ` AND (t.intern_id = ? OR i.user_id = ?)`;
+      params.push(myInternId, req.user.id);
+    } else if (req.user && req.user.role === 'Mentor') {
+      const myMentorId = req.user.mentorId || -1;
+      query += ` AND (t.mentor_id = ? OR i.mentor_id = ?)`;
+      params.push(myMentorId, myMentorId);
+    } else {
+      if (intern_id) {
+        query += ` AND t.intern_id = ?`;
+        params.push(intern_id);
+      }
+      if (mentor_id) {
+        query += ` AND t.mentor_id = ?`;
+        params.push(mentor_id);
+      }
     }
-    if (mentor_id) {
-      query += ` AND t.mentor_id = ?`;
-      params.push(mentor_id);
-    }
+
     if (status) {
       query += ` AND t.status = ?`;
       params.push(status);
@@ -39,19 +51,23 @@ exports.getTasks = async (req, res) => {
   }
 };
 
-// POST /api/tasks: Mentor hoặc TTS tạo/giao nhiệm vụ (STT 15)
+// POST /api/tasks: Mentor hoặc HR/Admin giao nhiệm vụ (STT 15)
 exports.createTask = async (req, res) => {
   try {
     const { intern_id, mentor_id, title, description, deadline, priority, progress, intern_note } = req.body;
 
-    if (!intern_id || !title) {
+    if (!intern_id || !title || !title.trim()) {
       return res.status(400).json({ success: false, message: 'Vui lòng cung cấp thực tập sinh và tiêu đề nhiệm vụ!' });
     }
 
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      return res.status(403).json({ success: false, message: 'Thực tập sinh không có quyền giao nhiệm vụ!' });
+    }
+
     // Xác định ID thực tế trong bảng interns
-    let [internRows] = await db.query('SELECT id, user_id FROM interns WHERE id = ?', [intern_id]);
+    let [internRows] = await db.query('SELECT id, user_id, mentor_id FROM interns WHERE id = ?', [intern_id]);
     if (internRows.length === 0) {
-      [internRows] = await db.query('SELECT id, user_id FROM interns WHERE user_id = ?', [intern_id]);
+      [internRows] = await db.query('SELECT id, user_id, mentor_id FROM interns WHERE user_id = ?', [intern_id]);
     }
 
     if (internRows.length === 0) {
@@ -62,32 +78,50 @@ exports.createTask = async (req, res) => {
     }
 
     const actualInternId = internRows[0].id;
+
+    // Kiểm tra quyền của Mentor: Mentor chỉ giao task cho TTS thuộc nhóm của mình (B04 & S3-01)
+    if (req.user && req.user.role === 'Mentor') {
+      const myMentorId = req.user.mentorId;
+      if (internRows[0].mentor_id && myMentorId && internRows[0].mentor_id !== myMentorId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn chỉ có quyền giao nhiệm vụ cho thực tập sinh thuộc nhóm hướng dẫn của mình!'
+        });
+      }
+    }
+
+    const validPriorities = ['low', 'medium', 'high', 'urgent'];
+    const taskPriority = priority && validPriorities.includes(priority) ? priority : 'medium';
+
     const taskProgress = progress !== undefined ? Math.min(100, Math.max(0, parseInt(progress, 10) || 0)) : 0;
     let autoStatus = 'todo';
     if (taskProgress >= 100) autoStatus = 'done';
     else if (taskProgress > 0) autoStatus = 'in_progress';
 
+    const assignedMentorId = (req.user && req.user.role === 'Mentor' && req.user.mentorId) 
+      ? req.user.mentorId 
+      : (mentor_id || internRows[0].mentor_id || null);
+
     const [result] = await db.query(
-      `INSERT INTO tasks (intern_id, mentor_id, title, description, deadline, priority, progress, status, intern_note) 
+      `INSERT INTO tasks (intern_id, mentor_id, title, description, deadline, progress, status, priority, intern_note) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [actualInternId, mentor_id || null, title.trim(), description || '', deadline || null, priority || 'medium', taskProgress, autoStatus, intern_note || '']
+      [actualInternId, assignedMentorId, title.trim(), description || '', deadline || null, taskProgress, autoStatus, taskPriority, intern_note || '']
     );
 
-    // Tự động tạo thông báo in-app cho thực tập sinh
-    try {
-      if (internRows[0].user_id) {
-        await db.query(
-          `INSERT INTO inapp_notifications (user_id, role, title, content, type, link) 
-           VALUES (?, 'Thực tập sinh', ?, ?, 'info', 'intern.html#progress')`,
-          [internRows[0].user_id, 'Nhiệm vụ mới: ' + title, `Công việc "${title}" đã được ghi nhận vào hệ thống. Hạn hoàn thành: ${deadline || 'Không có'}`]
-        );
-      }
-    } catch (notifErr) {}
+    // Tự động tạo thông báo In-app cho TTS khi nhận được nhiệm vụ mới (STT 36)
+    if (internRows[0].user_id) {
+      await db.query(
+        `INSERT INTO inapp_notifications (user_id, role, title, content, type, link) 
+         VALUES (?, 'Thực tập sinh', ?, ?, 'info', 'intern.html#progress')`,
+        [internRows[0].user_id, `Nhiệm vụ mới: ${title}`, `Bạn được giao nhiệm vụ "${title}". Hạn hoàn thành: ${deadline || 'Không giới hạn'}.`]
+      );
+    }
 
+    const [created] = await db.query('SELECT * FROM tasks WHERE id = ?', [result.insertId]);
     return res.status(201).json({
       success: true,
-      message: 'Tạo nhiệm vụ thành công!',
-      taskId: result.insertId
+      message: 'Giao nhiệm vụ thành công!',
+      data: created[0]
     });
   } catch (error) {
     console.error('Lỗi tạo nhiệm vụ:', error);
@@ -95,91 +129,100 @@ exports.createTask = async (req, res) => {
   }
 };
 
-// PUT /api/tasks/:id: Cập nhật thông tin nhiệm vụ
+// PUT /api/tasks/:id: Cập nhật nhiệm vụ
 exports.updateTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, deadline, priority, progress, status, intern_note } = req.body;
+    const { title, description, deadline, priority, status, progress, mentor_note, intern_note } = req.body;
 
     const [existing] = await db.query('SELECT * FROM tasks WHERE id = ?', [id]);
     if (existing.length === 0) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy nhiệm vụ!' });
     }
 
-    const current = existing[0];
-    let newProgress = current.progress;
-    if (progress !== undefined) {
-      newProgress = Math.min(100, Math.max(0, parseInt(progress, 10) || 0));
+    const task = existing[0];
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      return res.status(403).json({ success: false, message: 'Thực tập sinh không có quyền chỉnh sửa cấu hình nhiệm vụ!' });
     }
 
-    let newStatus = status || current.status;
+    let nextProgress = progress !== undefined ? Math.min(100, Math.max(0, parseInt(progress, 10) || 0)) : task.progress;
+    let nextStatus = status || task.status;
     if (progress !== undefined && !status) {
-      if (newProgress >= 100) newStatus = 'done';
-      else if (newProgress > 0) newStatus = 'in_progress';
-      else newStatus = 'todo';
+      if (nextProgress >= 100) nextStatus = 'done';
+      else if (nextProgress > 0) nextStatus = 'in_progress';
+      else nextStatus = 'todo';
     }
 
     await db.query(
       `UPDATE tasks 
-       SET title = ?, description = ?, deadline = ?, priority = ?, progress = ?, status = ?, intern_note = ?, updated_at = NOW() 
+       SET title = COALESCE(?, title), 
+           description = COALESCE(?, description), 
+           deadline = COALESCE(?, deadline), 
+           priority = COALESCE(?, priority), 
+           status = ?, 
+           progress = ?, 
+           mentor_note = COALESCE(?, mentor_note), 
+           intern_note = COALESCE(?, intern_note),
+           updated_at = NOW() 
        WHERE id = ?`,
-      [
-        title !== undefined ? title.trim() : current.title,
-        description !== undefined ? description : current.description,
-        deadline !== undefined ? deadline : current.deadline,
-        priority !== undefined ? priority : current.priority,
-        newProgress,
-        newStatus,
-        intern_note !== undefined ? intern_note : current.intern_note,
-        id
-      ]
+      [title, description, deadline, priority, nextStatus, nextProgress, mentor_note, intern_note, id]
     );
 
-    return res.status(200).json({
-      success: true,
-      message: 'Cập nhật nhiệm vụ thành công!'
-    });
+    return res.status(200).json({ success: true, message: 'Cập nhật nhiệm vụ thành công!' });
   } catch (error) {
     console.error('Lỗi cập nhật nhiệm vụ:', error);
     return res.status(500).json({ success: false, message: 'Lỗi server khi cập nhật nhiệm vụ', error: error.message });
   }
 };
 
-// PUT /api/tasks/:id/progress: Thực tập sinh cập nhật tiến độ công việc (STT 16)
+// PUT /api/tasks/:id/progress: TTS cập nhật tiến độ công việc (STT 16)
 exports.updateTaskProgress = async (req, res) => {
   try {
     const { id } = req.params;
-    const { progress, status, intern_note } = req.body;
+    const { progress, intern_note } = req.body;
 
-    let autoStatus = status;
-    let numericProgress = progress !== undefined ? Math.min(100, Math.max(0, parseInt(progress, 10) || 0)) : undefined;
-
-    if (numericProgress !== undefined && !status) {
-      if (numericProgress >= 100) autoStatus = 'done';
-      else if (numericProgress > 0) autoStatus = 'in_progress';
-      else autoStatus = 'todo';
+    if (progress === undefined) {
+      return res.status(400).json({ success: false, message: 'Vui lòng cung cấp giá trị tiến độ (0 - 100)!' });
     }
 
-    const [result] = await db.query(
-      `UPDATE tasks 
-       SET progress = COALESCE(?, progress), 
-           status = COALESCE(?, status), 
-           intern_note = COALESCE(?, intern_note),
-           updated_at = NOW() 
-       WHERE id = ?`,
-      [numericProgress !== undefined ? numericProgress : null, autoStatus || null, intern_note !== undefined ? intern_note : null, id]
-    );
-
-    if (result.affectedRows === 0) {
+    const [existing] = await db.query('SELECT * FROM tasks WHERE id = ?', [id]);
+    if (existing.length === 0) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy nhiệm vụ!' });
     }
 
+    const task = existing[0];
+
+    // Kiểm tra quyền sở hữu IDOR: TTS chỉ cập nhật task của chính mình (B04 & S3-04)
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      const myInternId = req.user.internId;
+      if (task.intern_id !== myInternId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn chỉ có quyền cập nhật tiến độ cho nhiệm vụ của chính mình!'
+        });
+      }
+    }
+
+    const val = Math.min(100, Math.max(0, parseInt(progress, 10) || 0));
+    let autoStatus = 'todo';
+    if (val >= 100) autoStatus = 'done';
+    else if (val > 0) autoStatus = 'in_progress';
+
+    await db.query(
+      `UPDATE tasks 
+       SET progress = ?, status = ?, intern_note = COALESCE(?, intern_note), updated_at = NOW() 
+       WHERE id = ?`,
+      [val, autoStatus, intern_note !== undefined ? intern_note : null, id]
+    );
+
     return res.status(200).json({
       success: true,
-      message: 'Cập nhật tiến độ nhiệm vụ thành công!'
+      message: 'Cập nhật tiến độ thành công!',
+      progress: val,
+      status: autoStatus
     });
   } catch (error) {
-    console.error('Lỗi cập nhật tiến độ task:', error);
+    console.error('Lỗi cập nhật tiến độ:', error);
     return res.status(500).json({ success: false, message: 'Lỗi server khi cập nhật tiến độ', error: error.message });
   }
 };
@@ -188,10 +231,13 @@ exports.updateTaskProgress = async (req, res) => {
 exports.deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
-    await db.query('DELETE FROM tasks WHERE id = ?', [id]);
+    const [result] = await db.query('DELETE FROM tasks WHERE id = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy nhiệm vụ để xóa!' });
+    }
     return res.status(200).json({ success: true, message: 'Đã xóa nhiệm vụ thành công!' });
   } catch (error) {
-    console.error('Lỗi xóa task:', error);
+    console.error('Lỗi xóa nhiệm vụ:', error);
     return res.status(500).json({ success: false, message: 'Lỗi server khi xóa nhiệm vụ', error: error.message });
   }
 };

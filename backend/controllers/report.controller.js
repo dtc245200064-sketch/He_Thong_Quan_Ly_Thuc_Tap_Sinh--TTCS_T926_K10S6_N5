@@ -13,10 +13,22 @@ exports.getWeeklyReports = async (req, res) => {
     `;
     const params = [];
 
-    if (intern_id) {
-      query += ` AND r.intern_id = ?`;
-      params.push(intern_id);
+    // Bảo vệ quyền xem (B04)
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      const myInternId = req.user.internId || -1;
+      query += ` AND (r.intern_id = ? OR i.user_id = ?)`;
+      params.push(myInternId, req.user.id);
+    } else if (req.user && req.user.role === 'Mentor') {
+      const myMentorId = req.user.mentorId || -1;
+      query += ` AND (r.mentor_id = ? OR i.mentor_id = ?)`;
+      params.push(myMentorId, myMentorId);
+    } else {
+      if (intern_id) {
+        query += ` AND r.intern_id = ?`;
+        params.push(intern_id);
+      }
     }
+
     if (status) {
       query += ` AND r.status = ?`;
       params.push(status);
@@ -37,28 +49,50 @@ exports.submitWeeklyReport = async (req, res) => {
   try {
     const { intern_id, week_number, start_date, end_date, tasks_completed, issues_faced, plans_next_week, is_draft } = req.body;
 
-    if (!intern_id || !week_number || !tasks_completed) {
-      return res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ thông tin báo cáo tuần!' });
+    if (!week_number || !tasks_completed || !tasks_completed.trim()) {
+      return res.status(400).json({ success: false, message: 'Vui lòng điền tuần báo cáo và công việc đã hoàn thành!' });
+    }
+
+    const weekNum = parseInt(week_number, 10);
+    if (isNaN(weekNum) || weekNum <= 0 || weekNum > 52) {
+      return res.status(400).json({ success: false, message: 'Số tuần không hợp lệ (phải từ 1 đến 52)!' });
+    }
+
+    if (start_date && end_date) {
+      const s = new Date(start_date);
+      const e = new Date(end_date);
+      if (e < s) {
+        return res.status(400).json({ success: false, message: 'Ngày kết thúc tuần không được nhỏ hơn ngày bắt đầu!' });
+      }
+    }
+
+    let targetInternId = null;
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      targetInternId = req.user.internId;
+    } else {
+      targetInternId = intern_id;
     }
 
     // Xác định ID thực tế trong bảng interns
-    let [internRows] = await db.query('SELECT id, mentor, user_id FROM interns WHERE id = ?', [intern_id]);
+    let [internRows] = await db.query('SELECT id, mentor_id, mentor, user_id FROM interns WHERE id = ?', [targetInternId]);
     if (internRows.length === 0) {
-      [internRows] = await db.query('SELECT id, mentor, user_id FROM interns WHERE user_id = ?', [intern_id]);
+      [internRows] = await db.query('SELECT id, mentor_id, mentor, user_id FROM interns WHERE user_id = ?', [targetInternId]);
     }
 
     if (internRows.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Chưa tìm thấy hồ sơ thực tập sinh tương ứng trong hệ thống. Vui lòng tạo/duyệt hồ sơ TTS trước khi nộp báo cáo!'
+        message: 'Chưa tìm thấy hồ sơ thực tập sinh tương ứng trong hệ thống.'
       });
     }
 
     const actualInternId = internRows[0].id;
-    let mentorId = null;
-    if (internRows[0].mentor) {
-      const [mentorRows] = await db.query('SELECT id FROM mentors WHERE name LIKE ? LIMIT 1', [`%${internRows[0].mentor}%`]);
-      if (mentorRows.length > 0) mentorId = mentorRows[0].id;
+
+    // Lấy mentor_id trực tiếp từ hồ sơ TTS (B18 & B19)
+    let mentorId = internRows[0].mentor_id || null;
+    if (!mentorId && internRows[0].mentor) {
+      const [mRows] = await db.query('SELECT id FROM mentors WHERE name = ? LIMIT 1', [internRows[0].mentor]);
+      if (mRows.length > 0) mentorId = mRows[0].id;
     }
 
     const status = is_draft ? 'draft' : 'submitted';
@@ -67,17 +101,19 @@ exports.submitWeeklyReport = async (req, res) => {
       `INSERT INTO weekly_reports (intern_id, mentor_id, week_number, start_date, end_date, tasks_completed, issues_faced, plans_next_week, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE 
-         tasks_completed=VALUES(tasks_completed), 
-         issues_faced=VALUES(issues_faced), 
-         plans_next_week=VALUES(plans_next_week), 
-         status=VALUES(status)`,
-      [actualInternId, mentorId, week_number, start_date || new Date().toISOString().slice(0, 10), end_date || new Date().toISOString().slice(0, 10), tasks_completed, issues_faced || '', plans_next_week || '', status]
+         tasks_completed = VALUES(tasks_completed), 
+         issues_faced = VALUES(issues_faced), 
+         plans_next_week = VALUES(plans_next_week), 
+         status = VALUES(status),
+         submitted_at = CURRENT_TIMESTAMP`,
+      [actualInternId, mentorId, weekNum, start_date || new Date().toISOString().slice(0, 10), end_date || new Date().toISOString().slice(0, 10), tasks_completed.trim(), issues_faced || '', plans_next_week || '', status]
     );
 
+    const [created] = await db.query('SELECT * FROM weekly_reports WHERE intern_id = ? AND week_number = ?', [actualInternId, weekNum]);
     return res.status(201).json({
       success: true,
-      message: is_draft ? 'Đã lưu bản nháp báo cáo tuần!' : 'Nộp báo cáo tuần thành công!',
-      reportId: result.insertId
+      message: is_draft ? 'Đã lưu nháp báo cáo tuần!' : 'Nộp báo cáo tuần thành công!',
+      data: created[0]
     });
   } catch (error) {
     console.error('Lỗi nộp báo cáo tuần:', error);
@@ -85,43 +121,87 @@ exports.submitWeeklyReport = async (req, res) => {
   }
 };
 
-// PUT /api/reports/weekly/:id: Cập nhật nội dung báo cáo tuần
+// PUT /api/reports/weekly/:id: Sửa báo cáo tuần
 exports.updateWeeklyReport = async (req, res) => {
   try {
     const { id } = req.params;
-    const { week_number, start_date, end_date, tasks_completed, issues_faced, plans_next_week, is_draft } = req.body;
+    const { tasks_completed, issues_faced, plans_next_week, is_draft } = req.body;
 
     const [existing] = await db.query('SELECT * FROM weekly_reports WHERE id = ?', [id]);
     if (existing.length === 0) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy báo cáo tuần!' });
     }
 
-    const current = existing[0];
-    const status = is_draft !== undefined ? (is_draft ? 'draft' : 'submitted') : current.status;
+    const report = existing[0];
+
+    // Chặn sửa khi báo cáo đã được mentor phản hồi (B19)
+    if (report.status === 'reviewed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Báo cáo tuần đã được Mentor đánh giá/phản hồi, không thể chỉnh sửa!'
+      });
+    }
+
+    // Bảo vệ quyền sở hữu IDOR (B04)
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      if (report.intern_id !== req.user.internId) {
+        return res.status(403).json({ success: false, message: 'Bạn không có quyền chỉnh sửa báo cáo của thực tập sinh khác!' });
+      }
+    }
+
+    const nextStatus = is_draft ? 'draft' : 'submitted';
 
     await db.query(
       `UPDATE weekly_reports 
-       SET week_number = ?, start_date = ?, end_date = ?, tasks_completed = ?, issues_faced = ?, plans_next_week = ?, status = ?
+       SET tasks_completed = COALESCE(?, tasks_completed), 
+           issues_faced = COALESCE(?, issues_faced), 
+           plans_next_week = COALESCE(?, plans_next_week), 
+           status = ? 
        WHERE id = ?`,
-      [
-        week_number !== undefined ? week_number : current.week_number,
-        start_date || current.start_date,
-        end_date || current.end_date,
-        tasks_completed !== undefined ? tasks_completed : current.tasks_completed,
-        issues_faced !== undefined ? issues_faced : current.issues_faced,
-        plans_next_week !== undefined ? plans_next_week : current.plans_next_week,
-        status,
-        id
-      ]
+      [tasks_completed, issues_faced, plans_next_week, nextStatus, id]
+    );
+
+    return res.status(200).json({ success: true, message: 'Cập nhật báo cáo tuần thành công!' });
+  } catch (error) {
+    console.error('Lỗi cập nhật báo cáo tuần:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi server khi cập nhật báo cáo tuần', error: error.message });
+  }
+};
+
+// PUT /api/reports/weekly/:id/feedback: Mentor phản hồi báo cáo tuần (STT 18)
+exports.feedbackWeeklyReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { mentor_feedback, mentor_rating } = req.body;
+
+    if (!mentor_feedback || !mentor_feedback.trim()) {
+      return res.status(400).json({ success: false, message: 'Vui lòng nhập nội dung nhận xét/phản hồi!' });
+    }
+
+    const rating = parseInt(mentor_rating, 10);
+    if (isNaN(rating) || rating < 1 || rating > 5) {
+      return res.status(400).json({ success: false, message: 'Đánh giá xếp loại của mentor phải từ 1 đến 5 sao!' });
+    }
+
+    const [existing] = await db.query('SELECT * FROM weekly_reports WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy báo cáo tuần!' });
+    }
+
+    await db.query(
+      `UPDATE weekly_reports 
+       SET mentor_feedback = ?, mentor_rating = ?, status = 'reviewed', reviewed_at = NOW() 
+       WHERE id = ?`,
+      [mentor_feedback.trim(), rating, id]
     );
 
     return res.status(200).json({
       success: true,
-      message: is_draft ? 'Đã lưu bản nháp báo cáo tuần!' : 'Cập nhật báo cáo tuần thành công!'
+      message: 'Gửi nhận xét và đánh giá báo cáo tuần thành công!'
     });
   } catch (error) {
-    console.error('Lỗi cập nhật báo cáo tuần:', error);
-    return res.status(500).json({ success: false, message: 'Lỗi server khi cập nhật báo cáo tuần', error: error.message });
+    console.error('Lỗi phản hồi báo cáo tuần:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi server khi gửi nhận xét', error: error.message });
   }
 };
 
@@ -129,10 +209,25 @@ exports.updateWeeklyReport = async (req, res) => {
 exports.deleteWeeklyReport = async (req, res) => {
   try {
     const { id } = req.params;
-    const [result] = await db.query('DELETE FROM weekly_reports WHERE id = ?', [id]);
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Không tìm thấy báo cáo tuần để xóa!' });
+    const [existing] = await db.query('SELECT * FROM weekly_reports WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy báo cáo tuần!' });
     }
+
+    if (existing[0].status === 'reviewed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Báo cáo tuần đã được Mentor phản hồi, không thể xóa!'
+      });
+    }
+
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      if (existing[0].intern_id !== req.user.internId) {
+        return res.status(403).json({ success: false, message: 'Bạn không có quyền xóa báo cáo của người khác!' });
+      }
+    }
+
+    await db.query('DELETE FROM weekly_reports WHERE id = ?', [id]);
     return res.status(200).json({ success: true, message: 'Đã xóa báo cáo tuần thành công!' });
   } catch (error) {
     console.error('Lỗi xóa báo cáo tuần:', error);
@@ -140,41 +235,7 @@ exports.deleteWeeklyReport = async (req, res) => {
   }
 };
 
-// PUT /api/reports/weekly/:id/feedback: Mentor xem báo cáo & gửi phản hồi (STT 18)
-exports.feedbackWeeklyReport = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { mentor_feedback, mentor_rating } = req.body;
-
-    if (!mentor_feedback) {
-      return res.status(400).json({ success: false, message: 'Vui lòng nhập nội dung nhận xét, phản hồi!' });
-    }
-
-    const [result] = await db.query(
-      `UPDATE weekly_reports 
-       SET mentor_feedback = ?, 
-           mentor_rating = ?, 
-           status = 'reviewed', 
-           reviewed_at = NOW() 
-       WHERE id = ?`,
-      [mentor_feedback, mentor_rating || null, id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Không tìm thấy báo cáo tuần!' });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: 'Gửi nhận xét và phản hồi thành công!'
-    });
-  } catch (error) {
-    console.error('Lỗi gửi feedback báo cáo:', error);
-    return res.status(500).json({ success: false, message: 'Lỗi server khi gửi nhận xét', error: error.message });
-  }
-};
-
-// GET /api/reports/statistics/demographics: Thống kê số lượng TTS theo trường/ngành (STT 32)
+// GET /api/reports/statistics/demographics (STT 32)
 exports.getStatisticsDemographics = async (req, res) => {
   try {
     const [bySchool] = await db.query(`
@@ -212,7 +273,7 @@ exports.getStatisticsDemographics = async (req, res) => {
   }
 };
 
-// GET /api/reports/statistics/completion: Thống kê tỷ lệ hoàn thành chương trình (STT 33)
+// GET /api/reports/statistics/completion: Thống kê tỷ lệ hoàn thành (STT 33)
 exports.getStatisticsCompletion = async (req, res) => {
   try {
     const [totalRows] = await db.query('SELECT COUNT(*) as total FROM interns');
@@ -233,7 +294,7 @@ exports.getStatisticsCompletion = async (req, res) => {
       if (r.status === 'Đã hoàn thành' || r.status === 'Hoàn thành') completed += r.count;
       else if (r.status === 'Đang thực tập') active += r.count;
       else if (r.status === 'Chờ xét duyệt') pending += r.count;
-      else if (r.status === 'Từ chối' || r.status === 'Hủy') rejected += r.count;
+      else if (r.status === 'Từ chối' || r.status === 'Đã từ chối' || r.status === 'Hủy') rejected += r.count;
     });
 
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -255,5 +316,30 @@ exports.getStatisticsCompletion = async (req, res) => {
   } catch (error) {
     console.error('Lỗi thống kê hoàn thành:', error);
     return res.status(500).json({ success: false, message: 'Lỗi server khi thống kê tỷ lệ hoàn thành', error: error.message });
+  }
+};
+
+
+// GET /api/reports/statistics/departments
+exports.getStatisticsDepartments = async (req, res) => {
+  try {
+    const [byDept] = await db.query(`
+      SELECT 
+        COALESCE(dept, 'Chưa phân bổ') as department,
+        COUNT(*) as total_interns,
+        SUM(CASE WHEN status = 'Đang thực tập' THEN 1 ELSE 0 END) as active_interns,
+        SUM(CASE WHEN status IN ('Đã hoàn thành', 'Hoàn thành') THEN 1 ELSE 0 END) as completed_interns
+      FROM interns 
+      GROUP BY dept 
+      ORDER BY total_interns DESC
+    `);
+
+    return res.status(200).json({
+      success: true,
+      data: byDept
+    });
+  } catch (error) {
+    console.error('Lỗi thống kê phòng ban:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi server khi thống kê phòng ban', error: error.message });
   }
 };

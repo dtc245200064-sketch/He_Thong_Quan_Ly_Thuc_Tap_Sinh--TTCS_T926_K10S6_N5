@@ -4,17 +4,13 @@ const { sendMeetingEmail } = require('../services/email.service');
 // GET /api/notifications: Lấy danh sách thông báo in-app cho TTS / người dùng (STT 36)
 exports.getInAppNotifications = async (req, res) => {
   try {
-    const { user_id, role } = req.query;
     let query = 'SELECT * FROM inapp_notifications WHERE 1=1';
     const params = [];
 
-    if (user_id) {
-      query += ' AND (user_id = ? OR user_id IS NULL)';
-      params.push(user_id);
-    }
-    if (role) {
-      query += ' AND (role = ? OR role IS NULL)';
-      params.push(role);
+    // Bảo vệ quyền xem: Người dùng chỉ thấy thông báo của chính mình (B04)
+    if (req.user) {
+      query += ' AND (user_id = ? OR (user_id IS NULL AND (role = ? OR role IS NULL)))';
+      params.push(req.user.id, req.user.role);
     }
 
     query += ' ORDER BY id DESC LIMIT 50';
@@ -34,7 +30,15 @@ exports.getInAppNotifications = async (req, res) => {
 exports.markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
-    await db.query('UPDATE inapp_notifications SET is_read = TRUE WHERE id = ?', [id]);
+    let query = 'UPDATE inapp_notifications SET is_read = TRUE WHERE id = ?';
+    const params = [id];
+
+    if (req.user) {
+      query += ' AND (user_id = ? OR user_id IS NULL)';
+      params.push(req.user.id);
+    }
+
+    await db.query(query, params);
     return res.status(200).json({ success: true, message: 'Đã đánh dấu thông báo là đã đọc' });
   } catch (error) {
     console.error('Lỗi cập nhật trạng thái thông báo:', error);
@@ -42,22 +46,20 @@ exports.markAsRead = async (req, res) => {
   }
 };
 
-// PUT /api/notifications/read-all: Đánh dấu tất cả thông báo đã đọc
+// PUT /api/notifications/read-all: Đánh dấu tất cả thông báo của người dùng đã đọc (B04)
 exports.markAllAsRead = async (req, res) => {
   try {
-    const { user_id, role } = req.body;
-    let query = 'UPDATE inapp_notifications SET is_read = TRUE WHERE 1=1';
-    const params = [];
-    if (user_id) {
-      query += ' AND (user_id = ? OR user_id IS NULL)';
-      params.push(user_id);
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Yêu cầu đăng nhập!' });
     }
-    if (role) {
-      query += ' AND (role = ? OR role IS NULL)';
-      params.push(role);
-    }
-    await db.query(query, params);
-    return res.status(200).json({ success: true, message: 'Đã đánh dấu tất cả thông báo là đã đọc' });
+
+    // B04: Chỉ cập nhật thông báo của người dùng hiện tại, không cập nhật toàn bộ hệ thống
+    await db.query(
+      'UPDATE inapp_notifications SET is_read = TRUE WHERE user_id = ?',
+      [req.user.id]
+    );
+
+    return res.status(200).json({ success: true, message: 'Đã đánh dấu tất cả thông báo của bạn là đã đọc' });
   } catch (error) {
     console.error('Lỗi đánh dấu tất cả thông báo đã đọc:', error);
     return res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
@@ -68,7 +70,15 @@ exports.markAllAsRead = async (req, res) => {
 exports.deleteNotification = async (req, res) => {
   try {
     const { id } = req.params;
-    await db.query('DELETE FROM inapp_notifications WHERE id = ?', [id]);
+    let query = 'DELETE FROM inapp_notifications WHERE id = ?';
+    const params = [id];
+
+    if (req.user && req.user.role !== 'Admin') {
+      query += ' AND (user_id = ? OR user_id IS NULL)';
+      params.push(req.user.id);
+    }
+
+    await db.query(query, params);
     return res.status(200).json({ success: true, message: 'Đã xóa thông báo thành công' });
   } catch (error) {
     console.error('Lỗi xóa thông báo:', error);
@@ -76,16 +86,20 @@ exports.deleteNotification = async (req, res) => {
   }
 };
 
-// POST /api/notifications: Tạo thông báo in-app mới
+// POST /api/notifications: Tạo thông báo in-app
 exports.createNotification = async (req, res) => {
   try {
     const { user_id, role, title, content, type, link } = req.body;
     if (!title || !content) {
       return res.status(400).json({ success: false, message: 'Tiêu đề và nội dung là bắt buộc!' });
     }
+
+    // Kiểm tra link chống XSS (B08)
+    const safeLink = (link && typeof link === 'string' && !link.toLowerCase().startsWith('javascript:')) ? link : '';
+
     const [result] = await db.query(
       'INSERT INTO inapp_notifications (user_id, role, title, content, type, link) VALUES (?, ?, ?, ?, ?, ?)',
-      [user_id || null, role || 'Thực tập sinh', title, content, type || 'info', link || '']
+      [user_id || null, role || 'Thực tập sinh', title, content, type || 'info', safeLink]
     );
     return res.status(201).json({ success: true, message: 'Đã tạo thông báo thành công', id: result.insertId });
   } catch (error) {
@@ -94,7 +108,7 @@ exports.createNotification = async (req, res) => {
   }
 };
 
-// POST /api/notifications/meetings: Tạo lịch họp & tự động gửi email cho TTS (STT 35)
+// POST /api/notifications/meetings: Tạo lịch họp & gửi email cho TTS (STT 35)
 exports.createMeeting = async (req, res) => {
   try {
     const { title, meeting_date, start_time, end_time, location, link, host_name, intern_ids, notes } = req.body;
@@ -103,18 +117,28 @@ exports.createMeeting = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Vui lòng điền tiêu đề, ngày họp và khung giờ họp!' });
     }
 
-    const internIdsArray = Array.isArray(intern_ids) ? intern_ids : (intern_ids ? [intern_ids] : []);
+    // Chặn giờ kết thúc <= giờ bắt đầu (B17 & S3-29)
+    if (end_time <= start_time) {
+      return res.status(400).json({
+        success: false,
+        message: 'Giờ kết thúc cuộc họp phải sau giờ bắt đầu!'
+      });
+    }
 
-    const [result] = await db.query(
-      `INSERT INTO meetings (title, meeting_date, start_time, end_time, location, link, host_name, intern_ids, notes, email_sent)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
-      [title, meeting_date, start_time, end_time, location || 'Online Meet', link || '', host_name || 'Mentor / HR', JSON.stringify(internIdsArray), notes || '']
-    );
+    // Kiểm tra link chống XSS (B08)
+    if (link && link.toLowerCase().startsWith('javascript:')) {
+      return res.status(400).json({ success: false, message: 'Liên kết cuộc họp không an toàn!' });
+    }
+
+    const internIdsArray = Array.isArray(intern_ids) ? intern_ids : (intern_ids ? [intern_ids] : []);
 
     // Tìm danh sách email và tên của các thực tập sinh để tự động gửi email (STT 35)
     let emailResults = [];
+    let allSentSuccess = false;
+
     if (internIdsArray.length > 0) {
       const [interns] = await db.query('SELECT id, name, email, user_id FROM interns WHERE id IN (?)', [internIdsArray]);
+      let successCount = 0;
       for (const intern of interns) {
         if (intern.email) {
           const mailRes = await sendMeetingEmail({
@@ -130,8 +154,9 @@ exports.createMeeting = async (req, res) => {
             notes: notes
           });
           emailResults.push(mailRes);
+          if (mailRes.success) successCount++;
 
-          // Tạo thêm thông báo in-app cho thực tập sinh (STT 36)
+          // Tạo thông báo in-app cho thực tập sinh (STT 36)
           if (intern.user_id) {
             await db.query(
               `INSERT INTO inapp_notifications (user_id, role, title, content, type, link)
@@ -145,12 +170,23 @@ exports.createMeeting = async (req, res) => {
           }
         }
       }
+      allSentSuccess = successCount > 0;
     }
+
+    // Ghi nhận email_sent theo kết quả gửi thực tế (B17)
+    const [result] = await db.query(
+      `INSERT INTO meetings (title, meeting_date, start_time, end_time, location, link, host_name, intern_ids, notes, email_sent)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [title, meeting_date, start_time, end_time, location || 'Online Meet', link || '', host_name || 'Mentor / HR', JSON.stringify(internIdsArray), notes || '', allSentSuccess]
+    );
 
     return res.status(201).json({
       success: true,
-      message: 'Tạo lịch họp thành công và đã gửi email thông báo tự động cho thực tập sinh!',
+      message: allSentSuccess 
+        ? 'Tạo lịch họp thành công và đã gửi email thông báo tự động cho thực tập sinh!'
+        : 'Tạo lịch họp thành công (Chưa gửi được email thông báo do cấu hình SMTP chưa sẵn sàng)',
       meetingId: result.insertId,
+      email_sent: allSentSuccess,
       emailsSentCount: emailResults.length,
       emailResults
     });
@@ -160,10 +196,25 @@ exports.createMeeting = async (req, res) => {
   }
 };
 
-// GET /api/notifications/meetings: Lấy danh sách các lịch họp
+// GET /api/notifications/meetings: Lấy danh sách các lịch họp (B17: TTS chỉ thấy cuộc họp của mình)
 exports.getMeetings = async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM meetings ORDER BY meeting_date DESC, id DESC');
+    
+    // Nếu là TTS, chỉ xem các cuộc họp được mời tham dự (B17)
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      const myInternId = req.user.internId;
+      const filtered = rows.filter(m => {
+        try {
+          const ids = typeof m.intern_ids === 'string' ? JSON.parse(m.intern_ids) : (m.intern_ids || []);
+          return Array.isArray(ids) && (ids.includes(myInternId) || ids.includes(String(myInternId)) || ids.includes(Number(myInternId)));
+        } catch (e) {
+          return false;
+        }
+      });
+      return res.status(200).json({ success: true, data: filtered });
+    }
+
     return res.status(200).json({ success: true, data: rows });
   } catch (error) {
     console.error('Lỗi lấy danh sách lịch họp:', error);

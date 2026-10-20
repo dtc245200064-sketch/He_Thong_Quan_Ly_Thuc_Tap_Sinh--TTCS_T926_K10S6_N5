@@ -9,7 +9,6 @@ function getVietnamDateTime() {
   return { dateStr, timeStr, hour: hh, minute: mm };
 }
 
-// Hàm giải quyết intern_id (nếu truyền user_id thì tự động tìm id của thực tập sinh trong bảng interns)
 async function resolveInternId(internIdOrUserId) {
   if (!internIdOrUserId) return null;
   const [internCheck] = await db.query('SELECT id FROM interns WHERE id = ?', [internIdOrUserId]);
@@ -34,11 +33,17 @@ exports.getAttendance = async (req, res) => {
     `;
     const params = [];
 
-    if (intern_id) {
+    // Nếu người dùng là Thực tập sinh, chỉ xem bảng chấm công của chính mình (B04)
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      const myInternId = req.user.internId || (await resolveInternId(req.user.id));
+      sql += ' AND (a.intern_id = ? OR i.user_id = ?)';
+      params.push(myInternId, req.user.id);
+    } else if (intern_id) {
       const resolvedId = await resolveInternId(intern_id);
       sql += ' AND (a.intern_id = ? OR i.user_id = ?)';
       params.push(resolvedId, intern_id);
     }
+
     if (date) {
       sql += ' AND a.date = ?';
       params.push(date);
@@ -62,13 +67,21 @@ exports.markAttendance = async (req, res) => {
   try {
     const { intern_id, date, status, notes } = req.body;
     if (!intern_id || !date) {
-      return res.status(400).json({ success: false, message: 'Thiếu thông tin intern_id hoặc date' });
+      return res.status(400).json({ success: false, message: 'Thiếu intern_id hoặc date' });
+    }
+
+    const validStatuses = ['present', 'late', 'leave', 'remote', 'absent'];
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Trạng thái chấm công không hợp lệ. Chỉ chấp nhận: ${validStatuses.join(', ')}`
+      });
     }
 
     const resolvedId = await resolveInternId(intern_id);
 
+    // Nếu trạng thái rỗng, xóa bản ghi chấm công của ngày đó
     if (!status) {
-      // Xóa bản ghi chấm công nếu status rỗng (trả về trạng thái chưa chấm)
       await db.query('DELETE FROM attendance WHERE intern_id = ? AND date = ?', [resolvedId, date]);
       return res.json({ success: true, message: 'Đã xóa bản ghi chấm công' });
     }
@@ -89,20 +102,49 @@ exports.markAttendance = async (req, res) => {
 // POST /api/attendance/check-in-out (TTS tự check-in / check-out hàng ngày)
 exports.toggleCheckInOut = async (req, res) => {
   try {
-    const { intern_id, date: clientDate } = req.body;
-    if (!intern_id) {
-      return res.status(400).json({ success: false, message: 'Thiếu intern_id' });
+    const { intern_id, date: clientDate, action } = req.body;
+    
+    // Bảo vệ quyền sở hữu: TTS chỉ được check-in cho chính mình (B04)
+    let resolvedId = null;
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      resolvedId = req.user.internId || (await resolveInternId(req.user.id));
+    } else {
+      if (!intern_id) {
+        return res.status(400).json({ success: false, message: 'Thiếu intern_id' });
+      }
+      resolvedId = await resolveInternId(intern_id);
     }
 
-    const resolvedId = await resolveInternId(intern_id);
+    if (!resolvedId) {
+      return res.status(400).json({ success: false, message: 'Không tìm thấy hồ sơ thực tập sinh!' });
+    }
+
     const vn = getVietnamDateTime();
-    const today = clientDate || vn.dateStr;
+
+    // Chặn gian lận ngày từ client (B15)
+    if (clientDate && clientDate !== vn.dateStr) {
+      return res.status(400).json({
+        success: false,
+        message: 'Không được phép gian lận chấm công bằng ngày khác với ngày hiện tại của hệ thống!'
+      });
+    }
+
+    const today = vn.dateStr;
     const timeStr = vn.timeStr;
 
     const [existing] = await db.query('SELECT * FROM attendance WHERE intern_id = ? AND date = ?', [resolvedId, today]);
 
-    if (existing.length === 0 || !existing[0].check_in) {
-      // Check-in
+    const targetAction = action || (existing.length === 0 || !existing[0].check_in ? 'checkin' : 'checkout');
+
+    if (targetAction === 'checkin') {
+      if (existing.length > 0 && existing[0].check_in) {
+        return res.status(400).json({
+          success: false,
+          message: `Bạn đã check-in hôm nay lúc ${existing[0].check_in} rồi!`
+        });
+      }
+
+      // Giờ quy định: sau 08:30 là đi muộn
       const isLate = (vn.hour > 8 || (vn.hour === 8 && vn.minute > 30));
       const status = isLate ? 'late' : 'present';
       await db.query(`
@@ -121,17 +163,22 @@ exports.toggleCheckInOut = async (req, res) => {
       });
     } else {
       // Check-out
-      const rec = existing[0];
-      let totalStr = '—';
-      if (rec.check_in) {
-        const [inH, inM] = rec.check_in.split(':').map(Number);
-        const [outH, outM] = timeStr.split(':').map(Number);
-        let diffMinutes = (outH * 60 + outM) - (inH * 60 + inM);
-        if (diffMinutes < 0) diffMinutes += 24 * 60;
-        const hours = Math.floor(diffMinutes / 60);
-        const mins = diffMinutes % 60;
-        totalStr = `${hours} giờ ${String(mins).padStart(2, '0')} phút`;
+      if (existing.length === 0 || !existing[0].check_in) {
+        return res.status(400).json({
+          success: false,
+          message: 'Bạn chưa thực hiện check-in hôm nay, không thể check-out!'
+        });
       }
+
+      const rec = existing[0];
+      const [inH, inM] = rec.check_in.split(':').map(Number);
+      const [outH, outM] = timeStr.split(':').map(Number);
+      let diffMinutes = (outH * 60 + outM) - (inH * 60 + inM);
+      if (diffMinutes < 0) diffMinutes = 0; // Chặn cộng 24h sai lệch (B15)
+
+      const hours = Math.floor(diffMinutes / 60);
+      const mins = diffMinutes % 60;
+      const totalStr = `${hours} giờ ${String(mins).padStart(2, '0')} phút`;
 
       await db.query(`
         UPDATE attendance SET check_out = ?, total_hours = ?
@@ -144,7 +191,7 @@ exports.toggleCheckInOut = async (req, res) => {
         date: today,
         time: timeStr,
         total_hours: totalStr,
-        message: `Check-out thành công lúc ${timeStr}! Tổng thời gian: ${totalStr}`
+        message: `Check-out thành công vào lúc ${timeStr} (Tổng thời gian: ${totalStr})`
       });
     }
   } catch (error) {
@@ -152,4 +199,3 @@ exports.toggleCheckInOut = async (req, res) => {
     res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
   }
 };
-
