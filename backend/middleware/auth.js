@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'codegym_secret_key_2026';
+const { JWT_SECRET } = require('../config/jwt');
 
 function normalizeRole(role) {
   if (!role) return 'HR Manager';

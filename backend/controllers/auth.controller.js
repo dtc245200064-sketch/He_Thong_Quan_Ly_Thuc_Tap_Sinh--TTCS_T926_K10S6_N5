@@ -1,8 +1,7 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'codegym_secret_key_2026';
+const { JWT_SECRET } = require('../config/jwt');
 
 // POST /api/auth/login (hoặc POST /api/login)
 exports.login = async (req, res) => {
@@ -17,13 +16,13 @@ exports.login = async (req, res) => {
       });
     }
 
-    // 1. Tìm user trong Database theo email hoặc tên đăng nhập (hỗ trợ cả email liên kết trong bảng interns)
+    // 1. Tìm user trong Database theo email hoặc tên đăng nhập (chỉ trong bảng users, không JOIN bừa)
     const [users] = await db.query(
-      `SELECT u.* FROM users u 
-       LEFT JOIN interns i ON i.user_id = u.id 
-       WHERE u.email = ? OR u.username = ? OR i.email = ? OR (? = 'mannh@gmail.com' AND u.id = 10)
+      `SELECT id, name, email, username, password, role, status, avatar, phone 
+       FROM users 
+       WHERE email = ? OR username = ? 
        LIMIT 1`,
-      [loginIdentifier, loginIdentifier, loginIdentifier, loginIdentifier]
+      [loginIdentifier, loginIdentifier]
     );
 
     if (users.length === 0) {
@@ -39,30 +38,17 @@ exports.login = async (req, res) => {
     if (user.status === 'locked') {
       return res.status(403).json({
         success: false,
+        code: 'ACCOUNT_LOCKED',
         message: 'Tài khoản của bạn đã bị khóa! Vui lòng liên hệ Quản trị viên.'
       });
     }
 
-    // 2. So sánh mật khẩu (Hỗ trợ cả bcrypt hash và so sánh trực tiếp)
+    // 2. So sánh mật khẩu bằng bcrypt duy nhất (bỏ hoàn toàn so sánh plaintext và backdoor)
     let isMatch = false;
     try {
       isMatch = await bcrypt.compare(password, user.password);
     } catch (e) {
       isMatch = false;
-    }
-
-    // Nếu không khớp bcrypt, thử so sánh trực tiếp chuỗi mật khẩu (cho trường hợp test plaintext)
-    if (!isMatch && user.password === password) {
-      isMatch = true;
-    }
-
-    // Tự động tương thích và sửa lỗi cho mật khẩu mặc định 123456 nếu trong DB còn lưu hash cũ
-    if (!isMatch && password === '123456' && user.password && user.password.startsWith('$2a$10$wK1b8B')) {
-      isMatch = true;
-      try {
-        const correctHash = await bcrypt.hash('123456', 10);
-        await db.query('UPDATE users SET password = ? WHERE id = ?', [correctHash, user.id]);
-      } catch (upErr) {}
     }
 
     if (!isMatch) {
@@ -72,32 +58,55 @@ exports.login = async (req, res) => {
       });
     }
 
-    // 3. Tạo JWT Token
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, name: user.name },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    // Chuẩn hóa tên vai trò
+    let normalizedRole = user.role;
+    if (user.role === 'HR' || user.role === 'HR Manager') normalizedRole = 'HR Manager';
+    else if (user.role === 'INTERN' || user.role === 'Thực tập sinh') normalizedRole = 'Thực tập sinh';
+    else if (user.role === 'MENTOR' || user.role === 'Mentor') normalizedRole = 'Mentor';
+    else if (user.role === 'ADMIN' || user.role === 'Admin') normalizedRole = 'Admin';
 
-    // Chuẩn hóa tên vai trò cho frontend
-    const roleDisplay = user.role === 'HR' ? 'HR Manager' : (user.role === 'INTERN' ? 'Thực tập sinh' : user.role);
-
-    // Nếu là thực tập sinh, lấy chính xác intern_id từ bảng interns
+    // Xác định intern_id nếu là thực tập sinh
     let internId = null;
-    if (user.role === 'INTERN' || user.role === 'Thực tập sinh') {
+    if (normalizedRole === 'Thực tập sinh') {
       const [interns] = await db.query(
-        'SELECT id FROM interns WHERE user_id = ? OR email = ? OR name = ? ORDER BY id DESC LIMIT 1', 
-        [user.id, user.email, user.name]
+        'SELECT id FROM interns WHERE user_id = ? OR email = ? LIMIT 1', 
+        [user.id, user.email]
       );
       if (interns.length > 0) {
         internId = interns[0].id;
-        // Auto-heal: liên kết user_id nếu còn NULL
         await db.query('UPDATE interns SET user_id = ? WHERE id = ? AND user_id IS NULL', [user.id, internId]);
       }
     }
 
+    // Xác định mentor_id nếu là mentor
+    let mentorId = null;
+    if (normalizedRole === 'Mentor') {
+      const [mentors] = await db.query(
+        'SELECT id FROM mentors WHERE user_id = ? OR email = ? LIMIT 1',
+        [user.id, user.email]
+      );
+      if (mentors.length > 0) {
+        mentorId = mentors[0].id;
+        await db.query('UPDATE mentors SET user_id = ? WHERE id = ? AND user_id IS NULL', [user.id, mentorId]);
+      }
+    }
+
+    // 3. Tạo JWT Token
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        email: user.email, 
+        role: normalizedRole, 
+        name: user.name,
+        internId: internId,
+        mentorId: mentorId
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
     // 4. Lấy ma trận phân quyền thực tế từ MySQL cho vai trò người dùng
-    const [permRows] = await db.query('SELECT permissions FROM role_permissions WHERE role = ? LIMIT 1', [roleDisplay]);
+    const [permRows] = await db.query('SELECT permissions FROM role_permissions WHERE role = ? LIMIT 1', [normalizedRole]);
     let permissions = null;
     if (permRows.length > 0) {
       permissions = permRows[0].permissions;
@@ -112,11 +121,12 @@ exports.login = async (req, res) => {
       token,
       user: {
         id: user.id,
-        internId: internId || user.id,
+        internId: internId || null,
+        mentorId: mentorId || null,
         name: user.name,
         email: user.email,
         username: user.username || '',
-        role: roleDisplay,
+        role: normalizedRole,
         avatar: user.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
         phone: user.phone || ''
       },
@@ -125,21 +135,9 @@ exports.login = async (req, res) => {
 
   } catch (error) {
     console.error('Lỗi API Login:', error);
-    let detailMessage = 'Lỗi máy chủ nội bộ';
-    if (error.code === 'ECONNREFUSED') {
-      detailMessage = 'Lỗi kết nối MySQL: Vui lòng bật Start MySQL trong XAMPP (Port 3306)!';
-    } else if (error.code === 'ER_BAD_DB_ERROR') {
-      detailMessage = 'Lỗi cơ sở dữ liệu: Chưa tạo database codegym hoặc chưa import database.sql!';
-    } else if (error.code === 'ER_NO_SUCH_TABLE') {
-      detailMessage = 'Lỗi cơ sở dữ liệu: Bảng chưa tồn tại, vui lòng import file database.sql!';
-    } else if (error.code === 'ER_ACCESS_DENIED_ERROR') {
-      detailMessage = 'Lỗi kết nối MySQL: Sai tài khoản/mật khẩu root trong backend/config/db.js!';
-    } else if (error.message) {
-      detailMessage = `Lỗi máy chủ: ${error.message}`;
-    }
     return res.status(500).json({
       success: false,
-      message: detailMessage,
+      message: 'Lỗi máy chủ nội bộ',
       error: error.message
     });
   }
@@ -148,13 +146,60 @@ exports.login = async (req, res) => {
 // GET /api/auth/me (Lấy thông tin tài khoản và ma trận quyền mới nhất từ MySQL)
 exports.getMe = async (req, res) => {
   try {
-    const user = req.user;
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Chưa đăng nhập!' });
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Chưa đăng nhập!'
+      });
     }
 
-    // Đọc ma trận phân quyền mới nhất từ MySQL
-    const [permRows] = await db.query('SELECT permissions FROM role_permissions WHERE role = ? LIMIT 1', [user.role]);
+    // Lấy thông tin mới nhất từ Database
+    const [users] = await db.query(
+      'SELECT id, name, email, username, role, status, avatar, phone FROM users WHERE id = ? LIMIT 1',
+      [req.user.id]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tài khoản không tồn tại!'
+      });
+    }
+
+    const user = users[0];
+    if (user.status === 'locked') {
+      return res.status(403).json({
+        success: false,
+        code: 'ACCOUNT_LOCKED',
+        message: 'Tài khoản của bạn đã bị khóa bởi Quản trị viên!'
+      });
+    }
+
+    let normalizedRole = user.role;
+    if (user.role === 'HR' || user.role === 'HR Manager') normalizedRole = 'HR Manager';
+    else if (user.role === 'INTERN' || user.role === 'Thực tập sinh') normalizedRole = 'Thực tập sinh';
+    else if (user.role === 'MENTOR' || user.role === 'Mentor') normalizedRole = 'Mentor';
+    else if (user.role === 'ADMIN' || user.role === 'Admin') normalizedRole = 'Admin';
+
+    let internId = req.user.internId || null;
+    if (!internId && normalizedRole === 'Thực tập sinh') {
+      const [interns] = await db.query(
+        'SELECT id FROM interns WHERE user_id = ? OR email = ? LIMIT 1',
+        [user.id, user.email]
+      );
+      if (interns.length > 0) internId = interns[0].id;
+    }
+
+    let mentorId = req.user.mentorId || null;
+    if (!mentorId && normalizedRole === 'Mentor') {
+      const [mentors] = await db.query(
+        'SELECT id FROM mentors WHERE user_id = ? OR email = ? LIMIT 1',
+        [user.id, user.email]
+      );
+      if (mentors.length > 0) mentorId = mentors[0].id;
+    }
+
+    const [permRows] = await db.query('SELECT permissions FROM role_permissions WHERE role = ? LIMIT 1', [normalizedRole]);
     let permissions = null;
     if (permRows.length > 0) {
       permissions = permRows[0].permissions;
@@ -163,33 +208,23 @@ exports.getMe = async (req, res) => {
       }
     }
 
-    // Nếu là thực tập sinh, lấy internId chính xác từ interns
-    let internId = user.id;
-    if (user.role === 'Thực tập sinh' || user.role === 'INTERN') {
-      const [interns] = await db.query(
-        'SELECT id FROM interns WHERE user_id = ? OR email = ? OR name = ? ORDER BY id DESC LIMIT 1', 
-        [user.id, user.email, user.name]
-      );
-      if (interns.length > 0) {
-        internId = interns[0].id;
-        await db.query('UPDATE interns SET user_id = ? WHERE id = ? AND user_id IS NULL', [user.id, internId]);
-      }
-    }
-
-    return res.json({
+    return res.status(200).json({
       success: true,
       user: {
-        ...user,
-        internId
+        id: user.id,
+        internId,
+        mentorId,
+        name: user.name,
+        email: user.email,
+        username: user.username || '',
+        role: normalizedRole,
+        avatar: user.avatar || '',
+        phone: user.phone || ''
       },
       permissions
     });
   } catch (error) {
     console.error('Lỗi API getMe:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi máy chủ nội bộ khi lấy thông tin tài khoản!',
-      error: error.message
-    });
+    return res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
   }
 };
