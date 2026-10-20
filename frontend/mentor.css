@@ -1019,75 +1019,56 @@ textarea.form-control {
 }
 
 
-/* MENTOR GLASS & ISLAND-FREE OVERRIDES */
-.mentor-sidebar .nav-item.active a, .mentor-sidebar .menu-item.active {
-  background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(167, 139, 250, 0.05) 100%) !important;
-  color: var(--text) !important;
-  border: 1px solid rgba(167, 139, 250, 0.35) !important;
-}
+/* MENTOR LIGHT THEME OVERRIDES */
 .stat-card, .intern-item-card, .eval-card, .report-card {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
+
 .stat-icon {
-  background: var(--accent-soft) !important;
-  color: var(--accent) !important;
-  border: 1px solid rgba(167, 139, 250, 0.25) !important;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid rgba(167, 139, 250, 0.25);
 }
-th { background: transparent !important; color: var(--text-3) !important; }
-.modal-header, .modal-footer { background: transparent !important; }
 
-
-/* MENTOR GLASS & ISLAND-FREE OVERRIDES */
-.mentor-sidebar .nav-item.active a, .mentor-sidebar .menu-item.active {
-  background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(167, 139, 250, 0.05) 100%) !important;
-  color: var(--text) !important;
-  border: 1px solid rgba(167, 139, 250, 0.35) !important;
+th {
+  background: transparent;
+  color: var(--text-3);
 }
-.stat-card, .intern-item-card, .eval-card, .report-card {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius-lg);
+
+.modal-header, .modal-footer {
+  background: transparent;
 }
-.stat-icon {
-  background: var(--accent-soft) !important;
-  color: var(--accent) !important;
-  border: 1px solid rgba(167, 139, 250, 0.25) !important;
-}
-th { background: transparent !important; color: var(--text-3) !important; }
-.modal-header, .modal-footer { background: transparent !important; }
 
-
-
-
-/* MENTOR LIGHT THEME */
 .mentor-sidebar .nav-item.active a,
 .mentor-sidebar .nav-item.active,
 .nav-item.active {
-  background: #f3effe !important;
-  color: #7c3aed !important;
-  border: 1px solid rgba(167, 139, 250, 0.35) !important;
+  background: #f3effe;
+  color: #7c3aed;
+  border: 1px solid rgba(167, 139, 250, 0.35);
 }
 
 .sidebar-logout {
-  background: #fdeeee !important;
-  color: #dc2626 !important;
+  background: #fdeeee;
+  color: #dc2626;
 }
 
 .live-date-pill {
-  background: #f3effe !important;
-  color: #7c3aed !important;
+  background: #f3effe;
+  color: #7c3aed;
 }
+
 .stat-icon.indigo {
-  background: #f3effe !important;
-  color: #7c3aed !important;
+  background: #f3effe;
+  color: #7c3aed;
 }
+
 .stat-icon.emerald {
-  background: #eafaf1 !important;
-  color: #059669 !important;
+  background: #eafaf1;
+  color: #059669;
 }
 
 .page-title, .stat-value {
-  color: var(--text) !important;
+  color: var(--text);
 }

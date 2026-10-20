@@ -1580,7 +1580,7 @@ body {
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  padding: 0 !important;
+  padding: 0;
   overflow: hidden;
   border-radius: var(--radius-lg);
   box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
@@ -1915,7 +1915,7 @@ body {
 
 /* Thẻ được chọn: Viền xanh đậm chuẩn mẫu ảnh */
 .schedule-day-card.selected {
-  border: 2px solid var(--primary-blue) !important;
+  border: 2px solid var(--primary-blue);
   background-color: #fafcff;
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.12);
 }
@@ -2161,7 +2161,7 @@ body {
 }
 
 .month-day-cell.selected {
-  border: 2px solid var(--primary-blue) !important;
+  border: 2px solid var(--primary-blue);
   background-color: var(--accent-soft);
 }
 
@@ -2642,7 +2642,7 @@ body {
 /* Khung trạng thái rỗng khi chưa có dữ liệu (Empty State) */
 .empty-state-cell {
   text-align: center;
-  padding: 48px 16px !important;
+  padding: 48px 16px;
 }
 
 .empty-state-box {
@@ -3410,115 +3410,75 @@ body {
 }
 
 
-/* INTERN GLASS & ISLAND-FREE OVERRIDES */
+/* INTERN LIGHT THEME OVERRIDES */
 .banner-welcome, .hero-banner {
-  background: linear-gradient(145deg, rgba(20, 184, 166, 0.12) 0%, rgba(56, 189, 248, 0.05) 100%) !important;
-  border: 1px solid rgba(20, 184, 166, 0.25) !important;
+  background: linear-gradient(145deg, rgba(20, 184, 166, 0.08) 0%, rgba(56, 189, 248, 0.04) 100%);
+  border: 1px solid rgba(20, 184, 166, 0.20);
   border-radius: var(--radius-lg);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 10px 30px -10px rgba(30, 45, 100, 0.08);
 }
-.sidebar .nav-link.active, .sidebar a.active {
-  background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(20, 184, 166, 0.05) 100%) !important;
-  color: var(--text) !important;
-  border: 1px solid rgba(20, 184, 166, 0.35) !important;
-}
-.card, .stat-card, .attendance-card, .task-card {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
+
+.intern-card, .stat-card, .attendance-card, .task-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
-.stat-icon, .icon-wrapper {
-  background: var(--accent-soft) !important;
-  color: var(--accent) !important;
-  border: 1px solid rgba(20, 184, 166, 0.25) !important;
-}
-.table-responsive, table {
-  background: transparent !important;
-}
-th { background: transparent !important; color: var(--text-3) !important; }
-td { color: var(--text) !important; }
-.badge, .status-pill { border-radius: var(--radius-full); }
 
-
-/* INTERN GLASS & ISLAND-FREE OVERRIDES */
-.banner-welcome, .hero-banner {
-  background: linear-gradient(145deg, rgba(20, 184, 166, 0.12) 0%, rgba(56, 189, 248, 0.05) 100%) !important;
-  border: 1px solid rgba(20, 184, 166, 0.25) !important;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+.stat-icon {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid rgba(20, 184, 166, 0.25);
 }
-.sidebar .nav-link.active, .sidebar a.active {
-  background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(20, 184, 166, 0.05) 100%) !important;
-  color: var(--text) !important;
-  border: 1px solid rgba(20, 184, 166, 0.35) !important;
+
+th {
+  background: transparent;
+  color: var(--text-3);
 }
-.card, .stat-card, .attendance-card, .task-card {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius-lg);
+
+td {
+  color: var(--text);
 }
-.stat-icon, .icon-wrapper {
-  background: var(--accent-soft) !important;
-  color: var(--accent) !important;
-  border: 1px solid rgba(20, 184, 166, 0.25) !important;
-}
-.table-responsive, table {
-  background: transparent !important;
-}
-th { background: transparent !important; color: var(--text-3) !important; }
-td { color: var(--text) !important; }
-.badge, .status-pill { border-radius: var(--radius-full); }
 
-
-
-
-
-
-/* INTERN LIGHT THEME & CONTRAST FIXES */
-.modal:not(.show):not(.active),
-.modal-overlay:not(.show):not(.active) {
-  background-color: transparent !important;
-}
 .modal.show,
 .modal.active,
 .modal-overlay.show,
 .modal-overlay.active {
-  background-color: rgba(15, 23, 42, 0.45) !important;
+  background-color: rgba(15, 23, 42, 0.45);
 }
 
 .sidebar .nav-link.active,
 .sidebar a.active,
 .sidebar-menu-btn.active {
-  background: #e6f7f5 !important;
-  color: #0d9488 !important;
-  border: 1px solid rgba(20, 184, 166, 0.35) !important;
+  background: #e6f7f5;
+  color: #0d9488;
+  border: 1px solid rgba(20, 184, 166, 0.35);
 }
 
 .sidebar-logout {
-  background: #fdeeee !important;
-  color: #dc2626 !important;
+  background: #fdeeee;
+  color: #dc2626;
 }
 
 .modal-dropzone {
-  background-color: var(--surface-2) !important;
-  border: 2px dashed var(--border-strong) !important;
-  color: var(--text) !important;
+  background-color: var(--surface-2);
+  border: 2px dashed var(--border-strong);
+  color: var(--text);
 }
 .modal-dropzone:hover, .modal-dropzone.dragover {
-  border-color: var(--accent) !important;
-  background-color: var(--accent-soft) !important;
+  border-color: var(--accent);
+  background-color: var(--accent-soft);
 }
 .modal-dropzone * {
-  color: var(--text) !important;
+  color: var(--text);
 }
 
 .modal-body.bg-light {
-  background-color: var(--surface-2) !important;
+  background-color: var(--surface-2);
 }
 .modal-body.bg-light * {
-  color: var(--text) !important;
+  color: var(--text);
 }
 
 .page-title {
-  color: var(--text) !important;
+  color: var(--text);
 }

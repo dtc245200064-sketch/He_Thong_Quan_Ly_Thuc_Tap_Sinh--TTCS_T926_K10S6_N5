@@ -1578,68 +1578,45 @@ body {
 
 
 
-/* ADMIN GLASS & ISLAND-FREE OVERRIDES */
-.admin-sidebar .menu-item.active, .admin-sidebar .nav-link.active {
-  background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(96, 165, 250, 0.05) 100%) !important;
-  color: var(--text) !important;
-  border: 1px solid rgba(96, 165, 250, 0.35) !important;
-}
+/* ADMIN LIGHT THEME OVERRIDES */
 .admin-card, .stat-card, .user-row-card {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
+
 .stat-icon, .admin-icon-tile {
-  background: var(--accent-soft) !important;
-  color: var(--accent) !important;
-  border: 1px solid rgba(96, 165, 250, 0.25) !important;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid rgba(96, 165, 250, 0.25);
 }
+
 .matrix-table th, .matrix-table td {
-  border-color: var(--border) !important;
+  border-color: var(--border);
 }
-th { background: transparent !important; color: var(--text-3) !important; }
-.modal-header, .modal-footer { background: transparent !important; }
 
-
-/* ADMIN GLASS & ISLAND-FREE OVERRIDES */
-.admin-sidebar .menu-item.active, .admin-sidebar .nav-link.active {
-  background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(96, 165, 250, 0.05) 100%) !important;
-  color: var(--text) !important;
-  border: 1px solid rgba(96, 165, 250, 0.35) !important;
+th {
+  background: transparent;
+  color: var(--text-3);
 }
-.admin-card, .stat-card, .user-row-card {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius-lg);
+
+.modal-header, .modal-footer {
+  background: transparent;
 }
-.stat-icon, .admin-icon-tile {
-  background: var(--accent-soft) !important;
-  color: var(--accent) !important;
-  border: 1px solid rgba(96, 165, 250, 0.25) !important;
-}
-.matrix-table th, .matrix-table td {
-  border-color: var(--border) !important;
-}
-th { background: transparent !important; color: var(--text-3) !important; }
-.modal-header, .modal-footer { background: transparent !important; }
 
-
-
-
-/* ADMIN LIGHT THEME */
 .admin-sidebar .menu-item.active,
 .admin-sidebar .nav-link.active,
 .nav-item.active {
-  background: #eff6ff !important;
-  color: #2563eb !important;
-  border: 1px solid rgba(96, 165, 250, 0.35) !important;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid rgba(96, 165, 250, 0.35);
 }
 
 .sidebar-logout {
-  background: #fdeeee !important;
-  color: #dc2626 !important;
+  background: #fdeeee;
+  color: #dc2626;
 }
 
 .page-title, .stat-value {
-  color: var(--text) !important;
+  color: var(--text);
 }
