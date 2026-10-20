@@ -13,7 +13,7 @@ function normalizeRole(role) {
   return r;
 }
 
-// 1. Xác thực người dùng (JWT Token từ Header Authorization, query, hoặc header x-user-role dự phòng)
+// 1. Xác thực người dùng (JWT Token từ Header Authorization, query)
 const authenticate = async (req, res, next) => {
   try {
     let token = null;
@@ -43,11 +43,29 @@ const authenticate = async (req, res, next) => {
             });
           }
           user.role = normalizeRole(user.role);
+
+          // Tự động liên kết internId nếu vai trò là Thực tập sinh
+          if (user.role === 'Thực tập sinh') {
+            try {
+              const [internRows] = await db.query(
+                'SELECT id FROM interns WHERE user_id = ? OR email = ? LIMIT 1',
+                [user.id, user.email]
+              );
+              if (internRows.length > 0) {
+                user.internId = internRows[0].id;
+              } else {
+                user.internId = user.id;
+              }
+            } catch (e) {
+              user.internId = user.id;
+            }
+          }
+
           req.user = user;
           return next();
         }
       } catch (err) {
-        // Token không hợp lệ hoặc hết hạn, tiếp tục thử fallback nếu có
+        // Token không hợp lệ hoặc hết hạn
       }
     }
 

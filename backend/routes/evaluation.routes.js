@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const evalController = require('../controllers/evaluation.controller');
+const evaluationController = require('../controllers/evaluation.controller');
+const { authenticate } = require('../middleware/auth');
 
-router.get('/', evalController.getAllEvaluations);
-router.get('/intern/:internId', evalController.getEvaluationByIntern);
-router.post('/', evalController.saveEvaluation);
+router.get('/', authenticate, evaluationController.getAllEvaluations);
+router.get('/intern/:internId', authenticate, evaluationController.getEvaluationByIntern);
+router.post('/', authenticate, evaluationController.saveEvaluation);
 
 module.exports = router;

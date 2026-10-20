@@ -15,10 +15,16 @@ exports.getSchedules = async (req, res) => {
     `;
     const params = [];
 
-    if (intern_id) {
-      query += ` AND s.intern_id = ?`;
-      params.push(intern_id);
+    // Bảo vệ quyền xem IDOR: TTS chỉ xem lịch của chính mình (B04 & S2-18)
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      const myInternId = req.user.internId || -1;
+      query += ` AND (s.intern_id = ? OR i.user_id = ?)`;
+      params.push(myInternId, req.user.id);
+    } else if (intern_id) {
+      query += ` AND (s.intern_id = ? OR i.user_id = ?)`;
+      params.push(intern_id, intern_id);
     }
+
     if (from) {
       query += ` AND s.schedule_date >= ?`;
       params.push(from);
@@ -61,26 +67,50 @@ exports.createSchedule = async (req, res) => {
       content,
       location = 'Văn phòng CodeGym',
       mentor_id,
-      schedule_type = 'working'
+      schedule_type = 'working',
+      status = 'scheduled'
     } = req.body;
 
     if (!intern_id || !schedule_date || !title) {
       return res.status(400).json({
         success: false,
-        message: 'Vui lòng điền đủ thông tin thực tập sinh, ngày và tiêu đề lịch!'
+        message: 'Vui lòng cung cấp thực tập sinh, ngày làm việc và tiêu đề lịch!'
       });
     }
 
+    if (end_time && start_time && end_time <= start_time) {
+      return res.status(400).json({
+        success: false,
+        message: 'Giờ kết thúc ca làm việc phải sau giờ bắt đầu!'
+      });
+    }
+
+    // Tra cứu intern_id thực tế
+    let [internRows] = await db.query('SELECT id, mentor_id, user_id FROM interns WHERE id = ?', [intern_id]);
+    if (internRows.length === 0) {
+      [internRows] = await db.query('SELECT id, mentor_id, user_id FROM interns WHERE user_id = ?', [intern_id]);
+    }
+    if (internRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy thực tập sinh!'
+      });
+    }
+
+    const actualInternId = internRows[0].id;
+    const assignedMentorId = mentor_id || internRows[0].mentor_id || null;
+
     const [result] = await db.query(
       `INSERT INTO intern_schedules (intern_id, schedule_date, start_time, end_time, title, content, location, mentor_id, schedule_type, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')`,
-      [intern_id, schedule_date, start_time, end_time, title.trim(), content ? content.trim() : null, location ? location.trim() : 'Văn phòng CodeGym', mentor_id ? Number(mentor_id) : null, schedule_type]
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [actualInternId, schedule_date, start_time, end_time, title.trim(), content || '', location, assignedMentorId, schedule_type, status]
     );
 
+    const [created] = await db.query('SELECT * FROM intern_schedules WHERE id = ?', [result.insertId]);
     return res.status(201).json({
       success: true,
-      message: 'Tạo lịch thực tập thành công!',
-      scheduleId: result.insertId
+      message: 'Thiết lập lịch thực tập thành công!',
+      data: created[0]
     });
   } catch (error) {
     console.error('Lỗi tạo lịch thực tập:', error);
@@ -96,49 +126,34 @@ exports.createSchedule = async (req, res) => {
 exports.updateSchedule = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      schedule_date,
-      start_time,
-      end_time,
-      title,
-      content,
-      location,
-      mentor_id,
-      schedule_type,
-      status
-    } = req.body;
+    const { schedule_date, start_time, end_time, title, content, location, mentor_id, schedule_type, status } = req.body;
 
     const [existing] = await db.query('SELECT * FROM intern_schedules WHERE id = ?', [id]);
     if (existing.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy lịch thực tập cần cập nhật!'
-      });
+      return res.status(404).json({ success: false, message: 'Không tìm thấy lịch thực tập!' });
     }
 
-    const current = existing[0];
+    if (start_time && end_time && end_time <= start_time) {
+      return res.status(400).json({ success: false, message: 'Giờ kết thúc phải sau giờ bắt đầu!' });
+    }
+
     await db.query(
       `UPDATE intern_schedules 
-       SET schedule_date = ?, start_time = ?, end_time = ?, title = ?, content = ?, location = ?, mentor_id = ?, schedule_type = ?, status = ?
+       SET schedule_date = COALESCE(?, schedule_date),
+           start_time = COALESCE(?, start_time),
+           end_time = COALESCE(?, end_time),
+           title = COALESCE(?, title),
+           content = COALESCE(?, content),
+           location = COALESCE(?, location),
+           mentor_id = COALESCE(?, mentor_id),
+           schedule_type = COALESCE(?, schedule_type),
+           status = COALESCE(?, status),
+           updated_at = NOW()
        WHERE id = ?`,
-      [
-        schedule_date || current.schedule_date,
-        start_time || current.start_time,
-        end_time || current.end_time,
-        title ? title.trim() : current.title,
-        content !== undefined ? (content ? content.trim() : null) : current.content,
-        location !== undefined ? location : current.location,
-        mentor_id !== undefined ? (mentor_id ? Number(mentor_id) : null) : current.mentor_id,
-        schedule_type || current.schedule_type,
-        status || current.status,
-        id
-      ]
+      [schedule_date, start_time, end_time, title, content, location, mentor_id, schedule_type, status, id]
     );
 
-    return res.status(200).json({
-      success: true,
-      message: 'Cập nhật lịch thực tập thành công!'
-    });
+    return res.status(200).json({ success: true, message: 'Cập nhật lịch thực tập thành công!' });
   } catch (error) {
     console.error('Lỗi cập nhật lịch thực tập:', error);
     return res.status(500).json({
@@ -155,16 +170,9 @@ exports.deleteSchedule = async (req, res) => {
     const { id } = req.params;
     const [result] = await db.query('DELETE FROM intern_schedules WHERE id = ?', [id]);
     if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy lịch thực tập để xóa!'
-      });
+      return res.status(404).json({ success: false, message: 'Không tìm thấy lịch thực tập để xóa!' });
     }
-
-    return res.status(200).json({
-      success: true,
-      message: 'Đã xóa lịch thực tập thành công!'
-    });
+    return res.status(200).json({ success: true, message: 'Xóa lịch thực tập thành công!' });
   } catch (error) {
     console.error('Lỗi xóa lịch thực tập:', error);
     return res.status(500).json({

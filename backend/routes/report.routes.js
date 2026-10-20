@@ -1,14 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const reportController = require('../controllers/report.controller');
+const { authenticate } = require('../middleware/auth');
 
-router.get('/', reportController.getWeeklyReports);
-router.get('/weekly', reportController.getWeeklyReports);
-router.post('/weekly', reportController.submitWeeklyReport);
-router.put('/weekly/:id', reportController.updateWeeklyReport);
-router.delete('/weekly/:id', reportController.deleteWeeklyReport);
-router.put('/weekly/:id/feedback', reportController.feedbackWeeklyReport);
-router.get('/statistics/demographics', reportController.getStatisticsDemographics);
-router.get('/statistics/completion', reportController.getStatisticsCompletion);
+router.get('/', authenticate, reportController.getWeeklyReports);
+router.get('/weekly', authenticate, reportController.getWeeklyReports);
+router.post('/weekly', authenticate, reportController.submitWeeklyReport);
+router.put('/weekly/:id', authenticate, reportController.updateWeeklyReport);
+router.delete('/weekly/:id', authenticate, reportController.deleteWeeklyReport);
+router.put('/weekly/:id/feedback', authenticate, reportController.feedbackWeeklyReport);
+router.get('/statistics/demographics', authenticate, reportController.getStatisticsDemographics);
+router.get('/statistics/completion', authenticate, reportController.getStatisticsCompletion);
+router.get('/statistics/departments', authenticate, reportController.getStatisticsDepartments);
 
 module.exports = router;
