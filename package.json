@@ -16,8 +16,5 @@
     "hr-portal"
   ],
   "author": "CodeGym Team",
-  "license": "ISC",
-  "dependencies": {
-    "puppeteer-core": "^25.15.0"
-  }
+  "license": "ISC"
 }
