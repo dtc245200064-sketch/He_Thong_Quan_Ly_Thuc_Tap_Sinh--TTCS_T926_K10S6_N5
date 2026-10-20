@@ -318,7 +318,7 @@ function renderOverviewView() {
   if (tbodyReports) {
     const pendingList = MentorState.reports.filter(r => r.status === 'submitted' || !r.mentor_feedback);
     if (pendingList.length === 0) {
-      tbodyReports.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 24px; color:#10b981;"><i class="fa-solid fa-circle-check"></i> Tuyệt vời! Không còn báo cáo nào đang chờ phản hồi.</td></tr>`;
+      tbodyReports.innerHTML = `<tr><td colspan="6" class="empty-row"><i class="fa-solid fa-circle-check"></i> Tuyệt vời! Không còn báo cáo nào đang chờ phản hồi.</td></tr>`;
     } else {
       tbodyReports.innerHTML = pendingList.slice(0, 5).map(r => {
         return `

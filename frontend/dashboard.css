@@ -74,7 +74,7 @@ body {
 
 /* ==================== 1. SIDEBAR BÊN TRÁI ==================== */
 .sidebar {
-  width: 260px;
+  width: 240px;
   background-color: var(--surface, #ffffff);
   color: var(--text, #111827);
   display: flex;
@@ -553,6 +553,7 @@ body {
 
 .overview-card .table-container {
   border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
 .overview-header {
@@ -1949,11 +1950,28 @@ body {
     flex-direction: column;
   }
   .sidebar {
-    width: 100%;
-    padding: 16px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    width: 240px;
+    z-index: 1060;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.25);
+    background: var(--surface);
+    overflow-y: auto;
+  }
+  .sidebar.mobile-open,
+  .sidebar.open {
+    transform: translateX(0);
   }
   .main-content {
+    margin-left: 0;
+    width: 100%;
     padding: 20px 16px;
+    padding-top: 64px;
     height: auto;
   }
   .toolbar {

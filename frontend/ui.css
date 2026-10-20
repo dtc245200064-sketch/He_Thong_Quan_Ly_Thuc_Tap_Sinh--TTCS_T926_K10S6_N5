@@ -826,31 +826,304 @@ tbody tr td {
 
 
 /* ==========================================================================
-   UNIFIED SIDEBAR RADII: Blocks (role, user, logout) -> lg, Menu items -> md
+   UNIFIED SIDEBAR (Shared across Admin, Dashboard, Mentor, Intern)
+   - Width: 240px
+   - Padding: 20px 14px
+   - Radii: Role box, User box, Logout btn -> var(--radius-md)
+   - Radii: Menu items -> var(--radius-sm)
    ========================================================================== */
-.sidebar .role-box,
-.portal-sidebar .sidebar-role-card,
-.mentor-sidebar .mentor-badge-box,
-.admin-sidebar .admin-badge-box,
+.sidebar,
+.portal-sidebar,
+.admin-sidebar,
+.mentor-sidebar {
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
+  padding: 20px 14px;
+  box-sizing: border-box;
+}
+
+/* Ô vai trò: radius-md */
+.role-box,
+.role-badge-box,
+.sidebar-role-card,
+.admin-badge-box,
+.mentor-badge-box,
+.sidebar-header .user-role {
+  border-radius: var(--radius-md);
+}
+
+/* Ô user: radius-md & flex ngang chuẩn */
+.user-profile,
 .sidebar .user-profile,
 .portal-sidebar .user-profile,
 .admin-sidebar .user-profile,
+.mentor-sidebar .user-profile,
 .sidebar-footer-wrapper .user-profile,
+.sidebar-user {
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.user-profile .user-avatar,
+.user-profile-avatar,
+#sidebarAvatar,
+.sidebar-user-avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.user-profile .user-info,
+.user-profile-info,
+.sidebar-user-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.user-profile .user-name,
+.user-profile-name,
+#sidebarName,
+.sidebar-user-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  display: block;
+}
+
+.user-profile .user-role,
+.user-profile-role,
+#sidebarRole,
+.sidebar-user-role {
+  font-size: 11.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  display: block;
+}
+
+/* Nút Đăng xuất: radius-md */
 .sidebar .sidebar-logout,
 .portal-sidebar .sidebar-logout,
 .admin-sidebar .sidebar-logout,
 .mentor-sidebar .btn-sidebar-logout,
-.btn-logout {
-  border-radius: var(--radius-lg);
+.mentor-sidebar .sidebar-logout,
+.btn-logout,
+.sidebar-logout {
+  border-radius: var(--radius-md);
 }
 
+/* Mục menu: radius-sm */
 .sidebar .menu-item,
 .sidebar .menu-item.active,
 .portal-sidebar .sidebar-menu-btn,
 .portal-sidebar .sidebar-menu-btn.active,
+.portal-sidebar .nav-link,
+.portal-sidebar .nav-link.active,
 .mentor-sidebar .nav-item,
 .mentor-sidebar .nav-item.active,
 .admin-sidebar .nav-item,
-.admin-sidebar .nav-item.active {
+.admin-sidebar .nav-item.active,
+.nav-link,
+.menu-item {
+  border-radius: var(--radius-sm);
+}
+
+/* ==========================================================================
+   UNIFIED EMPTY STATE (Across all 4 portals)
+   - Background: var(--surface-2)
+   - Text color: var(--text-2)
+   - Center aligned, 32px padding, Icon
+   ========================================================================== */
+td.empty-row,
+tr.empty-table-row td,
+td.empty-state-cell,
+.table-empty-state,
+.empty-state-wrap,
+.empty-state-box,
+.schedule-empty-state {
+  background: var(--surface-2);
+  color: var(--text-2);
+  text-align: center;
+  padding: 32px;
   border-radius: var(--radius-md);
+  box-sizing: border-box;
+}
+
+tbody tr:has(td.empty-row):hover,
+tbody tr.empty-table-row:hover,
+tbody tr:has(td.empty-state-cell):hover {
+  background: transparent;
+  transform: none;
+  box-shadow: none;
+}
+
+.empty-state-icon,
+.empty-row i,
+.empty-state-cell i,
+.empty-state-box i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+td.empty-row i,
+td.empty-state-cell i {
+  margin-right: 8px;
+  margin-bottom: 0;
+  vertical-align: middle;
+}
+
+.empty-state-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 4px 0;
+}
+
+.empty-state-desc,
+.empty-state-subtext {
+  font-size: 13px;
+  color: var(--text-2);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVENESS & SIDEBAR DRAWER (390px, max-width: 900px)
+   ========================================================================== */
+.table-container,
+.table-responsive,
+.data-table-wrap,
+.records-table-container,
+.overview-card .table-container,
+.schedule-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  table {
+    min-width: 600px;
+  }
+
+  .mobile-sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 1050;
+    height: 38px;
+    padding: 0 14px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 600;
+    transition: all var(--dur-fast) var(--ease);
+  }
+  .mobile-sidebar-toggle:hover {
+    background: var(--surface-2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .sidebar-mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 1040;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s var(--ease);
+  }
+  .sidebar-mobile-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sidebar,
+  .portal-sidebar,
+  .admin-sidebar,
+  .mentor-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    width: 240px;
+    min-width: 240px;
+    max-width: 240px;
+    z-index: 1060;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.25);
+    background: var(--surface);
+    overflow-y: auto;
+  }
+
+  .sidebar.mobile-open,
+  .portal-sidebar.mobile-open,
+  .admin-sidebar.mobile-open,
+  .mentor-sidebar.mobile-open,
+  .sidebar.open,
+  .admin-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content,
+  .portal-main,
+  .admin-main,
+  .mentor-main {
+    margin-left: 0;
+    width: 100%;
+    max-width: 100vw;
+    padding-top: 64px;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+}
+
+@media (min-width: 901px) {
+  .mobile-sidebar-toggle,
+  .sidebar-mobile-backdrop {
+    display: none;
+  }
 }

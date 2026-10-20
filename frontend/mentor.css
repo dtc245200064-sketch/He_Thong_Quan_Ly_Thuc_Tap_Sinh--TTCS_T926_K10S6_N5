@@ -67,7 +67,7 @@ body {
 
 /* SIDEBAR */
 .mentor-sidebar {
-  width: 270px;
+  width: 240px;
   background-color: var(--bg-sidebar);
   color: var(--text-main);
   display: flex;
@@ -931,16 +931,27 @@ textarea.form-control {
     flex-direction: column;
   }
   .mentor-sidebar {
-    position: relative;
-    width: 100%;
-    height: auto;
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
-    padding: 16px;
-    transform: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    width: 240px;
+    z-index: 1060;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.25);
+    background: var(--surface);
+    overflow-y: auto;
+  }
+  .mentor-sidebar.mobile-open,
+  .mentor-sidebar.open {
+    transform: translateX(0);
   }
   .mentor-main {
     margin-left: 0;
+    width: 100%;
+    padding-top: 64px;
     min-height: auto;
   }
   .sidebar-nav ul {

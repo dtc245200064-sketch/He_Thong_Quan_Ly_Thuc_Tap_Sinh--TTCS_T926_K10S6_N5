@@ -188,3 +188,64 @@ window.UI = (function() {
     alert
   };
 })();
+
+
+// ==========================================================================
+// MOBILE SIDEBAR DRAWER CONTROLLER (All 4 Portals)
+// ==========================================================================
+(function initMobileSidebar() {
+  function setup() {
+    const sidebar = document.querySelector('.sidebar, .portal-sidebar, .admin-sidebar, .mentor-sidebar');
+    if (!sidebar) return;
+
+    let toggleBtn = document.getElementById('mobileSidebarToggle');
+    if (!toggleBtn) {
+      toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.id = 'mobileSidebarToggle';
+      toggleBtn.className = 'mobile-sidebar-toggle';
+      toggleBtn.setAttribute('aria-label', 'Mở / Đóng menu');
+      toggleBtn.title = 'Mở / Đóng menu';
+      toggleBtn.innerHTML = '<i class="fa-solid fa-bars"></i><span>Menu</span>';
+      document.body.appendChild(toggleBtn);
+    }
+
+    let backdrop = document.getElementById('mobileSidebarBackdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.id = 'mobileSidebarBackdrop';
+      backdrop.className = 'sidebar-mobile-backdrop';
+      document.body.appendChild(backdrop);
+    }
+
+    function toggle(open) {
+      const isOpen = typeof open === 'boolean' ? open : !sidebar.classList.contains('mobile-open');
+      sidebar.classList.toggle('mobile-open', isOpen);
+      sidebar.classList.toggle('open', isOpen);
+      backdrop.classList.toggle('active', isOpen);
+      toggleBtn.innerHTML = isOpen
+        ? '<i class="fa-solid fa-xmark"></i><span>Đóng</span>'
+        : '<i class="fa-solid fa-bars"></i><span>Menu</span>';
+    }
+
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggle();
+    });
+
+    backdrop.addEventListener('click', () => toggle(false));
+
+    sidebar.addEventListener('click', (e) => {
+      const item = e.target.closest('.menu-item, .nav-item, .sidebar-menu-btn, .nav-link, .sidebar-logout');
+      if (item && window.innerWidth <= 900) {
+        toggle(false);
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup);
+  } else {
+    setup();
+  }
+})();

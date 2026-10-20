@@ -143,7 +143,7 @@ function renderOverview() {
   recentTbody.innerHTML = "";
 
   if (urgentList.length === 0) {
-    recentTbody.innerHTML = `<tr><td colspan="6" class="empty-row">🎉 Tuyệt vời! Hiện không còn hồ sơ nào cần duyệt gấp.</td></tr>`;
+    recentTbody.innerHTML = `<tr><td colspan="6" class="empty-row"><i class="fa-solid fa-circle-check"></i> Tuyệt vời! Hiện không còn hồ sơ nào cần duyệt gấp.</td></tr>`;
     return;
   }
 
