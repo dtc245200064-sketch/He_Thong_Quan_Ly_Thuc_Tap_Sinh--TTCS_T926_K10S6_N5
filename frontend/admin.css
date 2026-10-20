@@ -10,71 +10,75 @@
 :root {
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   
-  /* Primary & Accents */
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-light: #eff6ff;
-  --primary-border: #bfdbfe;
+  /* Primary & Accents (Slate for Admin) */
+  --accent: #334155;
+  --accent-hover: #1e293b;
+  --accent-soft: #f1f5f9;
 
-  /* Sidebar Theme (Deep Dark Navy) */
-  --sidebar-bg: #0b1329;
-  --sidebar-card-bg: rgba(255, 255, 255, 0.05);
-  --sidebar-card-border: rgba(255, 255, 255, 0.08);
-  --sidebar-text: #94a3b8;
-  --sidebar-text-active: #ffffff;
-  --sidebar-active-bg: rgba(59, 130, 246, 0.18);
-  --sidebar-hover-bg: rgba(255, 255, 255, 0.05);
+  --primary: var(--accent);
+  --primary-hover: var(--accent-hover);
+  --primary-light: var(--accent-soft);
+  --primary-border: #cbd5e1;
+
+  /* Sidebar Theme (Clean Calm Surface) */
+  --sidebar-bg: var(--surface, #ffffff);
+  --sidebar-card-bg: var(--surface-2, #f1f3f6);
+  --sidebar-card-border: var(--border, #e5e7eb);
+  --sidebar-text: var(--text-2, #4b5563);
+  --sidebar-text-active: var(--accent, #334155);
+  --sidebar-active-bg: var(--accent-soft, #f1f5f9);
+  --sidebar-hover-bg: var(--surface-2, #f1f3f6);
 
   /* Page Layout */
-  --bg-page: #f8fafc;
-  --card-bg: #ffffff;
-  --border-card: #edf2f7;
-  --border-light: #f1f5f9;
-  --border-input: #e2e8f0;
-  --border-input-focus: #2563eb;
+  --bg-page: var(--bg, #f6f7f9);
+  --card-bg: var(--surface, #ffffff);
+  --border-card: var(--border, #e5e7eb);
+  --border-light: var(--border, #e5e7eb);
+  --border-input: var(--border, #e5e7eb);
+  --border-input-focus: var(--accent, #334155);
 
   /* Text Colors */
-  --text-main: #0f172a;
-  --text-body: #334155;
-  --text-muted: #64748b;
-  --text-light: #94a3b8;
+  --text-main: var(--text, #111827);
+  --text-body: var(--text, #111827);
+  --text-muted: var(--text-2, #4b5563);
+  --text-light: var(--text-3, #9ca3af);
 
   /* Badge Colors */
-  --badge-admin-bg: #f3e8ff;
-  --badge-admin-text: #6b21a8;
-  --badge-hr-bg: #e0e7ff;
-  --badge-hr-text: #4338ca;
-  --badge-mentor-bg: #e0f2fe;
-  --badge-mentor-text: #0284c7;
-  --badge-intern-bg: #fef3c7;
-  --badge-intern-text: #b45309;
+  --badge-admin-bg: #f1f5f9;
+  --badge-admin-text: #334155;
+  --badge-hr-bg: #eef0ff;
+  --badge-hr-text: #4f46e5;
+  --badge-mentor-bg: #f5f3ff;
+  --badge-mentor-text: #7c3aed;
+  --badge-intern-bg: #f0fdfa;
+  --badge-intern-text: #0d9488;
 
   /* Status Colors */
-  --status-active: #10b981;
-  --status-locked: #ef4444;
+  --status-active: #16a34a;
+  --status-locked: #dc2626;
 
   /* Stat Icons Colors */
-  --icon-blue-bg: #eff6ff;
-  --icon-blue-text: #3b82f6;
+  --icon-blue-bg: #f1f5f9;
+  --icon-blue-text: #334155;
   --icon-purple-bg: #f5f3ff;
-  --icon-purple-text: #8b5cf6;
-  --icon-cyan-bg: #ecfeff;
-  --icon-cyan-text: #06b6d4;
-  --icon-amber-bg: #fffbeb;
+  --icon-purple-text: #7c3aed;
+  --icon-cyan-bg: #f0fdfa;
+  --icon-cyan-text: #0d9488;
+  --icon-amber-bg: #fff7e6;
   --icon-amber-text: #d97706;
-  --icon-green-bg: #ecfdf5;
-  --icon-green-text: #10b981;
+  --icon-green-bg: #ecfdf3;
+  --icon-green-text: #16a34a;
   --icon-red-bg: #fef2f2;
-  --icon-red-text: #ef4444;
+  --icon-red-text: #dc2626;
 
   /* Radius & Shadows */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-sm: var(--radius-sm, 8px);
+  --radius-md: var(--radius-md, 12px);
+  --radius-lg: var(--radius-lg, 16px);
   --radius-full: 9999px;
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
-  --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.05);
-  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-card: var(--shadow-sm, 0 1px 2px rgba(16, 24, 40, 0.04));
+  --shadow-hover: var(--shadow-md, 0 4px 16px rgba(16, 24, 40, 0.08));
+  --shadow-modal: var(--shadow-md, 0 4px 16px rgba(16, 24, 40, 0.08));
 }
 
 * {
@@ -115,7 +119,8 @@ body {
   display: flex;
   flex-direction: column;
   padding: 24px 16px 20px 16px;
-  transition: all 0.3s ease;
+  border-right: 1px solid var(--border-card);
+  transition: all var(--dur, 220ms) var(--ease, ease);
   -webkit-user-select: none;
   user-select: none;
 }
@@ -132,23 +137,23 @@ body {
 }
 
 .logo-badge {
-  background-color: var(--primary);
+  background-color: var(--accent);
   color: #ffffff;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.5px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+  box-shadow: var(--shadow-card);
 }
 
 .logo-title {
-  color: #ffffff;
+  color: var(--text-main);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.2px;
 }
 
@@ -156,15 +161,15 @@ body {
 .admin-badge-box {
   background-color: var(--sidebar-card-bg);
   border: 1px solid var(--sidebar-card-border);
-  border-radius: var(--radius-md);
-  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
   margin-bottom: 22px;
 }
 
 .admin-badge-subtitle {
   display: block;
   font-size: 11.5px;
-  color: var(--sidebar-text);
+  color: var(--text-light);
   margin-bottom: 4px;
 }
 
@@ -178,11 +183,11 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: #ffffff;
+  background-color: var(--accent);
 }
 
 .role-text {
-  color: #ffffff;
+  color: var(--text-main);
   font-size: 13.5px;
   font-weight: 600;
 }
@@ -196,48 +201,53 @@ body {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 14px;
+  padding: 10px 12px;
   color: var(--sidebar-text);
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 500;
   border-radius: var(--radius-sm);
-  transition: all 0.2s ease;
+  transition: all var(--dur-fast, 150ms) var(--ease, ease);
 }
 
 .nav-item i {
   font-size: 15px;
   width: 20px;
   text-align: center;
-  transition: color 0.2s;
+  color: var(--text-light);
+  transition: color var(--dur-fast, 150ms) var(--ease, ease);
 }
 
 .nav-item:hover {
   background-color: var(--sidebar-hover-bg);
-  color: #ffffff;
+  color: var(--text-main);
+}
+
+.nav-item:hover i {
+  color: var(--text-main);
 }
 
 .nav-item.active {
   background-color: var(--sidebar-active-bg);
-  color: #ffffff;
+  color: var(--sidebar-text-active);
   font-weight: 600;
 }
 
 .nav-item.active i {
-  color: #60a5fa;
+  color: var(--accent);
 }
 
 /* Chân Sidebar (User profile & Toggle) */
 .sidebar-footer {
   margin-top: auto;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border-card);
   padding-top: 16px;
   display: flex;
   flex-direction: column;
@@ -248,27 +258,27 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  background-color: rgba(255, 255, 255, 0.03);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background-color: var(--sidebar-card-bg);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--dur-fast, 150ms) var(--ease, ease);
   -webkit-user-select: none;
   user-select: none;
 }
 
 .user-profile:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: #e5e7eb;
 }
 
 .profile-arrow {
-  color: #64748b;
+  color: var(--text-light);
   font-size: 13px;
-  transition: transform 0.2s ease, color 0.2s ease;
+  transition: transform var(--dur-fast, 150ms) var(--ease, ease), color var(--dur-fast, 150ms) var(--ease, ease);
 }
 
 .user-profile:hover .profile-arrow {
-  color: #ffffff;
+  color: var(--text-main);
   transform: translateX(2px);
 }
 
@@ -277,7 +287,7 @@ body {
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1.5px solid var(--border-card);
 }
 
 .profile-info {
@@ -288,7 +298,7 @@ body {
 }
 
 .profile-name {
-  color: #ffffff;
+  color: var(--text-main);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
@@ -297,40 +307,39 @@ body {
 }
 
 .profile-role {
-  color: var(--sidebar-text);
+  color: var(--text-light);
   font-size: 11.5px;
 }
 
-/* Nút Đăng xuất chuẩn hình ảnh giống Thực tập sinh */
+/* Nút Đăng xuất */
 .sidebar-logout {
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 14px;
-  background-color: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: var(--radius-md);
-  color: #f87171;
+  padding: 9px 12px;
+  background-color: var(--icon-red-bg);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: var(--radius-sm);
+  color: var(--icon-red-text);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--dur-fast, 150ms) var(--ease, ease);
   font-family: inherit;
 }
 
 .sidebar-logout i {
-  font-size: 15px;
+  font-size: 14px;
   flex-shrink: 0;
-  color: #f87171;
-  transition: color 0.2s ease;
+  color: var(--icon-red-text);
+  transition: color var(--dur-fast, 150ms) var(--ease, ease);
 }
 
 .sidebar-logout:hover {
-  background-color: #ef4444;
-  border-color: #ef4444;
+  background-color: #dc2626;
+  border-color: #dc2626;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
 
 .sidebar-logout:hover i {
@@ -343,20 +352,19 @@ body {
 }
 
 .btn-danger-logout {
-  background-color: #ef4444;
+  background-color: #dc2626;
   color: #ffffff;
-  border: 1px solid #ef4444;
+  border: 1px solid #dc2626;
   font-weight: 500;
-  padding: 9px 18px;
+  padding: 8px 16px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--dur-fast, 150ms) var(--ease, ease);
 }
 
 .btn-danger-logout:hover {
-  background-color: #dc2626;
-  border-color: #dc2626;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+  background-color: #b91c1c;
+  border-color: #b91c1c;
 }
 
 .logout-confirm-text {
@@ -379,11 +387,11 @@ body {
   cursor: pointer;
   padding: 6px;
   border-radius: 4px;
-  transition: color 0.2s;
+  transition: color var(--dur-fast, 150ms) var(--ease, ease);
 }
 
 .sidebar-toggle-btn:hover {
-  color: #ffffff;
+  color: var(--text-main);
 }
 
 /* --------------------------------------------------------------------------
@@ -1221,23 +1229,26 @@ body {
    -------------------------------------------------------------------------- */
 .modal-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(15, 23, 42, 0.45);
+  inset: 0;
+  background-color: rgba(17, 24, 39, 0.45);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   z-index: 1000;
-  display: none;
+  display: flex !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
   align-items: center;
   justify-content: center;
   padding: 20px;
-  animation: modalFadeIn 0.2s ease-out;
+  transition: opacity var(--dur, 220ms) var(--ease, ease), visibility var(--dur, 220ms) var(--ease, ease);
 }
 
-.modal-backdrop.show {
-  display: flex;
+.modal-backdrop.show,
+.modal-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 @keyframes modalFadeIn {
@@ -1250,7 +1261,8 @@ body {
 }
 
 .modal-dialog {
-  background-color: #ffffff;
+  background-color: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-card);
   width: 580px;
   max-width: 100%;
   border-radius: var(--radius-lg);
@@ -1258,7 +1270,13 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(0.96) translateY(4px);
+  transition: transform var(--dur, 220ms) var(--ease, ease);
+}
+
+.modal-backdrop.show .modal-dialog,
+.modal-backdrop.active .modal-dialog {
+  transform: scale(1) translateY(0);
 }
 
 @keyframes modalScaleUp {
@@ -1489,15 +1507,21 @@ body {
 
 /* ==================== MODAL ĐĂNG XUẤT THÀNH CÔNG (ADMIN) ==================== */
 .login-success-box {
-  background: #ffffff;
+  background: var(--card-bg, #ffffff);
   width: 100%;
-  max-width: 430px;
-  padding: 36px 28px 28px;
-  border-radius: 24px;
+  max-width: 420px;
+  padding: 32px 28px 24px;
+  border-radius: var(--radius-lg);
   text-align: center;
-  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.18);
-  border: 1px solid #f1f5f9;
-  animation: modalPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-modal);
+  border: 1px solid var(--border-card);
+  transform: scale(0.96) translateY(4px);
+  transition: transform var(--dur, 220ms) var(--ease, ease);
+}
+
+.modal-backdrop.show .login-success-box,
+.modal-backdrop.active .login-success-box {
+  transform: scale(1) translateY(0);
 }
 
 @keyframes modalPopIn {
@@ -1512,19 +1536,17 @@ body {
 }
 
 .modal-icon.success-icon {
-  width: 76px;
-  height: 76px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background: #ecfdf5;
   color: #10b981;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px;
-  font-size: 38px;
-  border: 2px solid #a7f3d0;
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.22);
-  animation: iconPulse 1.8s infinite ease-in-out;
+  margin: 0 auto 18px;
+  font-size: 32px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 @keyframes iconPulse {
@@ -1565,7 +1587,7 @@ body {
 .redirect-progress-fill {
   width: 0%;
   height: 100%;
-  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  background: var(--status-active);
   border-radius: 99px;
   transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -1573,7 +1595,7 @@ body {
 .btn-continue-now {
   width: 100%;
   height: 44px;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: var(--accent);
   border: none;
   border-radius: 12px;
   color: #ffffff;
@@ -1589,7 +1611,7 @@ body {
 }
 
 .btn-continue-now:hover {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  background: var(--accent-hover);
   transform: translateY(-1px);
   box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
 }
