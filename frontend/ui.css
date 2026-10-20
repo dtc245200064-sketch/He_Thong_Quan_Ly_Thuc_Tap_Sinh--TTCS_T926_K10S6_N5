@@ -88,6 +88,7 @@ a:focus-visible {
    SMOOTH MODAL TRANSITIONS (CSS PURE, OPEN & CLOSE WITHOUT JS MODIFICATION)
    ========================================================================== */
 .modal,
+.modal-overlay,
 .custom-modal-overlay,
 .modal-backdrop-custom,
 .login-success-overlay,
@@ -101,6 +102,8 @@ a:focus-visible {
 
 .modal.active,
 .modal.show,
+.modal-overlay.active,
+.modal-overlay.show,
 .custom-modal-overlay.active,
 .custom-modal-overlay.show,
 .modal-backdrop-custom.active,
@@ -118,6 +121,8 @@ a:focus-visible {
 .modal .modal-box,
 .modal .modal-content,
 .modal .modal-dialog,
+.modal-overlay .custom-modal-card,
+.modal-overlay .modal-dialog,
 .custom-modal-overlay .custom-modal-box,
 .review-modal-overlay .review-modal-box {
   transform: scale(0.96) translateY(4px);
@@ -130,6 +135,10 @@ a:focus-visible {
 .modal.show .modal-box,
 .modal.show .modal-content,
 .modal.show .modal-dialog,
+.modal-overlay.active .custom-modal-card,
+.modal-overlay.show .custom-modal-card,
+.modal-overlay.active .modal-dialog,
+.modal-overlay.show .modal-dialog,
 .custom-modal-overlay.active .custom-modal-box,
 .custom-modal-overlay.show .custom-modal-box,
 .review-modal-overlay.active .review-modal-box,
