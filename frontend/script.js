@@ -1,3 +1,4 @@
+const IS_DEMO_MODE = (typeof window !== 'undefined' && (window.ENABLE_DEMO_LOGIN === true || localStorage.getItem('ENABLE_DEMO_LOGIN') === 'true'));
 // QUẢN LÝ XÁC THỰC VÀ CHUYỂN ĐỔI GIAO DIỆN
 // Quản lý phiên đăng nhập JWT. 100% dữ liệu nghiệp vụ đồng bộ qua REST API và MySQL Database.
 // ==========================================================================
@@ -26,7 +27,7 @@ function selectHRRole(button) {
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
   if (usernameInput) usernameInput.value = 'hr@company.vn';
-  if (passwordInput) passwordInput.value = '123456';
+  if (passwordInput && IS_DEMO_MODE) passwordInput.value = '123456';
 
   hideLoginError();
 }
@@ -38,7 +39,7 @@ function selectMentorRole(button) {
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
   if (usernameInput) usernameInput.value = 'mentor@company.vn';
-  if (passwordInput) passwordInput.value = '123456';
+  if (passwordInput && IS_DEMO_MODE) passwordInput.value = '123456';
 
   hideLoginError();
 }
@@ -51,7 +52,7 @@ function selectInternRole(button) {
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
   if (usernameInput) usernameInput.value = 'intern@student.vn';
-  if (passwordInput) passwordInput.value = '123456';
+  if (passwordInput && IS_DEMO_MODE) passwordInput.value = '123456';
 
   hideLoginError();
 }
@@ -63,7 +64,7 @@ function selectAdminRole(button) {
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
   if (usernameInput) usernameInput.value = 'admin@company.vn';
-  if (passwordInput) passwordInput.value = '123456';
+  if (passwordInput && IS_DEMO_MODE) passwordInput.value = '123456';
 
   hideLoginError();
 }

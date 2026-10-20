@@ -2337,26 +2337,9 @@ async function applyRolePermissionsToDashboard() {
 
   // Tự động kết nối lấy token từ MySQL nếu chưa có phiên đăng nhập hợp lệ
   if (!meRes || !meRes.success || !meRes.user) {
-    const roleForLogin = savedRole || 'HR Manager';
-    let defaultEmail = 'hr@company.vn';
-    if (roleForLogin === 'Admin' || roleForLogin === 'ADMIN') defaultEmail = 'admin@company.vn';
-    else if (roleForLogin === 'INTERN' || roleForLogin === 'Thực tập sinh') defaultEmail = 'intern@student.vn';
-
-    try {
-      if (typeof apiLogin === 'function') {
-        const loginRes = await apiLogin(defaultEmail, '123456');
-        if (loginRes && loginRes.success && loginRes.token) {
-          localStorage.setItem('token', loginRes.token);
-          localStorage.setItem('user', JSON.stringify(loginRes.user));
-          localStorage.setItem('userRole', loginRes.user.role);
-          if (typeof apiGetMe === 'function') {
-            meRes = await apiGetMe();
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('Lỗi tự động kết nối tài khoản DB:', e);
-    }
+    localStorage.clear();
+    window.location.href = 'index.html';
+    return;
   }
 
   if (meRes && meRes.success && meRes.user) {

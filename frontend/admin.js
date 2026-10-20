@@ -27,19 +27,9 @@ async function syncAdminSessionFromDB() {
   } catch (e) {}
 
   if (!meRes || !meRes.success || !meRes.user) {
-    try {
-      if (typeof apiLogin === 'function') {
-        const loginRes = await apiLogin('admin@company.vn', '123456');
-        if (loginRes && loginRes.success && loginRes.token) {
-          localStorage.setItem('token', loginRes.token);
-          localStorage.setItem('user', JSON.stringify(loginRes.user));
-          localStorage.setItem('userRole', loginRes.user.role);
-          if (typeof apiGetMe === 'function') {
-            meRes = await apiGetMe();
-          }
-        }
-      }
-    } catch (e) {}
+    localStorage.clear();
+    window.location.href = 'index.html';
+    return;
   }
 
   if (meRes && meRes.success && meRes.user) {
