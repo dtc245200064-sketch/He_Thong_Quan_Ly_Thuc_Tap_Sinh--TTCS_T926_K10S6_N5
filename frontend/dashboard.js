@@ -5886,7 +5886,8 @@ async function deleteDept(deptId) {
     return;
   }
 
-  if (!confirm(`Bạn có chắc chắn muốn xóa phòng ban "${target.name}" không?`)) return;
+  const confirmed = typeof UI !== 'undefined' ? await UI.confirm({ title: 'Xác nhận xóa phòng ban', message: `Bạn có chắc chắn muốn xóa phòng ban "${target.name}" không?`, danger: true }) : true;
+  if (!confirmed) return;
 
   try {
     const res = await apiDeleteDepartment(deptId);
@@ -6438,7 +6439,7 @@ function exportReportExcel() {
     if (typeof showToast === "function") {
       showToast("Không có dữ liệu thực tập sinh để xuất Excel!", "warning");
     } else {
-      alert("Không có dữ liệu thực tập sinh để xuất Excel!");
+      if (typeof UI !== 'undefined') { UI.alert({ title: 'Thông báo', message: "Không có dữ liệu thực tập sinh để xuất Excel!" }); }
     }
     return;
   }
@@ -6666,7 +6667,8 @@ async function handleCreateTaskSubmit(e) {
 }
 
 async function deleteTaskItem(id) {
-  if (!confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này?')) return;
+  const confirmed = typeof UI !== 'undefined' ? await UI.confirm({ title: 'Xác nhận xóa nhiệm vụ', message: 'Bạn có chắc chắn muốn xóa nhiệm vụ này?', danger: true }) : true;
+  if (!confirmed) return;
   if (typeof apiDeleteTask === 'function') {
     const res = await apiDeleteTask(id);
     if (res && res.success) {

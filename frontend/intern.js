@@ -114,7 +114,7 @@ function openUploadModal(type) {
     if (typeof showInternNotification === 'function') {
       showInternNotification('Bạn không có quyền tải lên CV! Quyền đã bị vô hiệu hóa trong CSDL.', 'danger');
     } else {
-      alert('Bạn không có quyền tải lên CV!');
+      if (typeof UI !== 'undefined') { UI.alert({ title: 'Không có quyền', message: 'Bạn không có quyền tải lên CV!' }); }
     }
     return;
   }
@@ -122,7 +122,7 @@ function openUploadModal(type) {
     if (typeof showInternNotification === 'function') {
       showInternNotification('Bạn không có quyền tải lên Đơn xin thực tập! Quyền đã bị vô hiệu hóa trong CSDL.', 'danger');
     } else {
-      alert('Bạn không có quyền tải lên Đơn xin thực tập!');
+      if (typeof UI !== 'undefined') { UI.alert({ title: 'Không có quyền', message: 'Bạn không có quyền tải lên Đơn xin thực tập!' }); }
     }
     return;
   }
@@ -1364,7 +1364,7 @@ async function saveInternProfileFormData(shouldProceed = false) {
     if (typeof showInternNotification === 'function') {
       showInternNotification('Bạn không có quyền chỉnh sửa hồ sơ cá nhân! Quyền đã bị vô hiệu hóa trong CSDL.', 'danger');
     } else {
-      alert('Bạn không có quyền chỉnh sửa hồ sơ cá nhân!');
+      if (typeof UI !== 'undefined') { await UI.alert({ title: 'Không có quyền', message: 'Bạn không có quyền chỉnh sửa hồ sơ cá nhân!' }); }
     }
     return;
   }
@@ -3843,7 +3843,8 @@ async function handleSaveProgress(event) {
 }
 
 async function deleteProgressTask(taskId) {
-  if (!confirm('Bạn có chắc chắn muốn xóa tiến độ công việc này không?')) return;
+  const confirmed = typeof UI !== 'undefined' ? await UI.confirm({ title: 'Xác nhận xóa tiến độ', message: 'Bạn có chắc chắn muốn xóa tiến độ công việc này không?', danger: true }) : true;
+  if (!confirmed) return;
   try {
     if (typeof apiDeleteTask === 'function') {
       const res = await apiDeleteTask(taskId);
@@ -4129,7 +4130,8 @@ async function saveWeeklyReportProcess(status) {
 }
 
 async function deleteWeeklyReport(reportId) {
-  if (!confirm('Bạn có chắc chắn muốn xóa báo cáo tuần này không?')) return;
+  const confirmed = typeof UI !== 'undefined' ? await UI.confirm({ title: 'Xác nhận xóa báo cáo', message: 'Bạn có chắc chắn muốn xóa báo cáo tuần này không?', danger: true }) : true;
+  if (!confirmed) return;
   try {
     if (typeof apiDeleteWeeklyReport === 'function') {
       const res = await apiDeleteWeeklyReport(reportId);

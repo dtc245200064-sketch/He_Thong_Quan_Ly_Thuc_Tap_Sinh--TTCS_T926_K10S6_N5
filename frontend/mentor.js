@@ -582,7 +582,8 @@ async function updateTaskStatusQuick(taskId, newStatus) {
 }
 
 async function deleteMentorTask(taskId) {
-  if (!confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này không?')) return;
+  const confirmed = typeof UI !== 'undefined' ? await UI.confirm({ title: 'Xác nhận xóa nhiệm vụ', message: 'Bạn có chắc chắn muốn xóa nhiệm vụ này không?', danger: true }) : true;
+  if (!confirmed) return;
   try {
     if (typeof apiDeleteTask === 'function') {
       await apiDeleteTask(taskId);
