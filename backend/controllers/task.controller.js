@@ -186,14 +186,39 @@ exports.updateTask = async (req, res) => {
         else nextStatus = 'todo';
       }
 
-      await db.query(
-        `UPDATE tasks 
-         SET progress = ?, status = ?, intern_note = COALESCE(?, intern_note), description = COALESCE(?, description), updated_at = NOW() 
-         WHERE id = ?`,
-        [nextProgress, nextStatus, intern_note !== undefined ? intern_note : null, description !== undefined ? description : null, id]
-      );
+      // Nếu task do Mentor giao: TTS chỉ cập nhật progress, status, intern_note (tiêu đề và deadline do Mentor quản lý)
+      if (task.mentor_id) {
+        await db.query(
+          `UPDATE tasks 
+           SET progress = ?, status = ?, intern_note = COALESCE(?, intern_note), updated_at = NOW() 
+           WHERE id = ?`,
+          [nextProgress, nextStatus, intern_note !== undefined ? intern_note : null, id]
+        );
 
-      return res.status(200).json({ success: true, message: 'Cập nhật tiến độ thành công!' });
+        return res.status(200).json({
+          success: true,
+          message: 'Đã cập nhật tiến độ và ghi chú báo cáo nhiệm vụ thành công!'
+        });
+      } else {
+        // Nếu là đầu việc tự ghi nhận của TTS: Cho phép cập nhật cả tiêu đề, hạn chót và nội dung
+        await db.query(
+          `UPDATE tasks 
+           SET title = COALESCE(?, title),
+               description = COALESCE(?, description),
+               deadline = COALESCE(?, deadline),
+               progress = ?,
+               status = ?,
+               intern_note = COALESCE(?, intern_note),
+               updated_at = NOW() 
+           WHERE id = ?`,
+          [title || task.title, description !== undefined ? description : task.description, deadline || task.deadline, nextProgress, nextStatus, intern_note !== undefined ? intern_note : null, id]
+        );
+
+        return res.status(200).json({
+          success: true,
+          message: 'Đã cập nhật đầu việc cá nhân thành công!'
+        });
+      }
     }
 
     let nextProgress = progress !== undefined ? Math.min(100, Math.max(0, parseInt(progress, 10) || 0)) : task.progress;
@@ -282,6 +307,30 @@ exports.updateTaskProgress = async (req, res) => {
 exports.deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
+    const [existing] = await db.query('SELECT * FROM tasks WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy nhiệm vụ để xóa!' });
+    }
+    const task = existing[0];
+
+    // Phân quyền bảo vệ: Nếu là Thực tập sinh
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      if (task.mentor_id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Thực tập sinh không có quyền xóa nhiệm vụ do Mentor phân công!'
+        });
+      }
+      const myInternId = req.user.internId;
+      const [internRows] = await db.query('SELECT id FROM interns WHERE id = ? OR user_id = ?', [task.intern_id, req.user.id]);
+      if (task.intern_id !== myInternId && internRows.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn chỉ có quyền xóa đầu việc do chính mình tự ghi nhận!'
+        });
+      }
+    }
+
     const [result] = await db.query('DELETE FROM tasks WHERE id = ?', [id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy nhiệm vụ để xóa!' });

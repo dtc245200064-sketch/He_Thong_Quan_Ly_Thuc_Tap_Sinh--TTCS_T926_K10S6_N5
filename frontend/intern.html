@@ -855,7 +855,7 @@
           </div>
 
           <!-- 3 Thẻ thống kê số lượng công việc (Chuẩn theo hình ảnh 1) -->
-          <div class="progress-metrics-row mb-4">
+          <div class="progress-metrics-row mb-3">
             <div class="progress-metric-card">
               <div class="progress-metric-label">Tổng công việc</div>
               <div class="progress-metric-val" id="statTotalProgressTasks">0</div>
@@ -867,6 +867,20 @@
             <div class="progress-metric-card">
               <div class="progress-metric-label">Hoàn thành</div>
               <div class="progress-metric-val" id="statCompletedTasks">0</div>
+            </div>
+          </div>
+
+          <!-- Banner hướng dẫn phân quyền và quy trình báo cáo tiến độ rõ ràng -->
+          <div class="progress-guide-banner mb-4 d-flex align-items-center gap-3 p-3" style="background: linear-gradient(135deg, #f0fdf4 0%, #f0f9ff 100%); border: 1px solid #bae6fd; border-radius: 14px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #0284c7; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);">
+              <i class="bi bi-info-circle-fill"></i>
+            </div>
+            <div class="flex-grow-1" style="font-size: 13.5px; color: #1e293b; line-height: 1.5;">
+              <strong style="color: #0369a1; font-size: 14px;">Quy định phân quyền tiến độ công việc:</strong>
+              <div class="text-secondary mt-1">
+                • <strong>Nhiệm vụ do Mentor giao</strong>: Thực tập sinh bấm nút <strong>"Cập nhật tiến độ"</strong> để kéo thanh % và ghi chú kết quả. Tiêu đề và Thời hạn do Mentor quản lý theo đề cương đào tạo.<br>
+                • <strong>Đầu việc tự ghi nhận</strong>: Nhấn nút <strong>"+ Thêm cập nhật tiến độ"</strong> để tự tạo và quản lý toàn quyền các đầu việc cá nhân của bạn.
+              </div>
             </div>
           </div>
 
@@ -1347,47 +1361,82 @@
   <!-- MODAL THÊM / CẬP NHẬT TIẾN ĐỘ (CHUẨN HÌNH ẢNH 2)                 -->
   <!-- ================================================================= -->
   <div class="modal-overlay" id="progressModalOverlay">
-    <div class="custom-modal-card" style="max-width: 580px; border-radius: 16px; padding: 24px;">
+    <div class="custom-modal-card" style="max-width: 600px; border-radius: 16px; padding: 24px;">
       <div class="modal-header-section d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-        <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
           <h4 class="m-0 fw-bold text-dark" id="progressModalTitle" style="font-size: 18px;">Thêm cập nhật tiến độ</h4>
+          <span id="progressModalBadge"></span>
         </div>
         <button type="button" class="btn-close" onclick="closeProgressModal()" aria-label="Đóng"></button>
+      </div>
+
+      <!-- Banner thông báo giải thích quyền hạn rõ ràng trong modal -->
+      <div id="progressModalNotice" class="alert d-flex align-items-start gap-2 p-3 mb-3" style="border-radius: 12px; font-size: 13px; line-height: 1.5; display: none;">
+        <i class="bi bi-info-circle-fill fs-5 flex-shrink-0 mt-0" id="progressModalNoticeIcon"></i>
+        <div id="progressModalNoticeText"></div>
       </div>
 
       <form id="progressForm" onsubmit="handleSaveProgress(event)">
         <input type="hidden" id="progressEditId" value="">
         <div class="modal-body p-0">
           <div class="mb-3">
-            <label for="progressTaskName" class="visually-hidden">Tên công việc</label>
+            <label for="progressTaskName" class="form-label fw-semibold small text-dark mb-1">
+              Tiêu đề nhiệm vụ <span class="text-danger">*</span>
+            </label>
             <input type="text" id="progressTaskName" class="form-control" placeholder="Tên công việc" title="Tên công việc" aria-label="Tên công việc" required>
+            <div id="progressTaskNameLockHint" class="small text-muted mt-1" style="display: none;">
+              <i class="bi bi-lock-fill text-warning me-1"></i>Tiêu đề do Mentor chỉ định (Chỉ đọc). Bạn chỉ cập nhật % và ghi chú bên dưới.
+            </div>
           </div>
 
           <div class="row g-3 mb-3">
             <div class="col-md-6">
-              <label for="progressTaskDate" class="visually-hidden">Ngày thực hiện</label>
-              <input type="date" id="progressTaskDate" class="form-control" title="Ngày thực hiện" placeholder="Ngày thực hiện" aria-label="Ngày thực hiện" required>
+              <label for="progressTaskDate" class="form-label fw-semibold small text-dark mb-1">
+                Thời hạn hoàn thành <span class="text-danger">*</span>
+              </label>
+              <input type="date" id="progressTaskDate" class="form-control" title="Thời hạn hoàn thành" placeholder="Thời hạn hoàn thành" aria-label="Thời hạn hoàn thành" required>
+              <div id="progressTaskDateLockHint" class="small text-muted mt-1" style="display: none;">
+                <i class="bi bi-lock-fill text-warning me-1"></i>Hạn chót do Mentor ấn định (Chỉ đọc).
+              </div>
             </div>
-            <div class="col-md-6 d-flex align-items-center gap-3">
-              <label for="progressTaskPercent" class="visually-hidden">Tiến độ hoàn thành (%)</label>
-              <input type="range" class="form-range flex-grow-1" id="progressTaskPercent" min="0" max="100" step="5" value="0" title="Tiến độ hoàn thành (%)" aria-label="Tiến độ hoàn thành (%)" oninput="updateProgressPercentDisplay(this.value)">
-              <span id="progressPercentDisplay" class="fw-bold text-primary fs-6" style="min-width: 42px; text-align: right;">0%</span>
+            <div class="col-md-6">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label for="progressTaskPercent" class="form-label fw-semibold small text-dark mb-0">
+                  Tiến độ thực tế <span class="text-primary fw-bold fs-6 ms-1" id="progressPercentDisplay">0%</span>
+                </label>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle small px-2 py-0.5" style="font-size: 11px;">
+                  <i class="bi bi-sliders me-1"></i>Kéo để chỉnh
+                </span>
+              </div>
+              <div class="d-flex align-items-center gap-2 pt-1">
+                <input type="range" class="form-range flex-grow-1" id="progressTaskPercent" min="0" max="100" step="5" value="0" title="Tiến độ hoàn thành (%)" aria-label="Tiến độ hoàn thành (%)" oninput="updateProgressPercentDisplay(this.value)">
+              </div>
+              <!-- Phím chọn nhanh mốc tiến độ -->
+              <div class="d-flex gap-1 mt-1 justify-content-between">
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 11px; border-radius: 6px;" onclick="setProgressSliderVal(0)">0%</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 11px; border-radius: 6px;" onclick="setProgressSliderVal(25)">25%</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 11px; border-radius: 6px;" onclick="setProgressSliderVal(50)">50%</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 11px; border-radius: 6px;" onclick="setProgressSliderVal(75)">75%</button>
+                <button type="button" class="btn btn-sm btn-outline-success py-0 px-2" style="font-size: 11px; border-radius: 6px;" onclick="setProgressSliderVal(100)">100%</button>
+              </div>
             </div>
           </div>
 
           <div class="mb-3">
-            <label for="progressTaskContent" class="visually-hidden">Nội dung đã thực hiện</label>
-            <textarea id="progressTaskContent" class="form-control" rows="3" placeholder="Nội dung đã thực hiện" title="Nội dung đã thực hiện" aria-label="Nội dung đã thực hiện" required></textarea>
+            <label for="progressTaskContent" class="form-label fw-semibold small text-dark mb-1">
+              Nội dung / Kết quả đã thực hiện <span class="text-danger">*</span>
+            </label>
+            <textarea id="progressTaskContent" class="form-control" rows="3" placeholder="Mô tả cụ thể những việc bạn đã hoàn thành để Mentor nắm được..." title="Nội dung đã thực hiện" aria-label="Nội dung đã thực hiện" required></textarea>
           </div>
 
           <div class="row g-3 mb-3">
             <div class="col-md-6">
-              <label for="progressTaskBlockers" class="visually-hidden">Khó khăn gặp phải</label>
-              <textarea id="progressTaskBlockers" class="form-control" rows="3" placeholder="Khó khăn gặp phải" title="Khó khăn gặp phải" aria-label="Khó khăn gặp phải"></textarea>
+              <label for="progressTaskBlockers" class="form-label fw-semibold small text-dark mb-1">Khó khăn gặp phải (nếu có)</label>
+              <textarea id="progressTaskBlockers" class="form-control" rows="2" placeholder="Ghi nhận các vướng mắc kỹ thuật..." title="Khó khăn gặp phải" aria-label="Khó khăn gặp phải"></textarea>
             </div>
             <div class="col-md-6">
-              <label for="progressTaskNextPlan" class="visually-hidden">Kế hoạch tiếp theo</label>
-              <textarea id="progressTaskNextPlan" class="form-control" rows="3" placeholder="Kế hoạch tiếp theo" title="Kế hoạch tiếp theo" aria-label="Kế hoạch tiếp theo"></textarea>
+              <label for="progressTaskNextPlan" class="form-label fw-semibold small text-dark mb-1">Kế hoạch tiếp theo / Ghi chú</label>
+              <textarea id="progressTaskNextPlan" class="form-control" rows="2" placeholder="Đầu việc dự kiến làm tiếp theo..." title="Kế hoạch tiếp theo" aria-label="Kế hoạch tiếp theo"></textarea>
             </div>
           </div>
         </div>

@@ -3709,6 +3709,11 @@ async function initProgressTab() {
           content: t.description || '',
           blockers: '',
           nextPlan: t.intern_note || '',
+          mentor_id: t.mentor_id,
+          mentor_name: t.mentor_name,
+          isMentorAssigned: Boolean(t.mentor_id),
+          priority: t.priority,
+          status: t.status,
           updatedAt: t.updated_at
         }));
       } else {
@@ -3727,9 +3732,21 @@ function updateProgressPercentDisplay(val) {
   if (display) display.textContent = `${val}%`;
 }
 
+function setProgressSliderVal(val) {
+  const percentInput = document.getElementById('progressTaskPercent');
+  if (percentInput) {
+    percentInput.value = val;
+    updateProgressPercentDisplay(val);
+  }
+}
+
 function openProgressModal(taskId = null) {
   const modal = document.getElementById('progressModalOverlay');
   const modalTitle = document.getElementById('progressModalTitle');
+  const modalBadge = document.getElementById('progressModalBadge');
+  const noticeBox = document.getElementById('progressModalNotice');
+  const noticeIcon = document.getElementById('progressModalNoticeIcon');
+  const noticeText = document.getElementById('progressModalNoticeText');
   const editIdInput = document.getElementById('progressEditId');
   const nameInput = document.getElementById('progressTaskName');
   const dateInput = document.getElementById('progressTaskDate');
@@ -3738,12 +3755,14 @@ function openProgressModal(taskId = null) {
   const contentInput = document.getElementById('progressTaskContent');
   const blockersInput = document.getElementById('progressTaskBlockers');
   const nextPlanInput = document.getElementById('progressTaskNextPlan');
+  const nameLockHint = document.getElementById('progressTaskNameLockHint');
+  const dateLockHint = document.getElementById('progressTaskDateLockHint');
+  const btnSubmit = document.getElementById('btnSubmitProgressModal');
 
   if (taskId) {
     const tasks = InternState.progressTasks || [];
     const task = tasks.find(t => String(t.id) === String(taskId));
     if (task) {
-      if (modalTitle) modalTitle.textContent = 'Cập nhật tiến độ';
       if (editIdInput) editIdInput.value = task.id;
       if (nameInput) nameInput.value = task.name || '';
       if (dateInput) dateInput.value = task.date || '';
@@ -3752,20 +3771,109 @@ function openProgressModal(taskId = null) {
       if (contentInput) contentInput.value = task.content || '';
       if (blockersInput) blockersInput.value = task.blockers || '';
       if (nextPlanInput) nextPlanInput.value = task.nextPlan || '';
+
+      if (task.isMentorAssigned) {
+        // Nhiệm vụ do Mentor giao: Khóa Tiêu đề & Thời hạn, hiển thị giải thích rõ ràng
+        if (modalTitle) modalTitle.textContent = 'Cập nhật tiến độ nhiệm vụ';
+        if (modalBadge) {
+          modalBadge.innerHTML = `<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="bi bi-person-workspace me-1"></i>Mentor giao: ${escapeHtml(task.mentor_name || 'Người hướng dẫn')}</span>`;
+        }
+        if (noticeBox && noticeText) {
+          noticeBox.style.display = 'flex';
+          noticeBox.className = 'alert alert-info d-flex align-items-start gap-2 p-3 mb-3';
+          noticeBox.style.backgroundColor = '#f0f9ff';
+          noticeBox.style.borderColor = '#bae6fd';
+          noticeBox.style.color = '#0369a1';
+          if (noticeIcon) noticeIcon.className = 'bi bi-info-circle-fill text-primary fs-5 flex-shrink-0 mt-0';
+          noticeText.innerHTML = `<strong>Quy định phân quyền:</strong> Nhiệm vụ này do <strong>Mentor ${escapeHtml(task.mentor_name || 'hướng dẫn')}</strong> phân công trong kế hoạch đào tạo. Bạn chỉ cần điều chỉnh <strong>% tiến độ hoàn thành</strong> và <strong>ghi chú báo cáo kết quả</strong>. Tiêu đề và Thời hạn do Mentor cố định.`;
+        }
+        // Đặt thuộc tính readonly và giao diện bị khóa
+        if (nameInput) {
+          nameInput.setAttribute('readonly', 'true');
+          nameInput.style.backgroundColor = '#f1f5f9';
+          nameInput.style.cursor = 'not-allowed';
+        }
+        if (nameLockHint) nameLockHint.style.display = 'block';
+
+        if (dateInput) {
+          dateInput.setAttribute('readonly', 'true');
+          dateInput.style.backgroundColor = '#f1f5f9';
+          dateInput.style.cursor = 'not-allowed';
+        }
+        if (dateLockHint) dateLockHint.style.display = 'block';
+
+        if (btnSubmit) btnSubmit.textContent = 'Lưu tiến độ & Báo cáo';
+      } else {
+        // Đầu việc tự ghi nhận của TTS: Cho phép chỉnh sửa toàn bộ
+        if (modalTitle) modalTitle.textContent = 'Chỉnh sửa đầu việc cá nhân';
+        if (modalBadge) {
+          modalBadge.innerHTML = `<span class="badge bg-secondary-subtle text-secondary border px-2 py-1"><i class="bi bi-person-check me-1"></i>Tự ghi nhận</span>`;
+        }
+        if (noticeBox && noticeText) {
+          noticeBox.style.display = 'flex';
+          noticeBox.className = 'alert alert-secondary d-flex align-items-start gap-2 p-3 mb-3';
+          noticeBox.style.backgroundColor = '#f8fafc';
+          noticeBox.style.borderColor = '#e2e8f0';
+          noticeBox.style.color = '#475569';
+          if (noticeIcon) noticeIcon.className = 'bi bi-pencil-square text-secondary fs-5 flex-shrink-0 mt-0';
+          noticeText.innerHTML = `<strong>Đầu việc tự ghi nhận:</strong> Đây là đầu việc cá nhân do bạn tự tạo. Bạn có toàn quyền cập nhật tiêu đề, thời hạn, % tiến độ và nội dung chi tiết.`;
+        }
+        if (nameInput) {
+          nameInput.removeAttribute('readonly');
+          nameInput.style.backgroundColor = '';
+          nameInput.style.cursor = '';
+        }
+        if (nameLockHint) nameLockHint.style.display = 'none';
+
+        if (dateInput) {
+          dateInput.removeAttribute('readonly');
+          dateInput.style.backgroundColor = '';
+          dateInput.style.cursor = '';
+        }
+        if (dateLockHint) dateLockHint.style.display = 'none';
+
+        if (btnSubmit) btnSubmit.textContent = 'Lưu đầu việc';
+      }
     }
   } else {
-    if (modalTitle) modalTitle.textContent = 'Thêm cập nhật tiến độ';
+    // Thêm đầu việc mới
+    if (modalTitle) modalTitle.textContent = 'Thêm đầu việc mới';
+    if (modalBadge) {
+      modalBadge.innerHTML = `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-plus-circle me-1"></i>Tạo mới</span>`;
+    }
+    if (noticeBox && noticeText) {
+      noticeBox.style.display = 'flex';
+      noticeBox.className = 'alert alert-success d-flex align-items-start gap-2 p-3 mb-3';
+      noticeBox.style.backgroundColor = '#f0fdf4';
+      noticeBox.style.borderColor = '#bbf7d0';
+      noticeBox.style.color = '#15803d';
+      if (noticeIcon) noticeIcon.className = 'bi bi-journal-plus text-success fs-5 flex-shrink-0 mt-0';
+      noticeText.innerHTML = `<strong>Tạo đầu việc cá nhân:</strong> Ghi lại các nội dung tự học, nghiên cứu hoặc nhiệm vụ cá nhân trong đợt thực tập của bạn.`;
+    }
     if (editIdInput) editIdInput.value = '';
-    if (nameInput) nameInput.value = '';
+    if (nameInput) {
+      nameInput.value = '';
+      nameInput.removeAttribute('readonly');
+      nameInput.style.backgroundColor = '';
+      nameInput.style.cursor = '';
+    }
+    if (nameLockHint) nameLockHint.style.display = 'none';
 
     const today = new Date().toISOString().split('T')[0];
-    if (dateInput) dateInput.value = today;
+    if (dateInput) {
+      dateInput.value = today;
+      dateInput.removeAttribute('readonly');
+      dateInput.style.backgroundColor = '';
+      dateInput.style.cursor = '';
+    }
+    if (dateLockHint) dateLockHint.style.display = 'none';
 
     if (percentInput) percentInput.value = 0;
     if (percentDisplay) percentDisplay.textContent = '0%';
     if (contentInput) contentInput.value = '';
     if (blockersInput) blockersInput.value = '';
     if (nextPlanInput) nextPlanInput.value = '';
+    if (btnSubmit) btnSubmit.textContent = 'Lưu đầu việc';
   }
 
   if (modal) {
@@ -3803,14 +3911,37 @@ async function handleSaveProgress(event) {
 
   try {
     if (editId) {
+      const tasks = InternState.progressTasks || [];
+      const currentTask = tasks.find(t => String(t.id) === String(editId));
       let res = null;
-      if (typeof apiUpdateTaskProgress === 'function') {
-        res = await apiUpdateTaskProgress(editId, {
-          progress: percent,
-          intern_note: nextPlan || blockers
-        });
-      }
-      if (!res || !res.success) {
+
+      if (currentTask && currentTask.isMentorAssigned) {
+        // Cập nhật tiến độ cho task do Mentor giao
+        if (typeof apiUpdateTaskProgress === 'function') {
+          res = await apiUpdateTaskProgress(editId, {
+            progress: percent,
+            intern_note: nextPlan || blockers
+          });
+        }
+        if (!res || !res.success) {
+          if (typeof apiUpdateTask === 'function') {
+            res = await apiUpdateTask(editId, {
+              progress: percent,
+              intern_note: nextPlan || blockers,
+              description: content
+            });
+          }
+        }
+        if (res && res.success) {
+          if (typeof showInternToast === 'function') {
+            showInternToast(`Đã cập nhật tiến độ "${name}" đạt ${percent}% và gửi báo cáo đến Mentor!`, 'success');
+          }
+          addPortalNotification('Cập nhật tiến độ', `Bạn đã cập nhật tiến độ công việc "${name}" đạt ${percent}%.`, 'info');
+        } else {
+          if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi cập nhật tiến độ', 'warning');
+        }
+      } else {
+        // Cập nhật đầu việc tự tạo
         if (typeof apiUpdateTask === 'function') {
           res = await apiUpdateTask(editId, {
             title: name,
@@ -3820,13 +3951,16 @@ async function handleSaveProgress(event) {
             intern_note: nextPlan || blockers
           });
         }
-      }
-      if (res && res.success) {
-        if (typeof showInternToast === 'function') showInternToast('Cập nhật tiến độ thành công!', 'success');
-      } else {
-        if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi cập nhật tiến độ', 'warning');
+        if (res && res.success) {
+          if (typeof showInternToast === 'function') {
+            showInternToast(`Đã lưu cập nhật đầu việc "${name}" thành công!`, 'success');
+          }
+        } else {
+          if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi lưu đầu việc', 'warning');
+        }
       }
     } else {
+      // Tạo đầu việc mới
       if (typeof apiCreateTask === 'function') {
         const res = await apiCreateTask({
           intern_id: internId,
@@ -3837,8 +3971,8 @@ async function handleSaveProgress(event) {
           intern_note: nextPlan || blockers
         });
         if (res && res.success) {
-          addPortalNotification('Cập nhật tiến độ mới', `Bạn đã ghi nhận tiến độ công việc "${name}" đạt ${percent}%.`, 'info');
-          if (typeof showInternToast === 'function') showInternToast('Thêm cập nhật tiến độ thành công!', 'success');
+          addPortalNotification('Thêm đầu việc mới', `Bạn đã ghi nhận đầu việc "${name}" với tiến độ ${percent}%.`, 'info');
+          if (typeof showInternToast === 'function') showInternToast(`Thêm đầu việc "${name}" thành công!`, 'success');
         } else {
           if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi lưu tiến độ vào CSDL', 'warning');
         }
@@ -3854,19 +3988,47 @@ async function handleSaveProgress(event) {
 }
 
 async function deleteProgressTask(taskId) {
-  const confirmed = typeof UI !== 'undefined' ? await UI.confirm({ title: 'Xác nhận xóa tiến độ', message: 'Bạn có chắc chắn muốn xóa tiến độ công việc này không?', danger: true }) : true;
+  const tasks = InternState.progressTasks || [];
+  const task = tasks.find(t => String(t.id) === String(taskId));
+
+  if (task && task.isMentorAssigned) {
+    // Thông báo modal rõ ràng khi TTS bấm xóa task của Mentor
+    if (typeof UI !== 'undefined' && typeof UI.alert === 'function') {
+      await UI.alert({
+        title: 'Không thể xóa nhiệm vụ của Mentor',
+        message: `Nhiệm vụ "${task.name}" do Mentor ${task.mentor_name || 'hướng dẫn'} phân công trong kế hoạch thực tập.\n\nTheo quy định phân quyền, Thực tập sinh không được xóa nhiệm vụ của Mentor. Nếu kế hoạch có sự thay đổi, bạn hãy liên hệ trao đổi với Mentor hướng dẫn.`,
+        buttonText: 'Đã hiểu'
+      });
+    } else if (typeof showInternToast === 'function') {
+      showInternToast(`Nhiệm vụ "${task.name}" do Mentor giao, bạn không có quyền xóa!`, 'warning');
+    }
+    return;
+  }
+
+  const confirmed = typeof UI !== 'undefined'
+    ? await UI.confirm({
+        title: 'Xóa đầu việc cá nhân',
+        message: `Bạn có chắc chắn muốn xóa đầu việc "${task ? task.name : ''}" không? Dữ liệu đã xóa sẽ không thể khôi phục.`,
+        danger: true,
+        confirmText: 'Xác nhận xóa',
+        cancelText: 'Hủy'
+      })
+    : confirm('Bạn có chắc chắn muốn xóa đầu việc này?');
+
   if (!confirmed) return;
+
   try {
     if (typeof apiDeleteTask === 'function') {
       const res = await apiDeleteTask(taskId);
       if (res && res.success) {
-        if (typeof showInternToast === 'function') showInternToast('Đã xóa tiến độ công việc trong CSDL!', 'info');
+        if (typeof showInternToast === 'function') showInternToast('Đã xóa đầu việc cá nhân thành công!', 'info');
       } else {
         if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi xóa công việc', 'warning');
       }
     }
   } catch (err) {
     console.error('Lỗi xóa task trong DB:', err);
+    if (typeof showInternToast === 'function') showInternToast('Lỗi kết nối máy chủ!', 'error');
   }
   await initProgressTab();
 }
@@ -3875,7 +4037,7 @@ function renderProgressList() {
   const container = document.getElementById('progressTasksContainer');
   const tasks = InternState.progressTasks || [];
 
-  // Cập nhật 3 Thẻ thống kê (chuẩn hình ảnh 1: Tổng công việc, Đang thực hiện, Hoàn thành)
+  // Cập nhật 3 Thẻ thống kê
   const total = tasks.length;
   const inProgress = tasks.filter(t => (t.percent || 0) < 100).length;
   const completed = tasks.filter(t => (t.percent || 0) >= 100).length;
@@ -3896,8 +4058,8 @@ function renderProgressList() {
           <i class="bi bi-bar-chart-line"></i>
         </div>
         <h4 class="empty-state-title">Chưa có dữ liệu tiến độ công việc</h4>
-        <p class="empty-state-desc">Dữ liệu hiện đang để trống. Nhấn nút <strong>"+ Thêm cập nhật tiến độ"</strong> ở góc trên để bắt đầu ghi nhận tiến độ công việc đầu tiên của bạn.</p>
-        <button type="button" class="btn btn-primary px-4 py-2" onclick="openProgressModal()" style="border-radius: 10px; font-weight: 600; background: #2563eb; border-color: #2563eb;">
+        <p class="empty-state-desc">Danh sách nhiệm vụ hiện đang để trống. Nhấn nút <strong>"+ Thêm cập nhật tiến độ"</strong> ở góc trên để bắt đầu ghi nhận tiến độ công việc đầu tiên của bạn.</p>
+        <button type="button" class="btn btn-primary px-4 py-2" onclick="openProgressModal()" style="border-radius: 10px; font-weight: 600; background: var(--accent); border-color: var(--accent);">
           <i class="bi bi-plus-lg me-1"></i> Thêm cập nhật tiến độ
         </button>
       </div>
@@ -3907,7 +4069,7 @@ function renderProgressList() {
 
   let html = `
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="fw-bold mb-0 text-dark" style="font-size: 16px;">Danh sách công việc (${tasks.length})</h5>
+      <h5 class="fw-bold mb-0 text-dark" style="font-size: 16px;">Danh sách nhiệm vụ & công việc (${tasks.length})</h5>
     </div>
   `;
 
@@ -3917,52 +4079,64 @@ function renderProgressList() {
       ? `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>Hoàn thành</span>`
       : `<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="bi bi-clock-history me-1"></i>Đang thực hiện</span>`;
 
+    const originBadge = task.isMentorAssigned
+      ? `<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1" title="Nhiệm vụ được phân công bởi Mentor"><i class="bi bi-person-workspace me-1"></i>Mentor: ${escapeHtml(task.mentor_name || 'Người hướng dẫn')}</span>`
+      : `<span class="badge bg-secondary-subtle text-secondary border px-2 py-1" title="Đầu việc do chính bạn tự tạo"><i class="bi bi-person-check me-1"></i>Tự ghi nhận</span>`;
+
+    const actionButtons = task.isMentorAssigned
+      ? `
+        <button type="button" class="btn btn-sm btn-outline-primary px-3 py-1 d-flex align-items-center gap-1" onclick="openProgressModal('${task.id}')" title="Cập nhật % tiến độ và gửi báo cáo kết quả" style="border-radius: 8px; font-weight: 600;">
+          <i class="bi bi-sliders"></i> <span>Cập nhật tiến độ</span>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-1 text-muted" onclick="deleteProgressTask('${task.id}')" title="Nhiệm vụ do Mentor giao - Xem thông tin phân quyền" style="border-radius: 8px; opacity: 0.7;">
+          <i class="bi bi-lock-fill"></i>
+        </button>
+      `
+      : `
+        <button type="button" class="btn btn-sm btn-outline-secondary px-3 py-1 d-flex align-items-center gap-1" onclick="openProgressModal('${task.id}')" title="Chỉnh sửa đầu việc cá nhân" style="border-radius: 8px; font-weight: 500;">
+          <i class="bi bi-pencil-square"></i> <span>Sửa</span>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1" onclick="deleteProgressTask('${task.id}')" title="Xóa đầu việc cá nhân" style="border-radius: 8px;">
+          <i class="bi bi-trash3"></i>
+        </button>
+      `;
+
     html += `
-      <div class="progress-task-card">
-        <div class="progress-task-header">
+      <div class="progress-task-card mb-3 p-3" style="border-radius: 14px; border: 1px solid #e2e8f0; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        <div class="progress-task-header d-flex justify-content-between align-items-start gap-2 mb-3">
           <div>
             <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-              <h5 class="progress-task-title">${escapeHtml(task.name)}</h5>
+              <h5 class="progress-task-title fw-bold text-dark m-0" style="font-size: 16px;">${escapeHtml(task.name)}</h5>
               ${statusBadge}
+              ${originBadge}
             </div>
-            <div class="text-muted small">
-              <i class="bi bi-calendar3 me-1"></i>${escapeHtml(task.date || 'Chưa chọn ngày')}
+            <div class="text-muted small mt-1">
+              <i class="bi bi-calendar-event me-1"></i>Hạn hoàn thành: <span class="fw-semibold text-dark">${escapeHtml(task.date || 'Không có')}</span>
             </div>
           </div>
-          <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-1" onclick="openProgressModal('${task.id}')" title="Chỉnh sửa tiến độ" style="border-radius: 8px;">
-              <i class="bi bi-pencil-square"></i> Sửa
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1" onclick="deleteProgressTask('${task.id}')" title="Xóa" style="border-radius: 8px;">
-              <i class="bi bi-trash3"></i>
-            </button>
+          <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            ${actionButtons}
           </div>
         </div>
 
-        <div>
-          <div class="d-flex justify-content-between align-items-center small fw-semibold text-secondary">
-            <span>Tiến độ thực tế</span>
-            <span class="text-primary">${task.percent || 0}%</span>
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center small fw-semibold text-secondary mb-1">
+            <span>Tiến độ thực tế:</span>
+            <span class="text-primary fw-bold fs-6">${task.percent || 0}%</span>
           </div>
-          <div class="progress-bar-wrap">
-            <div class="progress-bar-fill" style="width: ${Math.min(100, Math.max(0, task.percent || 0))}%;"></div>
+          <div class="progress" style="height: 9px; border-radius: 6px; background-color: #f1f5f9;">
+            <div class="progress-bar ${isDone ? 'bg-success' : 'bg-primary'}" role="progressbar" style="width: ${Math.min(100, Math.max(0, task.percent || 0))}%; border-radius: 6px;" aria-valuenow="${task.percent || 0}" aria-valuemin="0" aria-valuemax="100"></div>
           </div>
         </div>
 
-        <div class="progress-task-content-box">
-          <div class="fw-semibold text-dark mb-1"><i class="bi bi-card-text me-1 text-primary"></i>Nội dung đã thực hiện:</div>
-          <div class="text-secondary">${escapeHtml(task.content || 'Chưa có nội dung')}</div>
+        <div class="progress-task-content-box p-2 rounded bg-light" style="font-size: 13.5px;">
+          <div class="fw-semibold text-dark mb-1"><i class="bi bi-card-text me-1 text-primary"></i>Nội dung / Báo cáo:</div>
+          <div class="text-secondary">${escapeHtml(task.content || 'Chưa có nội dung ghi nhận')}</div>
         </div>
-
-        ${task.blockers ? `
-          <div class="mt-2 p-2 rounded bg-warning-subtle text-dark border border-warning-subtle small">
-            <strong><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Khó khăn gặp phải:</strong> ${escapeHtml(task.blockers)}
-          </div>
-        ` : ''}
 
         ${task.nextPlan ? `
-          <div class="mt-2 p-2 rounded bg-light text-dark border small">
-            <strong><i class="bi bi-arrow-right-circle text-primary me-1"></i>Kế hoạch tiếp theo:</strong> ${escapeHtml(task.nextPlan)}
+          <div class="mt-2 p-2 rounded bg-info-subtle text-dark border border-info-subtle small" style="font-size: 13px;">
+            <strong><i class="bi bi-chat-left-dots-fill text-info me-1"></i>Ghi chú / Kế hoạch:</strong> ${escapeHtml(task.nextPlan)}
           </div>
         ` : ''}
       </div>
@@ -4517,3 +4691,4 @@ window.closeProgressModal = closeProgressModal;
 window.handleSaveProgress = handleSaveProgress;
 window.deleteProgressTask = deleteProgressTask;
 window.updateProgressPercentDisplay = updateProgressPercentDisplay;
+window.setProgressSliderVal = setProgressSliderVal;
