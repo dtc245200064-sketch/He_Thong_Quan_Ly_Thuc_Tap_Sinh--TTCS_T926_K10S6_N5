@@ -2,7 +2,17 @@
 // CẤU HÌNH API CLIENT (DÙNG CHUNG CHO FRONTEND)
 // ==========================================
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = (typeof window !== 'undefined' && window.location && window.location.origin && !window.location.origin.includes(':5500') && !window.location.origin.includes(':3000') && window.location.protocol.startsWith('http'))
+  ? `${window.location.origin}/api`
+  : 'http://localhost:5000/api';
+
+// Hàm xây dựng đường dẫn file tải/xem kèm token xác thực JWT (L2)
+function buildFileUrl(fileUrl) {
+  if (!fileUrl) return '';
+  const base = /^https?:/.test(fileUrl) ? fileUrl : window.location.origin + (fileUrl.startsWith('/') ? '' : '/') + fileUrl;
+  const token = localStorage.getItem('token') || '';
+  return token ? base + (base.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token) : base;
+}
 
 // Hàm lấy token từ localStorage và vai trò người dùng
 function getAuthHeaders() {

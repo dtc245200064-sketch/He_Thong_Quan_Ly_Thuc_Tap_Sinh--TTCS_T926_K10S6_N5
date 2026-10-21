@@ -980,7 +980,7 @@ async function confirmSubmitDossierToHR() {
         await apiUpdateIntern(internId, { status: 'Chờ xét duyệt' });
       } else {
         const token = localStorage.getItem('token');
-        await fetch(`http://localhost:5000/api/interns/${internId}`, {
+        await fetch(`${typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : window.location.origin + '/api'}/interns/${internId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -1016,9 +1016,9 @@ function openFilePreviewModal(type) {
     const targetUrl = (doc && (doc.fileUrl || doc.previewUrl)) ? (doc.fileUrl || doc.previewUrl) : '';
     
     if (targetUrl) {
-      const fullUrl = (targetUrl.startsWith('http') || targetUrl.startsWith('blob:'))
+      const fullUrl = targetUrl.startsWith('blob:')
         ? targetUrl
-        : `http://localhost:5000${targetUrl}`;
+        : (typeof buildFileUrl === 'function' ? buildFileUrl(targetUrl) : (targetUrl.startsWith('http') ? targetUrl : `${window.location.origin}${targetUrl}`));
       
       const fileName = doc.name || targetUrl.split('/').pop() || '';
       const ext = fileName.split('.').pop().toLowerCase();
@@ -2730,7 +2730,7 @@ async function loadContractsFromDB() {
       if (res && res.success && Array.isArray(res.data)) {
         ContractsState.contracts = res.data.map(c => {
           const rawUrl = c.file_url || '';
-          const fileUrl = rawUrl.startsWith('http') ? rawUrl : (rawUrl ? `http://localhost:5000${rawUrl}` : '');
+          const fileUrl = typeof buildFileUrl === 'function' ? buildFileUrl(rawUrl) : (rawUrl.startsWith('http') ? rawUrl : (rawUrl ? `${window.location.origin}${rawUrl}` : ''));
           return {
             id: String(c.id),
             internId: c.intern_id,
@@ -2914,7 +2914,7 @@ function openContractDetailModal(contractId) {
   const actionsEl = document.getElementById('modalContractFooterActions');
 
   const rawUrl = contract.fileUrl || '';
-  const fullUrl = rawUrl.startsWith('http') ? rawUrl : (rawUrl ? `http://localhost:5000${rawUrl}` : '');
+  const fullUrl = typeof buildFileUrl === 'function' ? buildFileUrl(rawUrl) : (rawUrl.startsWith('http') ? rawUrl : (rawUrl ? `${window.location.origin}${rawUrl}` : ''));
   const fileName = contract.fileName || 'Hop_Dong_Thuc_Tap.pdf';
   const ext = (fileName || rawUrl).split('.').pop().toLowerCase();
   const internName = internProfileData.name || '—';
@@ -3152,7 +3152,7 @@ function downloadContractPDF(contractId) {
     return;
   }
   const rawUrl = contract.fileUrl;
-  const fullUrl = rawUrl.startsWith('http') ? rawUrl : `http://localhost:5000${rawUrl}`;
+  const fullUrl = typeof buildFileUrl === 'function' ? buildFileUrl(rawUrl) : (rawUrl.startsWith('http') ? rawUrl : `${window.location.origin}${rawUrl}`);
   const fileName = contract.fileName || 'Hop_Dong_Thuc_Tap.pdf';
 
   const link = document.createElement('a');

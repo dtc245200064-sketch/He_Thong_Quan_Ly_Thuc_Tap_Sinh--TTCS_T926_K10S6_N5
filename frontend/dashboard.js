@@ -580,7 +580,7 @@ function switchDocTab(type) {
 
   // 1. Kiểm tra tài liệu thực tế tải lên server
   if (realDoc && realDoc.fileUrl) {
-    const fullUrl = realDoc.fileUrl.startsWith("http") ? realDoc.fileUrl : `http://localhost:5000${realDoc.fileUrl}`;
+    const fullUrl = typeof buildFileUrl === 'function' ? buildFileUrl(realDoc.fileUrl) : (realDoc.fileUrl.startsWith("http") ? realDoc.fileUrl : `${window.location.origin}${realDoc.fileUrl}`);
     const ext = realDoc.fileUrl.split(".").pop().toLowerCase();
     if (fileNameEl) fileNameEl.textContent = realDoc.name;
     if (fileSizeEl) fileSizeEl.textContent = `${realDoc.size || "Tài liệu"} • Định dạng ${ext.toUpperCase()}`;
