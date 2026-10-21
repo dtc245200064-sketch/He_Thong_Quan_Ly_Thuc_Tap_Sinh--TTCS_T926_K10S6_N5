@@ -796,8 +796,34 @@ tbody tr td {
   transition: opacity var(--dur) var(--ease), visibility var(--dur) var(--ease);
 }
 
-.modal.active, .modal.show, .modal-backdrop.active, .ui-modal-backdrop.active, .modal-overlay.active, .mentor-modal.active {
+.modal.active, .modal.show,
+.modal-backdrop.active, .modal-backdrop.show,
+.ui-modal-backdrop.active, .ui-modal-backdrop.show,
+.modal-overlay.active, .modal-overlay.show,
+.mentor-modal.active, .mentor-modal.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
   background-color: rgba(15, 23, 42, 0.45);
+}
+
+/* Thanh tiến trình chuyển hướng khi Đăng nhập / Đăng xuất thành công */
+.redirect-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.redirect-progress-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2, #22d3ee) 100%);
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+  transition: width 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /* Ghi đè class tiện ích Bootstrap trong intern.html để đảm bảo tương phản WCAG */

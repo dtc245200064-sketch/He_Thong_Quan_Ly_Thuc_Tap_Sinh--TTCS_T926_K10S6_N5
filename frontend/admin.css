@@ -16,6 +16,9 @@
   --accent-2-soft: #eef2ff;
   --accent-glow: 0 0 0 1px rgba(96, 165, 250, 0.35), 0 8px 30px rgba(96, 165, 250, 0.2);
 
+  --status-active: var(--success);
+  --status-locked: var(--danger);
+
   --primary: var(--accent);
   --primary-hover: var(--accent-hover);
   --primary-light: var(--accent-soft);
@@ -1515,9 +1518,10 @@ body {
 .redirect-progress-fill {
   width: 0%;
   height: 100%;
-  background: var(--status-active);
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2, #22d3ee) 100%);
   border-radius: var(--radius-full);
-  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+  transition: width 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .btn-continue-now {
