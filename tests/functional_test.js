@@ -28,12 +28,36 @@ const pdfBlob = () => new Blob(['%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF
 const today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
 const addDays = (d, n) => new Date(new Date(d).getTime() + n * 864e5).toISOString().slice(0, 10);
 
+const db = require('../backend/config/db');
+
 async function login(id, pw) {
   const r = await call('POST', '/auth/login', null, id.includes('@') ? { email: id, password: pw } : { username: id, password: pw });
   return { r, token: r.j.token || (r.j.data && r.j.data.token), user: r.j.user || (r.j.data && r.j.data.user) };
 }
 
 (async () => {
+  // Idempotent test cleanup
+  const cleanSqls = [
+    "DELETE FROM attendance WHERE intern_id IN (SELECT id FROM interns WHERE email LIKE '%@test.vn' OR email LIKE '%@candidate.vn' OR email = 'nam.le@school.edu.vn')",
+    "DELETE FROM leave_requests WHERE intern_id IN (SELECT id FROM interns WHERE email LIKE '%@test.vn' OR email LIKE '%@candidate.vn' OR email = 'nam.le@school.edu.vn')",
+    "DELETE FROM contracts WHERE intern_id IN (SELECT id FROM interns WHERE email LIKE '%@test.vn' OR email LIKE '%@candidate.vn' OR email = 'nam.le@school.edu.vn')",
+    "DELETE FROM documents WHERE intern_id IN (SELECT id FROM interns WHERE email LIKE '%@test.vn' OR email LIKE '%@candidate.vn' OR email = 'nam.le@school.edu.vn')",
+    "DELETE FROM evaluations WHERE intern_id IN (SELECT id FROM interns WHERE email LIKE '%@test.vn' OR email LIKE '%@candidate.vn' OR email = 'nam.le@school.edu.vn')",
+    "DELETE FROM weekly_reports WHERE intern_id IN (SELECT id FROM interns WHERE email LIKE '%@test.vn' OR email LIKE '%@candidate.vn' OR email = 'nam.le@school.edu.vn')",
+    "DELETE FROM tasks WHERE intern_id IN (SELECT id FROM interns WHERE email LIKE '%@test.vn' OR email LIKE '%@candidate.vn' OR email = 'nam.le@school.edu.vn')",
+    "DELETE FROM intern_schedules WHERE intern_id IN (SELECT id FROM interns WHERE email LIKE '%@test.vn' OR email LIKE '%@candidate.vn' OR email = 'nam.le@school.edu.vn')",
+    "DELETE FROM inapp_notifications WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@test.vn' OR email LIKE '%@candidate.vn' OR email = 'nam.le@school.edu.vn')",
+    "DELETE FROM interns WHERE email LIKE '%@test.vn' OR email LIKE '%@candidate.vn' OR email = 'nam.le@school.edu.vn'",
+    "DELETE FROM mentors WHERE email LIKE '%@test.vn' OR email = 'an@test.vn'",
+    "DELETE FROM users WHERE email LIKE '%@test.vn' OR email LIKE '%@candidate.vn' OR email = 'nam.le@school.edu.vn' OR username IN ('hr1','mentor1','mentor2','intern1','intern2','weak')",
+    "DELETE FROM programs WHERE name LIKE '%K26%'",
+    "DELETE FROM meetings WHERE title = 'Họp tuần'",
+    "UPDATE users SET password = '$2b$10$ED0SWcX/mtmKZbfc/tSUTugKJpFnqAfHdKE5UcNcCC1c0phdKeUUe' WHERE username = 'admin' OR id = 1"
+  ];
+  for (const sql of cleanSqls) {
+    try { await db.query(sql); } catch (e) {}
+  }
+
   // ---------- STT 39: Admin tạo tài khoản ----------
   const a = await login('admin', 'Admin@123');
   ctx.admin = a.token;
@@ -347,4 +371,5 @@ async function login(id, pw) {
   } catch (e) {
     console.error('Error saving ftest_result.json:', e);
   }
+  process.exit(pass === results.length ? 0 : 1);
 })();

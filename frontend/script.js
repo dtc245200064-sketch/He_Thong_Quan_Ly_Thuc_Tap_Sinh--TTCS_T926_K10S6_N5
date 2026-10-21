@@ -218,10 +218,11 @@ function closeNoticeModal() {
   }
 }
 
-// Bắt sự kiện phím Escape và click nền mờ để đóng modal thông báo
+// Bắt sự kiện phím Escape và click nền mờ để đóng modal thông báo & modal đăng ký
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeNoticeModal();
+    closeRegisterModal();
   }
 });
 
@@ -229,6 +230,10 @@ window.addEventListener('click', (e) => {
   const noticeModal = document.getElementById('webNoticeModal');
   if (e.target === noticeModal) {
     closeNoticeModal();
+  }
+  const registerModal = document.getElementById('registerModal');
+  if (e.target === registerModal) {
+    closeRegisterModal();
   }
 });
 
@@ -436,12 +441,22 @@ function openRegisterModal() {
   if (form) form.reset();
   hideRegisterError();
   const modal = document.getElementById('registerModal');
-  if (modal) modal.classList.add('active');
+  if (modal) {
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+    setTimeout(() => {
+      const firstInput = document.getElementById('regName');
+      if (firstInput) firstInput.focus();
+    }, 100);
+  }
 }
 
 function closeRegisterModal() {
   const modal = document.getElementById('registerModal');
-  if (modal) modal.classList.remove('active');
+  if (modal) {
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+  }
 }
 
 function showRegisterError(message) {
