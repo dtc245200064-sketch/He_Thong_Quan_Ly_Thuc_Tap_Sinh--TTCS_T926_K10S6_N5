@@ -94,6 +94,12 @@
           <span>Chương trình thực tập</span>
         </a>
 
+        <!-- Lịch làm việc (Sprint 2 - STT 23) -->
+        <a href="javascript:void(0)" class="menu-item" id="navSchedules" onclick="switchTab('schedules')">
+          <i class="fa-solid fa-calendar-check"></i>
+          <span>Lịch làm việc</span>
+        </a>
+
         <!-- Công việc & Đánh giá (Sprint 3) -->
         <a href="javascript:void(0)" class="menu-item" id="navTasks" onclick="switchTab('tasks')">
           <i class="fa-solid fa-list-check"></i>
@@ -567,6 +573,76 @@
                 <!-- Render lịch trình từ dashboard.js -->
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 5b. TAB LỊCH LÀM VIỆC (SPRINT 2: STT 23, 14) ==================== -->
+      <section id="schedulesTab" class="tab-pane">
+        <header class="content-header">
+          <div>
+            <h1 class="page-title">Lịch làm việc & Đào tạo</h1>
+            <p class="page-subtitle">Lập và quản lý lịch thực tập, phân ca làm việc cho thực tập sinh</p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn-primary" onclick="openCreateScheduleModal()" style="display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-plus"></i>
+              <span>Thêm lịch làm việc</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Bộ lọc lịch làm việc -->
+        <div class="card mb-4" style="padding: 16px; margin-bottom: 20px;">
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+            <div style="flex: 1; min-width: 170px;">
+              <label class="form-label" style="font-size: 12px; margin-bottom: 4px; display: block;">Từ ngày</label>
+              <input type="date" id="scheduleFilterFrom" class="form-control" onchange="loadSchedulesData()">
+            </div>
+            <div style="flex: 1; min-width: 170px;">
+              <label class="form-label" style="font-size: 12px; margin-bottom: 4px; display: block;">Đến ngày</label>
+              <input type="date" id="scheduleFilterTo" class="form-control" onchange="loadSchedulesData()">
+            </div>
+            <div style="flex: 1.5; min-width: 200px;">
+              <label class="form-label" style="font-size: 12px; margin-bottom: 4px; display: block;">Lọc theo Thực tập sinh</label>
+              <select id="scheduleFilterIntern" class="form-control" onchange="loadSchedulesData()">
+                <option value="">-- Tất cả Thực tập sinh --</option>
+              </select>
+            </div>
+            <div style="flex: 1.5; min-width: 200px;">
+              <label class="form-label" style="font-size: 12px; margin-bottom: 4px; display: block;">Lọc theo Mentor</label>
+              <select id="scheduleFilterMentor" class="form-control" onchange="loadSchedulesData()">
+                <option value="">-- Tất cả Mentor --</option>
+              </select>
+            </div>
+            <div>
+              <button type="button" class="btn-secondary" onclick="resetScheduleFilters()" style="height: 38px; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-rotate-left"></i> Đặt lại
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng danh sách lịch làm việc -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 110px;">Ngày</th>
+                  <th style="width: 130px;">Thời gian</th>
+                  <th style="width: 200px;">Thực tập sinh</th>
+                  <th>Tiêu đề & Nội dung</th>
+                  <th style="width: 150px;">Địa điểm</th>
+                  <th style="width: 150px;">Mentor phụ trách</th>
+                  <th style="width: 110px;">Loại ca</th>
+                  <th style="width: 100px; text-align: center;">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="schedulesTableBody">
+                <!-- Render từ dashboard.js -->
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -2665,7 +2741,184 @@
     </div>
   </div>
 
-  <!-- TOAST NOTIFICATION CONTAINER -->
+    <!-- ==================== MODAL: THÊM LỊCH LÀM VIỆC CHO TTS (STT 23) ==================== -->
+  <div class="modal" id="createScheduleModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h2 class="modal-title">Thêm lịch làm việc / Đào tạo cho Thực tập sinh</h2>
+        <button type="button" class="close-btn" onclick="closeModal('createScheduleModal')">&times;</button>
+      </div>
+      <form id="createScheduleForm" onsubmit="handleCreateScheduleSubmit(event)">
+        <div class="modal-body">
+          <!-- Chọn phạm vi thực tập sinh -->
+          <div class="form-group mb-3">
+            <label class="form-label" style="font-weight: 600;">Áp dụng cho <span class="text-danger">*</span></label>
+            <div style="display: flex; gap: 16px; margin-bottom: 8px;">
+              <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                <input type="radio" name="scheduleScope" value="custom" checked onchange="handleScheduleScopeChange()"> Chọn TTS cụ thể
+              </label>
+              <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                <input type="radio" name="scheduleScope" value="mentor" onchange="handleScheduleScopeChange()"> Theo nhóm của Mentor
+              </label>
+              <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                <input type="radio" name="scheduleScope" value="all" onchange="handleScheduleScopeChange()"> Tất cả Thực tập sinh
+              </label>
+            </div>
+
+            <!-- Khối chọn mentor khi chọn theo nhóm -->
+            <div id="scheduleMentorScopeContainer" style="display: none; margin-bottom: 10px;">
+              <select id="scheduleScopeMentorSelect" class="form-control" onchange="handleScheduleScopeMentorChange()">
+                <option value="">-- Chọn Mentor để lấy danh sách TTS --</option>
+              </select>
+            </div>
+
+            <!-- Danh sách TTS kèm checkbox -->
+            <div style="border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; padding: 10px; max-height: 180px; overflow-y: auto; background: var(--surface-1, #fff);" id="scheduleInternCheckboxesContainer">
+              <!-- Render danh sách checkbox từ dashboard.js -->
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 12px; color: var(--text-2, #64748b);">
+              <span id="scheduleSelectedCountText">Đã chọn 0 thực tập sinh</span>
+              <div>
+                <a href="javascript:void(0)" onclick="selectAllScheduleInterns(true)" style="color: var(--accent); margin-right: 10px;">Chọn tất cả</a>
+                <a href="javascript:void(0)" onclick="selectAllScheduleInterns(false)" style="color: var(--text-3, #94a3b8);">Bỏ chọn</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mb-3" style="display: flex; gap: 12px;">
+            <div style="flex: 1;">
+              <label class="form-label" for="scheduleDateInput">Ngày làm việc <span class="text-danger">*</span></label>
+              <input type="date" id="scheduleDateInput" class="form-control" required>
+            </div>
+            <div style="flex: 1;">
+              <label class="form-label" for="scheduleStartTimeInput">Giờ bắt đầu <span class="text-danger">*</span></label>
+              <input type="time" id="scheduleStartTimeInput" class="form-control" value="08:30" required>
+            </div>
+            <div style="flex: 1;">
+              <label class="form-label" for="scheduleEndTimeInput">Giờ kết thúc <span class="text-danger">*</span></label>
+              <input type="time" id="scheduleEndTimeInput" class="form-control" value="17:30" required>
+            </div>
+          </div>
+
+          <div class="row mb-3" style="display: flex; gap: 12px;">
+            <div style="flex: 2;">
+              <label class="form-label" for="scheduleTitleInput">Tiêu đề ca làm việc / Đào tạo <span class="text-danger">*</span></label>
+              <input type="text" id="scheduleTitleInput" class="form-control" placeholder="Ví dụ: Onboarding & Tìm hiểu quy trình dự án" required>
+            </div>
+            <div style="flex: 1;">
+              <label class="form-label" for="scheduleTypeSelect">Loại ca</label>
+              <select id="scheduleTypeSelect" class="form-control">
+                <option value="working" selected>Làm việc</option>
+                <option value="training">Đào tạo / Workshop</option>
+                <option value="meeting">Họp</option>
+                <option value="event">Sự kiện</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row mb-3" style="display: flex; gap: 12px;">
+            <div style="flex: 1;">
+              <label class="form-label" for="scheduleLocationInput">Địa điểm làm việc</label>
+              <input type="text" id="scheduleLocationInput" class="form-control" value="Văn phòng CodeGym" placeholder="Ví dụ: Văn phòng CodeGym / Online Google Meet">
+            </div>
+            <div style="flex: 1;">
+              <label class="form-label" for="scheduleFormMentorSelect">Mentor phụ trách</label>
+              <select id="scheduleFormMentorSelect" class="form-control">
+                <option value="">-- Mặc định (Mentor của TTS) --</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="form-label" for="scheduleContentInput">Nội dung chi tiết / Hướng dẫn công việc</label>
+            <textarea id="scheduleContentInput" class="form-control" rows="3" placeholder="Ghi chú công việc cần làm, nội dung bài học, tài liệu cần chuẩn bị..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 15px; border-top: 1px solid #e2e8f0;">
+          <button type="button" class="btn-secondary" onclick="closeModal('createScheduleModal')">Hủy</button>
+          <button type="submit" class="btn-primary">Tạo lịch làm việc</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: CHỈNH SỬA LỊCH LÀM VIỆC ==================== -->
+  <div class="modal" id="editScheduleModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 class="modal-title">Chỉnh sửa lịch làm việc</h2>
+        <button type="button" class="close-btn" onclick="closeModal('editScheduleModal')">&times;</button>
+      </div>
+      <form id="editScheduleForm" onsubmit="handleEditScheduleSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group mb-3">
+            <label class="form-label">Thực tập sinh</label>
+            <input type="text" id="editScheduleInternName" class="form-control" disabled>
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="editScheduleTitle">Tiêu đề <span class="text-danger">*</span></label>
+            <input type="text" id="editScheduleTitle" class="form-control" required>
+          </div>
+          <div class="row mb-3" style="display: flex; gap: 12px;">
+            <div style="flex: 1;">
+              <label class="form-label" for="editScheduleDate">Ngày <span class="text-danger">*</span></label>
+              <input type="date" id="editScheduleDate" class="form-control" required>
+            </div>
+            <div style="flex: 1;">
+              <label class="form-label" for="editScheduleStartTime">Giờ bắt đầu</label>
+              <input type="time" id="editScheduleStartTime" class="form-control" required>
+            </div>
+            <div style="flex: 1;">
+              <label class="form-label" for="editScheduleEndTime">Giờ kết thúc</label>
+              <input type="time" id="editScheduleEndTime" class="form-control" required>
+            </div>
+          </div>
+          <div class="row mb-3" style="display: flex; gap: 12px;">
+            <div style="flex: 1;">
+              <label class="form-label" for="editScheduleLocation">Địa điểm</label>
+              <input type="text" id="editScheduleLocation" class="form-control">
+            </div>
+            <div style="flex: 1;">
+              <label class="form-label" for="editScheduleType">Loại ca</label>
+              <select id="editScheduleType" class="form-control">
+                <option value="working">Làm việc</option>
+                <option value="training">Đào tạo / Workshop</option>
+                <option value="meeting">Họp</option>
+                <option value="event">Sự kiện</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="editScheduleContent">Nội dung chi tiết</label>
+            <textarea id="editScheduleContent" class="form-control" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 15px; border-top: 1px solid #e2e8f0;">
+          <button type="button" class="btn-secondary" onclick="closeModal('editScheduleModal')">Hủy</button>
+          <button type="submit" class="btn-primary">Lưu thay đổi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: XÁC NHẬN XÓA LỊCH LÀM VIỆC ==================== -->
+  <div class="modal" id="deleteScheduleConfirmModal">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Xác nhận xóa</h2>
+        <button type="button" class="close-btn" onclick="closeModal('deleteScheduleConfirmModal')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <p style="margin: 0; color: var(--text-2, #475569); line-height: 1.5;">Bạn có chắc chắn muốn xóa lịch làm việc này không? Thao tác này không thể hoàn tác.</p>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 15px; border-top: 1px solid #e2e8f0;">
+        <button type="button" class="btn-secondary" onclick="closeModal('deleteScheduleConfirmModal')">Hủy</button>
+        <button type="button" class="btn-danger" onclick="confirmDeleteSchedule()">Xóa lịch</button>
+      </div>
+    </div>
+  </div>
+
+<!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toastContainer" class="toast-container"></div>
 
   <script src="ui.js"></script>

@@ -67,6 +67,7 @@ function switchTab(tabName) {
     interns: { tab: document.getElementById("internsTab"), nav: document.getElementById("navInterns") },
     attendance: { tab: document.getElementById("attendanceTab"), nav: document.getElementById("navAttendance") },
     programs: { tab: document.getElementById("programsTab"), nav: document.getElementById("navPrograms") },
+    schedules: { tab: document.getElementById("schedulesTab"), nav: document.getElementById("navSchedules") },
     tasks: { tab: document.getElementById("tasksTab"), nav: document.getElementById("navTasks") },
     mentors: { tab: document.getElementById("mentorsTab"), nav: document.getElementById("navMentors") },
     reports: { tab: document.getElementById("reportsTab"), nav: document.getElementById("navReports") }
@@ -93,6 +94,8 @@ function switchTab(tabName) {
     renderAttendanceTab();
   } else if (tabName === "programs") {
     renderPrograms();
+  } else if (tabName === "schedules") {
+    renderSchedulesTab();
   } else if (tabName === "tasks") {
     initTasksTab();
   } else if (tabName === "mentors") {
@@ -7033,3 +7036,429 @@ window.handleCreateMeetingSubmit = handleCreateMeetingSubmit;
 
 
 
+
+
+// ==============================================================================
+// TAB: LỊCH LÀM VIỆC & ĐÀO TẠO CHO THỰC TẬP SINH (SPRINT 2: STT 23, STT 14)
+// ==============================================================================
+let hrSchedulesList = [];
+let hrSchedulesEditingId = null;
+let hrSchedulesDeletingId = null;
+let hrMentorsList = [];
+
+async function renderSchedulesTab() {
+  await populateScheduleFilters();
+  await loadSchedulesData();
+}
+
+async function populateScheduleFilters() {
+  // 1. Tải danh sách Mentor
+  if (typeof apiGetMentors === 'function') {
+    try {
+      const res = await apiGetMentors();
+      if (res && res.success && Array.isArray(res.data)) {
+        hrMentorsList = res.data;
+        const filterMentorEl = document.getElementById('scheduleFilterMentor');
+        const formMentorEl = document.getElementById('scheduleFormMentorSelect');
+        const scopeMentorEl = document.getElementById('scheduleScopeMentorSelect');
+        
+        let mentorOpts = '<option value="">-- Tất cả Mentor --</option>';
+        let formOpts = '<option value="">-- Mặc định (Mentor của TTS) --</option>';
+        let scopeOpts = '<option value="">-- Chọn Mentor để lấy danh sách TTS --</option>';
+
+        res.data.forEach(m => {
+          mentorOpts += `<option value="${m.id}">${escapeHtml(m.name)} (${escapeHtml(m.dept || 'Mentor')})</option>`;
+          formOpts += `<option value="${m.id}">${escapeHtml(m.name)}</option>`;
+          scopeOpts += `<option value="${m.id}">${escapeHtml(m.name)}</option>`;
+        });
+
+        if (filterMentorEl) filterMentorEl.innerHTML = mentorOpts;
+        if (formMentorEl) formMentorEl.innerHTML = formOpts;
+        if (scopeMentorEl) scopeMentorEl.innerHTML = scopeOpts;
+      }
+    } catch (e) {
+      console.warn('Lỗi tải mentor cho lịch:', e);
+    }
+  }
+
+  // 2. Tải danh sách TTS cho bộ lọc
+  const filterInternEl = document.getElementById('scheduleFilterIntern');
+  if (filterInternEl) {
+    const list = (typeof internList !== 'undefined' && Array.isArray(internList)) ? internList : [];
+    let internOpts = '<option value="">-- Tất cả Thực tập sinh --</option>';
+    list.forEach(i => {
+      internOpts += `<option value="${i.id}">${escapeHtml(i.name)} (${escapeHtml(i.dept || 'TTS')})</option>`;
+    });
+    filterInternEl.innerHTML = internOpts;
+  }
+}
+
+async function loadSchedulesData() {
+  const tbody = document.getElementById('schedulesTableBody');
+  if (!tbody) return;
+
+  const from = document.getElementById('scheduleFilterFrom')?.value || '';
+  const to = document.getElementById('scheduleFilterTo')?.value || '';
+  const intern_id = document.getElementById('scheduleFilterIntern')?.value || '';
+  const mentor_id = document.getElementById('scheduleFilterMentor')?.value || '';
+
+  try {
+    const res = await apiGetSchedules({ from, to, intern_id, mentor_id });
+    if (res && res.success && Array.isArray(res.data)) {
+      hrSchedulesList = res.data;
+      renderSchedulesTable(res.data);
+    } else {
+      hrSchedulesList = [];
+      renderSchedulesTable([]);
+    }
+  } catch (err) {
+    console.error('Lỗi tải lịch làm việc:', err);
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: red; padding: 20px;">Không thể tải dữ liệu lịch làm việc. Vui lòng thử lại!</td></tr>';
+  }
+}
+
+function renderSchedulesTable(schedules) {
+  const tbody = document.getElementById('schedulesTableBody');
+  if (!tbody) return;
+
+  if (!schedules || schedules.length === 0) {
+    tbody.innerHTML = `
+      <tr class="empty-table-row">
+        <td colspan="8" style="text-align: center; padding: 36px 20px; color: var(--text-2, #64748b); background: var(--surface-2, #f8fafc);">
+          <i class="fa-regular fa-calendar-xmark" style="font-size: 32px; display: block; margin-bottom: 8px; color: var(--text-3, #94a3b8);"></i>
+          <span>Tuyệt vời! Không có lịch làm việc nào được ghi nhận trong điều kiện lọc này.</span>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  const typeBadges = {
+    working: '<span class="badge" style="background: #e0e7ff; color: #4338ca;">Làm việc</span>',
+    training: '<span class="badge" style="background: #ecfdf5; color: #047857;">Đào tạo</span>',
+    meeting: '<span class="badge" style="background: #fef3c7; color: #b45309;">Họp</span>',
+    event: '<span class="badge" style="background: #f3e8ff; color: #6b21a8;">Sự kiện</span>'
+  };
+
+  tbody.innerHTML = schedules.map(s => {
+    let dateFormatted = s.schedule_date || '—';
+    if (dateFormatted.includes('-')) {
+      const p = dateFormatted.split('T')[0].split('-');
+      if (p.length === 3) dateFormatted = `${p[2]}/${p[1]}/${p[0]}`;
+    }
+
+    const typeBadge = typeBadges[s.schedule_type] || `<span class="badge" style="background: #f1f5f9; color: #475569;">${escapeHtml(s.schedule_type || 'Ca làm')}</span>`;
+    const timeDisplay = `${s.start_time || '08:30'} – ${s.end_time || '17:30'}`;
+
+    return `
+      <tr>
+        <td style="font-weight: 600;">${dateFormatted}</td>
+        <td><i class="fa-regular fa-clock me-1 text-muted"></i>${timeDisplay}</td>
+        <td>
+          <div style="font-weight: 600; color: var(--text-1, #1e293b);">${escapeHtml(s.intern_name || 'TTS #' + s.intern_id)}</div>
+        </td>
+        <td>
+          <div style="font-weight: 600; color: var(--accent, #6366f1);">${escapeHtml(s.title)}</div>
+          ${s.content ? `<div style="font-size: 12px; color: var(--text-2, #64748b); margin-top: 2px;">${escapeHtml(s.content)}</div>` : ''}
+        </td>
+        <td><i class="fa-solid fa-location-dot me-1 text-muted"></i>${escapeHtml(s.location || 'Văn phòng')}</td>
+        <td>${escapeHtml(s.mentor_name || 'Chưa phân công')}</td>
+        <td>${typeBadge}</td>
+        <td style="text-align: center;">
+          <div style="display: inline-flex; gap: 6px;">
+            <button type="button" class="btn-ghost" style="padding: 4px 8px; font-size: 13px;" onclick="openEditScheduleModal(${s.id})" title="Chỉnh sửa lịch">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button type="button" class="btn-ghost" style="padding: 4px 8px; font-size: 13px; color: #ef4444;" onclick="openDeleteScheduleModal(${s.id})" title="Xóa lịch">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function resetScheduleFilters() {
+  const fromEl = document.getElementById('scheduleFilterFrom');
+  const toEl = document.getElementById('scheduleFilterTo');
+  const internEl = document.getElementById('scheduleFilterIntern');
+  const mentorEl = document.getElementById('scheduleFilterMentor');
+  if (fromEl) fromEl.value = '';
+  if (toEl) toEl.value = '';
+  if (internEl) internEl.value = '';
+  if (mentorEl) mentorEl.value = '';
+  loadSchedulesData();
+}
+
+function openCreateScheduleModal() {
+  const form = document.getElementById('createScheduleForm');
+  if (form) form.reset();
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const dateInput = document.getElementById('scheduleDateInput');
+  if (dateInput) dateInput.value = todayStr;
+
+  const startInput = document.getElementById('scheduleStartTimeInput');
+  const endInput = document.getElementById('scheduleEndTimeInput');
+  if (startInput) startInput.value = '08:30';
+  if (endInput) endInput.value = '17:30';
+
+  const locInput = document.getElementById('scheduleLocationInput');
+  if (locInput) locInput.value = 'Văn phòng CodeGym';
+
+  // Render danh sách checkbox TTS
+  renderScheduleInternCheckboxes();
+  handleScheduleScopeChange();
+
+  openModal('createScheduleModal');
+}
+
+function renderScheduleInternCheckboxes(filterMentorId = null) {
+  const container = document.getElementById('scheduleInternCheckboxesContainer');
+  if (!container) return;
+
+  let list = (typeof internList !== 'undefined' && Array.isArray(internList)) ? internList : [];
+
+  if (filterMentorId) {
+    list = list.filter(i => String(i.mentor_id) === String(filterMentorId) || (i.mentor && hrMentorsList.some(m => String(m.id) === String(filterMentorId) && m.name === i.mentor)));
+  }
+
+  if (list.length === 0) {
+    container.innerHTML = '<div style="text-align: center; color: var(--text-3, #94a3b8); font-size: 13px; padding: 10px;">Không có thực tập sinh nào phù hợp</div>';
+    updateScheduleSelectedCount();
+    return;
+  }
+
+  container.innerHTML = list.map(i => `
+    <label style="display: flex; align-items: center; gap: 8px; padding: 5px 4px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f1f5f9;">
+      <input type="checkbox" class="schedule-intern-cb" value="${i.id}" onchange="updateScheduleSelectedCount()">
+      <span style="font-weight: 500;">${escapeHtml(i.name)}</span>
+      <span style="color: var(--text-3, #94a3b8); font-size: 12px;">(${escapeHtml(i.email)})</span>
+      ${i.dept ? `<span class="badge" style="margin-left: auto; font-size: 11px; background: #f1f5f9; color: #475569;">${escapeHtml(i.dept)}</span>` : ''}
+    </label>
+  `).join('');
+
+  updateScheduleSelectedCount();
+}
+
+function updateScheduleSelectedCount() {
+  const cbs = document.querySelectorAll('.schedule-intern-cb:checked');
+  const textEl = document.getElementById('scheduleSelectedCountText');
+  if (textEl) {
+    textEl.textContent = `Đã chọn ${cbs.length} thực tập sinh`;
+  }
+}
+
+function selectAllScheduleInterns(checked) {
+  const cbs = document.querySelectorAll('.schedule-intern-cb');
+  cbs.forEach(cb => { cb.checked = checked; });
+  updateScheduleSelectedCount();
+}
+
+function handleScheduleScopeChange() {
+  const selectedScope = document.querySelector('input[name="scheduleScope"]:checked')?.value || 'custom';
+  const mentorContainer = document.getElementById('scheduleMentorScopeContainer');
+
+  if (selectedScope === 'mentor') {
+    if (mentorContainer) mentorContainer.style.display = 'block';
+    const mentorId = document.getElementById('scheduleScopeMentorSelect')?.value || null;
+    renderScheduleInternCheckboxes(mentorId);
+    selectAllScheduleInterns(true);
+  } else if (selectedScope === 'all') {
+    if (mentorContainer) mentorContainer.style.display = 'none';
+    renderScheduleInternCheckboxes(null);
+    selectAllScheduleInterns(true);
+  } else {
+    if (mentorContainer) mentorContainer.style.display = 'none';
+    renderScheduleInternCheckboxes(null);
+    selectAllScheduleInterns(false);
+  }
+}
+
+function handleScheduleScopeMentorChange() {
+  const mentorId = document.getElementById('scheduleScopeMentorSelect')?.value || null;
+  renderScheduleInternCheckboxes(mentorId);
+  selectAllScheduleInterns(true);
+}
+
+async function handleCreateScheduleSubmit(event) {
+  event.preventDefault();
+
+  const cbs = document.querySelectorAll('.schedule-intern-cb:checked');
+  const selectedInternIds = Array.from(cbs).map(cb => cb.value);
+
+  if (selectedInternIds.length === 0) {
+    showToast('Vui lòng chọn ít nhất một thực tập sinh để tạo lịch!', 'warning');
+    return;
+  }
+
+  const scheduleDate = document.getElementById('scheduleDateInput')?.value || '';
+  const startTime = document.getElementById('scheduleStartTimeInput')?.value || '08:30';
+  const endTime = document.getElementById('scheduleEndTimeInput')?.value || '17:30';
+  const title = document.getElementById('scheduleTitleInput')?.value || '';
+  const scheduleType = document.getElementById('scheduleTypeSelect')?.value || 'working';
+  const location = document.getElementById('scheduleLocationInput')?.value || 'Văn phòng CodeGym';
+  const mentorId = document.getElementById('scheduleFormMentorSelect')?.value || null;
+  const content = document.getElementById('scheduleContentInput')?.value || '';
+
+  if (!scheduleDate) {
+    showToast('Vui lòng chọn ngày làm việc!', 'warning');
+    return;
+  }
+
+  if (!title.trim()) {
+    showToast('Vui lòng nhập tiêu đề ca làm việc / đào tạo!', 'warning');
+    return;
+  }
+
+  if (endTime <= startTime) {
+    showToast('Giờ kết thúc ca làm việc phải sau giờ bắt đầu!', 'warning');
+    return;
+  }
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const internId of selectedInternIds) {
+    try {
+      const payload = {
+        intern_id: internId,
+        schedule_date: scheduleDate,
+        start_time: startTime,
+        end_time: endTime,
+        title: title.trim(),
+        content: content.trim(),
+        location: location.trim(),
+        mentor_id: mentorId ? Number(mentorId) : null,
+        schedule_type: scheduleType,
+        status: 'scheduled'
+      };
+      const res = await apiCreateSchedule(payload);
+      if (res && res.success) {
+        successCount++;
+      } else {
+        failCount++;
+      }
+    } catch (e) {
+      failCount++;
+    }
+  }
+
+  closeModal('createScheduleModal');
+
+  if (successCount > 0) {
+    showToast(`Đã thiết lập lịch làm việc thành công cho ${successCount} thực tập sinh!`, 'success');
+  }
+  if (failCount > 0) {
+    showToast(`Có ${failCount} thực tập sinh không thể tạo lịch. Vui lòng kiểm tra lại!`, 'warning');
+  }
+
+  await loadSchedulesData();
+}
+
+function openEditScheduleModal(scheduleId) {
+  const sched = hrSchedulesList.find(s => s.id === scheduleId);
+  if (!sched) {
+    showToast('Không tìm thấy lịch làm việc!', 'error');
+    return;
+  }
+
+  hrSchedulesEditingId = scheduleId;
+
+  const nameEl = document.getElementById('editScheduleInternName');
+  const titleEl = document.getElementById('editScheduleTitle');
+  const dateEl = document.getElementById('editScheduleDate');
+  const startEl = document.getElementById('editScheduleStartTime');
+  const endEl = document.getElementById('editScheduleEndTime');
+  const locEl = document.getElementById('editScheduleLocation');
+  const typeEl = document.getElementById('editScheduleType');
+  const contentEl = document.getElementById('editScheduleContent');
+
+  if (nameEl) nameEl.value = sched.intern_name || `TTS #${sched.intern_id}`;
+  if (titleEl) titleEl.value = sched.title || '';
+  if (dateEl) {
+    dateEl.value = sched.schedule_date ? sched.schedule_date.split('T')[0] : '';
+  }
+  if (startEl) startEl.value = sched.start_time || '08:30';
+  if (endEl) endEl.value = sched.end_time || '17:30';
+  if (locEl) locEl.value = sched.location || 'Văn phòng CodeGym';
+  if (typeEl) typeEl.value = sched.schedule_type || 'working';
+  if (contentEl) contentEl.value = sched.content || '';
+
+  openModal('editScheduleModal');
+}
+
+async function handleEditScheduleSubmit(event) {
+  event.preventDefault();
+
+  if (!hrSchedulesEditingId) return;
+
+  const title = document.getElementById('editScheduleTitle')?.value || '';
+  const scheduleDate = document.getElementById('editScheduleDate')?.value || '';
+  const startTime = document.getElementById('editScheduleStartTime')?.value || '';
+  const endTime = document.getElementById('editScheduleEndTime')?.value || '';
+  const location = document.getElementById('editScheduleLocation')?.value || '';
+  const scheduleType = document.getElementById('editScheduleType')?.value || 'working';
+  const content = document.getElementById('editScheduleContent')?.value || '';
+
+  if (!title.trim()) {
+    showToast('Vui lòng nhập tiêu đề lịch làm việc!', 'warning');
+    return;
+  }
+
+  if (!scheduleDate) {
+    showToast('Vui lòng chọn ngày làm việc!', 'warning');
+    return;
+  }
+
+  if (endTime && startTime && endTime <= startTime) {
+    showToast('Giờ kết thúc ca làm việc phải sau giờ bắt đầu!', 'warning');
+    return;
+  }
+
+  try {
+    const res = await apiUpdateSchedule(hrSchedulesEditingId, {
+      title: title.trim(),
+      schedule_date: scheduleDate,
+      start_time: startTime,
+      end_time: endTime,
+      location: location.trim(),
+      schedule_type: scheduleType,
+      content: content.trim()
+    });
+
+    if (res && res.success) {
+      closeModal('editScheduleModal');
+      showToast('Cập nhật lịch làm việc thành công!', 'success');
+      await loadSchedulesData();
+    } else {
+      showToast(res ? res.message : 'Lỗi khi cập nhật lịch làm việc', 'danger');
+    }
+  } catch (e) {
+    showToast('Không thể kết nối đến máy chủ!', 'error');
+  }
+}
+
+function openDeleteScheduleModal(scheduleId) {
+  hrSchedulesDeletingId = scheduleId;
+  openModal('deleteScheduleConfirmModal');
+}
+
+async function confirmDeleteSchedule() {
+  if (!hrSchedulesDeletingId) return;
+
+  try {
+    const res = await apiDeleteSchedule(hrSchedulesDeletingId);
+    closeModal('deleteScheduleConfirmModal');
+    if (res && res.success) {
+      showToast('Đã xóa lịch làm việc thành công!', 'warning');
+      await loadSchedulesData();
+    } else {
+      showToast(res ? res.message : 'Lỗi khi xóa lịch làm việc', 'danger');
+    }
+  } catch (e) {
+    closeModal('deleteScheduleConfirmModal');
+    showToast('Không thể kết nối đến máy chủ!', 'error');
+  }
+}

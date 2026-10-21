@@ -34,8 +34,8 @@ exports.getSchedules = async (req, res) => {
       params.push(to);
     }
     if (mentor_id) {
-      query += ` AND s.mentor_id = ?`;
-      params.push(mentor_id);
+      query += ` AND (s.mentor_id = ? OR i.mentor_id = ?)`;
+      params.push(mentor_id, mentor_id);
     }
 
     query += ` ORDER BY s.schedule_date ASC, s.start_time ASC`;
