@@ -1067,11 +1067,46 @@ function openLogoutModal() {
   openModal('logoutModal');
 }
 
+let mentorLogoutTimer = null;
+
 function confirmLogout() {
+  closeModal('logoutModal');
   localStorage.removeItem('isLoggedIn');
   localStorage.removeItem('userRole');
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+  showMentorLogoutSuccessModal();
+}
+
+function showMentorLogoutSuccessModal() {
+  const modalEl = document.getElementById('logoutSuccessModal');
+  const progressFill = document.getElementById('logoutProgressFill');
+
+  if (progressFill) {
+    progressFill.style.transition = 'none';
+    progressFill.style.width = '0%';
+    void progressFill.offsetWidth;
+    progressFill.style.transition = 'width 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+    setTimeout(() => {
+      progressFill.style.width = '100%';
+    }, 50);
+  }
+
+  if (modalEl) {
+    modalEl.classList.add('active');
+  }
+
+  if (mentorLogoutTimer) clearTimeout(mentorLogoutTimer);
+  mentorLogoutTimer = setTimeout(() => {
+    proceedToLoginPage();
+  }, 1250);
+}
+
+function proceedToLoginPage() {
+  if (mentorLogoutTimer) {
+    clearTimeout(mentorLogoutTimer);
+    mentorLogoutTimer = null;
+  }
   window.location.href = 'index.html';
 }
 

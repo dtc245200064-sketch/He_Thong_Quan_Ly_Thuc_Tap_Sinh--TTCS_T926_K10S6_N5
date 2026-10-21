@@ -1518,10 +1518,9 @@ body {
 .redirect-progress-fill {
   width: 0%;
   height: 100%;
-  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2, #22d3ee) 100%);
+  background: var(--success);
   border-radius: var(--radius-full);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
-  transition: width 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-continue-now {

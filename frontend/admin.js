@@ -864,34 +864,16 @@ function confirmAdminLogout() {
 function showAdminLogoutSuccessModal() {
   const modalEl = document.getElementById('logoutSuccessModal');
   const progressFill = document.getElementById('logoutProgressFill');
-  const percentEl = document.getElementById('logoutPercent');
-
-  if (percentEl) percentEl.textContent = '0%';
 
   if (progressFill) {
     progressFill.style.transition = 'none';
     progressFill.style.width = '0%';
     void progressFill.offsetWidth; // Force reflow
-    progressFill.style.transition = 'width 1.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    progressFill.style.transition = 'width 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
     setTimeout(() => {
       progressFill.style.width = '100%';
     }, 50);
   }
-
-  // Cập nhật số % tiến trình mượt mà từ 0% đến 100%
-  const startTime = Date.now();
-  const duration = 1200;
-  function updatePercent() {
-    const elapsed = Date.now() - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    const pct = Math.round(eased * 100);
-    if (percentEl) percentEl.textContent = pct + '%';
-    if (progress < 1) {
-      requestAnimationFrame(updatePercent);
-    }
-  }
-  requestAnimationFrame(updatePercent);
 
   if (modalEl) {
     modalEl.classList.add('show');

@@ -767,6 +767,31 @@
   </div>
 
   <!-- TOAST NOTIFICATIONS CONTAINER -->
+  
+
+  <!-- MODAL 6: THÔNG BÁO ĐĂNG XUẤT THÀNH CÔNG -->
+  <div class="mentor-modal" id="logoutSuccessModal">
+    <div class="login-success-box">
+      <div class="modal-icon success-icon">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <h3>Đăng xuất thành công!</h3>
+      <p>
+        Bạn đã đăng xuất an toàn khỏi hệ thống.<br>
+        <span class="redirect-hint">
+          Đang chuyển hướng về màn hình đăng nhập...
+        </span>
+      </p>
+      <div class="redirect-progress-bar">
+        <div class="redirect-progress-fill" id="logoutProgressFill"></div>
+      </div>
+      <button type="button" class="btn-continue-now" onclick="proceedToLoginPage()">
+        <span>Về trang đăng nhập ngay</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
   <div class="mentor-toast-container" id="toastContainer"></div>
 
   <!-- SCRIPTS -->
