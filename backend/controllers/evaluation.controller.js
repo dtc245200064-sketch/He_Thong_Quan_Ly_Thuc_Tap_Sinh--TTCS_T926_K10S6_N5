@@ -109,7 +109,7 @@ exports.saveEvaluation = async (req, res) => {
 
     // Mentor chỉ được đánh giá TTS thuộc nhóm mình (B19)
     if (req.user && req.user.role === 'Mentor') {
-      if (internRows[0].mentor_id && req.user.mentorId && internRows[0].mentor_id !== req.user.mentorId) {
+      if (!req.user.mentorId || (internRows[0].mentor_id && internRows[0].mentor_id !== req.user.mentorId)) {
         return res.status(403).json({
           success: false,
           message: 'Bạn chỉ có quyền đánh giá thực tập sinh thuộc nhóm hướng dẫn của mình!'

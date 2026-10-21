@@ -82,7 +82,7 @@ exports.createTask = async (req, res) => {
     // Kiểm tra quyền của Mentor: Mentor chỉ giao task cho TTS thuộc nhóm của mình (B04 & S3-01)
     if (req.user && req.user.role === 'Mentor') {
       const myMentorId = req.user.mentorId;
-      if (internRows[0].mentor_id && myMentorId && internRows[0].mentor_id !== myMentorId) {
+      if (!myMentorId || (internRows[0].mentor_id && internRows[0].mentor_id !== myMentorId)) {
         return res.status(403).json({
           success: false,
           message: 'Bạn chỉ có quyền giao nhiệm vụ cho thực tập sinh thuộc nhóm hướng dẫn của mình!'

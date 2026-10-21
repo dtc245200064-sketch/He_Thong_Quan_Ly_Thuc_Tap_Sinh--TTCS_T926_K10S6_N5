@@ -61,6 +61,18 @@ const authenticate = async (req, res, next) => {
             }
           }
 
+          if (user.role === 'Mentor') {
+            try {
+              const [mRows] = await db.query(
+                'SELECT id FROM mentors WHERE user_id = ? OR email = ? LIMIT 1',
+                [user.id, user.email]
+              );
+              user.mentorId = mRows.length > 0 ? mRows[0].id : null;
+            } catch (e) {
+              user.mentorId = null;
+            }
+          }
+
           req.user = user;
           return next();
         }
