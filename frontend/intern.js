@@ -3451,6 +3451,7 @@ function openEmailInboxModal() {
   const modal = document.getElementById('systemEmailModal');
   if (modal) {
     modal.style.display = 'flex';
+    modal.classList.add('active', 'show');
   }
   backToEmailList();
   loadSystemEmails();
@@ -3460,6 +3461,7 @@ function closeEmailInboxModal() {
   const modal = document.getElementById('systemEmailModal');
   if (modal) {
     modal.style.display = 'none';
+    modal.classList.remove('active', 'show');
   }
 }
 
@@ -3766,12 +3768,18 @@ function openProgressModal(taskId = null) {
     if (nextPlanInput) nextPlanInput.value = '';
   }
 
-  if (modal) modal.classList.add('show');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.classList.add('show', 'active');
+  }
 }
 
 function closeProgressModal() {
   const modal = document.getElementById('progressModalOverlay');
-  if (modal) modal.classList.remove('show');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('show', 'active');
+  }
 }
 
 async function handleSaveProgress(event) {
@@ -3795,25 +3803,28 @@ async function handleSaveProgress(event) {
 
   try {
     if (editId) {
-      if (typeof apiUpdateTask === 'function') {
-        const res = await apiUpdateTask(editId, {
-          title: name,
-          deadline: date,
+      let res = null;
+      if (typeof apiUpdateTaskProgress === 'function') {
+        res = await apiUpdateTaskProgress(editId, {
           progress: percent,
-          description: content,
           intern_note: nextPlan || blockers
         });
-        if (res && res.success) {
-          if (typeof showInternToast === 'function') showInternToast('Cập nhật tiến độ thành công!', 'success');
-        } else {
-          if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi cập nhật tiến độ', 'warning');
+      }
+      if (!res || !res.success) {
+        if (typeof apiUpdateTask === 'function') {
+          res = await apiUpdateTask(editId, {
+            title: name,
+            deadline: date,
+            progress: percent,
+            description: content,
+            intern_note: nextPlan || blockers
+          });
         }
-      } else if (typeof apiUpdateTaskProgress === 'function') {
-        await apiUpdateTaskProgress(editId, {
-          progress: percent,
-          intern_note: nextPlan || blockers
-        });
+      }
+      if (res && res.success) {
         if (typeof showInternToast === 'function') showInternToast('Cập nhật tiến độ thành công!', 'success');
+      } else {
+        if (typeof showInternToast === 'function') showInternToast(res?.message || 'Lỗi cập nhật tiến độ', 'warning');
       }
     } else {
       if (typeof apiCreateTask === 'function') {
@@ -4495,3 +4506,14 @@ function renderNotificationsList() {
 }
 
 
+
+// Expose global modal and progress functions for inline HTML handlers
+window.openEmailInboxModal = openEmailInboxModal;
+window.closeEmailInboxModal = closeEmailInboxModal;
+window.backToEmailList = backToEmailList;
+window.viewEmailDetail = viewEmailDetail;
+window.openProgressModal = openProgressModal;
+window.closeProgressModal = closeProgressModal;
+window.handleSaveProgress = handleSaveProgress;
+window.deleteProgressTask = deleteProgressTask;
+window.updateProgressPercentDisplay = updateProgressPercentDisplay;

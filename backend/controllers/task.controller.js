@@ -55,13 +55,39 @@ exports.getTasks = async (req, res) => {
 exports.createTask = async (req, res) => {
   try {
     const { intern_id, mentor_id, title, description, deadline, priority, progress, intern_note } = req.body;
+    const effectiveInternId = intern_id || (req.user && req.user.internId);
 
-    if (!intern_id || !title || !title.trim()) {
+    if (!effectiveInternId || !title || !title.trim()) {
       return res.status(400).json({ success: false, message: 'Vui lòng cung cấp thực tập sinh và tiêu đề nhiệm vụ!' });
     }
 
+    // Nếu là Thực tập sinh: Cho phép tự ghi nhận tiến độ công việc của chính mình
     if (req.user && req.user.role === 'Thực tập sinh') {
-      return res.status(403).json({ success: false, message: 'Thực tập sinh không có quyền giao nhiệm vụ!' });
+      let targetInternId = intern_id;
+      let [myRows] = await db.query('SELECT id, mentor_id FROM interns WHERE id = ? OR user_id = ?', [intern_id || -1, req.user.id]);
+      if (myRows.length === 0) {
+        [myRows] = await db.query('SELECT id, mentor_id FROM interns WHERE user_id = ? LIMIT 1', [req.user.id]);
+      }
+      if (myRows.length > 0) {
+        targetInternId = myRows[0].id;
+      }
+      const taskProgress = progress !== undefined ? Math.min(100, Math.max(0, parseInt(progress, 10) || 0)) : 0;
+      let autoStatus = 'todo';
+      if (taskProgress >= 100) autoStatus = 'done';
+      else if (taskProgress > 0) autoStatus = 'in_progress';
+
+      const [result] = await db.query(
+        `INSERT INTO tasks (intern_id, mentor_id, title, description, deadline, priority, status, progress, intern_note, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [targetInternId, myRows[0]?.mentor_id || null, title.trim(), description || '', deadline || null, 'medium', autoStatus, taskProgress, intern_note || '']
+      );
+
+      const [created] = await db.query('SELECT * FROM tasks WHERE id = ?', [result.insertId]);
+      return res.status(201).json({
+        success: true,
+        message: 'Thêm cập nhật tiến độ thành công!',
+        data: created[0]
+      });
     }
 
     // Xác định ID thực tế trong bảng interns
@@ -141,8 +167,33 @@ exports.updateTask = async (req, res) => {
     }
 
     const task = existing[0];
+    // Nếu là Thực tập sinh: Cho phép cập nhật tiến độ công việc của chính mình
     if (req.user && req.user.role === 'Thực tập sinh') {
-      return res.status(403).json({ success: false, message: 'Thực tập sinh không có quyền chỉnh sửa cấu hình nhiệm vụ!' });
+      const myInternId = req.user.internId;
+      const [internRows] = await db.query('SELECT id FROM interns WHERE id = ? OR user_id = ?', [task.intern_id, req.user.id]);
+      if (task.intern_id !== myInternId && internRows.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn chỉ có quyền cập nhật tiến độ cho nhiệm vụ của chính mình!'
+        });
+      }
+
+      let nextProgress = progress !== undefined ? Math.min(100, Math.max(0, parseInt(progress, 10) || 0)) : task.progress;
+      let nextStatus = status || task.status;
+      if (progress !== undefined && !status) {
+        if (nextProgress >= 100) nextStatus = 'done';
+        else if (nextProgress > 0) nextStatus = 'in_progress';
+        else nextStatus = 'todo';
+      }
+
+      await db.query(
+        `UPDATE tasks 
+         SET progress = ?, status = ?, intern_note = COALESCE(?, intern_note), description = COALESCE(?, description), updated_at = NOW() 
+         WHERE id = ?`,
+        [nextProgress, nextStatus, intern_note !== undefined ? intern_note : null, description !== undefined ? description : null, id]
+      );
+
+      return res.status(200).json({ success: true, message: 'Cập nhật tiến độ thành công!' });
     }
 
     let nextProgress = progress !== undefined ? Math.min(100, Math.max(0, parseInt(progress, 10) || 0)) : task.progress;
