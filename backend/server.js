@@ -95,7 +95,7 @@ app.use((err, req, res, next) => {
       message: `Lỗi tải file: ${err.message}`
     });
   }
-  if (err.message && err.message.includes('Định dạng')) {
+  if (err.status === 400 || (err.message && (err.message.includes('Định dạng') || err.message.includes('nguy hiểm') || err.message.includes('tệp tin') || err.message.includes('hỗ trợ') || err.message.includes('File')))) {
     return res.status(400).json({
       success: false,
       message: err.message

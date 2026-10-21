@@ -171,11 +171,25 @@ exports.createIntern = async (req, res) => {
     // Kiểm tra xem đã có hồ sơ cho email hoặc linkedUserId này chưa (tránh trùng lặp hồ sơ TTS)
     if ((email && email.trim()) || linkedUserId) {
       const [existingInterns] = await db.query(
-        'SELECT id FROM interns WHERE (email = ? AND email != "") OR (user_id IS NOT NULL AND user_id = ?) LIMIT 1',
+        'SELECT id, school, dept, status FROM interns WHERE (email = ? AND email != "") OR (user_id IS NOT NULL AND user_id = ?) LIMIT 1',
         [email ? email.trim() : '', linkedUserId]
       );
       if (existingInterns.length > 0) {
-        const existingId = existingInterns[0].id;
+        const existingRec = existingInterns[0];
+        const existingId = existingRec.id;
+
+        // Chỉ cho phép gộp/cập nhật khi hồ sơ cũ là bản tự sinh từ tài khoản và còn trống thông tin (M1)
+        const isDefaultSchool = !existingRec.school || existingRec.school === 'Chưa cập nhật';
+        const isDefaultDept = !existingRec.dept || existingRec.dept === 'Chưa phân bổ' || existingRec.dept === 'Chưa cập nhật';
+        const isPlaceholder = isDefaultSchool && isDefaultDept;
+
+        if (!isPlaceholder) {
+          return res.status(409).json({
+            success: false,
+            message: 'Email đã tồn tại trong hệ thống!'
+          });
+        }
+
         await db.query(`
           UPDATE interns SET
             user_id = COALESCE(?, user_id),

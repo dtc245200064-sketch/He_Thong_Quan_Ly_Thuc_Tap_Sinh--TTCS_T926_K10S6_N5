@@ -47,6 +47,13 @@ exports.createProgram = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ thông tin bắt buộc' });
     }
 
+    if (new Date(end_date) < new Date(start_date)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu!'
+      });
+    }
+
     let scheduleStr = null;
     if (schedule) {
       scheduleStr = typeof schedule === 'string' ? schedule : JSON.stringify(schedule);
@@ -77,6 +84,14 @@ exports.updateProgram = async (req, res) => {
     }
 
     const current = existing[0];
+    const finalStartDate = start_date !== undefined ? start_date : current.start_date;
+    const finalEndDate = end_date !== undefined ? end_date : current.end_date;
+    if (finalStartDate && finalEndDate && new Date(finalEndDate) < new Date(finalStartDate)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu!'
+      });
+    }
     let scheduleStr = current.schedule;
     if (schedule !== undefined) {
       scheduleStr = typeof schedule === 'string' ? schedule : JSON.stringify(schedule);

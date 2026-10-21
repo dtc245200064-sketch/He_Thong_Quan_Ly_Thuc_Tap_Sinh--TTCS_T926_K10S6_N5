@@ -32,13 +32,17 @@ const fileFilter = (req, file, cb) => {
   // Chặn ngay các extension nguy hiểm
   const dangerousExts = ['.exe', '.bat', '.cmd', '.sh', '.php', '.phtml', '.html', '.htm', '.js', '.vbs', '.svg'];
   if (dangerousExts.includes(ext) || file.originalname.toLowerCase().includes('.exe.')) {
-    return cb(new Error('Phát hiện tệp tin nguy hiểm! Hệ thống từ chối xử lý.'), false);
+    const error = new Error('Phát hiện tệp tin nguy hiểm! Hệ thống từ chối xử lý.');
+    error.status = 400;
+    return cb(error, false);
   }
 
   if (ALLOWED_EXTENSIONS.includes(ext)) {
     cb(null, true);
   } else {
-    cb(new Error(`Định dạng tệp ${ext} không được hỗ trợ! Chỉ chấp nhận PDF, DOC, DOCX, PNG, JPG.`), false);
+    const error = new Error(`Định dạng tệp ${ext} không được hỗ trợ! Chỉ chấp nhận PDF, DOC, DOCX, PNG, JPG.`);
+    error.status = 400;
+    return cb(error, false);
   }
 };
 

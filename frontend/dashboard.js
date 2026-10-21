@@ -3459,6 +3459,11 @@ function handleProgramFormSubmit(e) {
   const mentor = document.getElementById("progFormMentor").value.trim();
   const startDate = document.getElementById("progFormStartDate").value;
   const endDate = document.getElementById("progFormEndDate").value;
+
+  if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+    showToast("Ngày kết thúc phải sau hoặc bằng ngày bắt đầu!", "warning");
+    return;
+  }
   const capacity = document.getElementById("progFormCapacity").value ? Number(document.getElementById("progFormCapacity").value) : null;
   const status = document.getElementById("progFormStatus").value;
 
