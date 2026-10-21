@@ -7,8 +7,7 @@
     "start": "node backend/server.js",
     "server": "node backend/server.js",
     "dev": "nodemon backend/server.js",
-    "backend": "node backend/server.js",
-    "test": "node tests/baseline_test.js"
+    "backend": "node backend/server.js"
   },
   "keywords": [
     "codegym",
@@ -16,8 +15,5 @@
     "hr-portal"
   ],
   "author": "CodeGym Team",
-  "license": "ISC",
-  "dependencies": {
-    "puppeteer-core": "^25.15.0"
-  }
+  "license": "ISC"
 }
