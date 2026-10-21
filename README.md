@@ -242,7 +242,7 @@ SMTP_PASS=
 | `DB_HOST`, `DB_PORT` | `localhost`, `3306` | Địa chỉ MySQL |
 | `DB_USER`, `DB_PASSWORD` | `root`, rỗng | Tài khoản MySQL |
 | `DB_NAME` | `codegym` | Tên CSDL |
-| `JWT_SECRET` | có giá trị dự phòng trong mã nguồn | **Bắt buộc đặt riêng khi triển khai thật** |
+| `JWT_SECRET` | không có | **Bắt buộc.** Thiếu biến này, server báo lỗi `FATAL` và không khởi động |
 | `SMTP_USER`, `SMTP_PASS`, `SMTP_SERVICE` | không có | Nếu bỏ trống, hệ thống dùng tài khoản email thử nghiệm |
 
 **4. Chạy server**
@@ -290,7 +290,7 @@ Base URL: `http://localhost:5000/api` · Xác thực: `Authorization: Bearer <TO
 
 - **Mô hình:** Scrum, sprint ngắn (khoảng 1 tuần/sprint sau giai đoạn onboarding), có họp Daily, sprint review và retrospective.
 - **Quản lý công việc:** Jira (project `SCRUM`), mỗi user story được chia thành các subtask.
-- **Quy tắc Git:** nhánh `main` giữ bản ổn định, `develop` là nhánh tích hợp, mỗi tính năng làm trên nhánh `feature/*` rồi merge qua Pull Request.
+- **Quy tắc Git:** nhánh `main` giữ bản ổn định, `develop` là nhánh tích hợp. Một số thay đổi được merge qua Pull Request. Các nhánh `feature/*` dùng để đánh dấu từng chức năng, các nhánh `fix/*` dùng cho đợt sửa lỗi và kiểm thử cuối kỳ.
 - **Thông điệp commit:** theo dạng `feat:`, `fix:`, `refactor:`, `style:`, `chore:` kèm mô tả ngắn.
 
 ---
@@ -301,7 +301,7 @@ Base URL: `http://localhost:5000/api` · Xác thực: `Authorization: Bearer <TO
 
 - Một số user story chưa thực hiện (xem [mục 2](#chưa-thực-hiện-hoặc-chưa-hoàn-thiện-11-user-story)).
 - Chưa có kiểm thử tự động và CI.
-- `JWT_SECRET` có giá trị dự phòng trong mã nguồn, CORS đang mở cho mọi origin. Cần siết chặt trước khi triển khai thật.
+- CORS đang mở cho mọi origin (`*`). Cần giới hạn lại trước khi triển khai thật.
 - `API_CONTRACT.md` chưa cập nhật cho Sprint 2 và Sprint 3.
 
 **Hướng phát triển**
