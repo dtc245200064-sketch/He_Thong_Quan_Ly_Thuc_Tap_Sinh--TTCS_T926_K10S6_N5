@@ -45,6 +45,16 @@ async function apiGetMe() {
 }
 
 // 1. Đăng nhập HR Manager: POST /api/auth/login
+// 1b. Đăng ký tài khoản Thực tập sinh trực tuyến: POST /api/auth/register (STT 6)
+async function apiRegister(data) {
+  const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
 async function apiLogin(email, password) {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',

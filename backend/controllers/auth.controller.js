@@ -228,3 +228,124 @@ exports.getMe = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
   }
 };
+
+// POST /api/auth/register: Đăng ký tài khoản Thực tập sinh trực tuyến (STT 6)
+exports.register = async (req, res) => {
+  try {
+    const { name, email, password, phone } = req.body;
+
+    // 1. Kiểm tra trường bắt buộc
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng nhập họ và tên!'
+      });
+    }
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng nhập địa chỉ email!'
+      });
+    }
+
+    // Kiểm tra định dạng email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Địa chỉ email không đúng định dạng!'
+      });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mật khẩu phải có độ dài tối thiểu 6 ký tự!'
+      });
+    }
+
+    const trimmedEmail = email.trim();
+    const trimmedName = name.trim();
+    const trimmedPhone = phone ? phone.trim() : '';
+
+    // 2. Kiểm tra email đã tồn tại trong bảng users chưa
+    const [existUsers] = await db.query('SELECT id FROM users WHERE email = ? LIMIT 1', [trimmedEmail]);
+    if (existUsers.length > 0) {
+      return res.status(409).json({
+        success: false,
+        code: 'EMAIL_EXISTS',
+        message: `Email "${trimmedEmail}" đã tồn tại trong hệ thống!`
+      });
+    }
+
+    // 3. Mật khẩu băm bcrypt
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Sinh username từ email
+    const username = trimmedEmail.split('@')[0] + '_' + Math.floor(1000 + Math.random() * 9000);
+
+    // Luôn luôn ép vai trò là Thực tập sinh (bỏ qua mọi role client gửi - STT 6)
+    const fixedRole = 'Thực tập sinh';
+
+    // 4. Tạo người dùng trong users
+    const [userResult] = await db.query(
+      `INSERT INTO users (name, email, username, password, phone, role, status) VALUES (?, ?, ?, ?, ?, ?, 'active')`,
+      [trimmedName, trimmedEmail, username, hashedPassword, trimmedPhone, fixedRole]
+    );
+
+    const newUserId = userResult.insertId;
+
+    // 5. Kiểm tra hồ sơ interns đã có sẵn từ email/name chưa
+    const [existingInterns] = await db.query(
+      'SELECT id FROM interns WHERE email = ? ORDER BY id DESC LIMIT 1',
+      [trimmedEmail]
+    );
+
+    let internId = null;
+    if (existingInterns.length > 0) {
+      internId = existingInterns[0].id;
+      await db.query(
+        'UPDATE interns SET user_id = ?, name = ?, phone = COALESCE(NULLIF(phone, ""), ?) WHERE id = ?',
+        [newUserId, trimmedName, trimmedPhone, internId]
+      );
+    } else {
+      const [internResult] = await db.query(
+        `INSERT INTO interns (user_id, name, email, phone, mentor, mentor_id, school, major, dept, status) 
+         VALUES (?, ?, ?, ?, 'Chưa phân công', NULL, 'Chưa cập nhật', 'Chưa cập nhật', 'Chưa phân bổ', 'Chưa hoàn thiện')`,
+        [newUserId, trimmedName, trimmedEmail, trimmedPhone]
+      );
+      internId = internResult.insertId;
+    }
+
+    // Sinh JWT token để client có thể sử dụng ngay
+    const token = jwt.sign(
+      { id: newUserId, email: trimmedEmail, role: fixedRole },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Đăng ký tài khoản Thực tập sinh thành công!',
+      token,
+      user: {
+        id: newUserId,
+        internId,
+        name: trimmedName,
+        email: trimmedEmail,
+        username,
+        phone: trimmedPhone,
+        role: fixedRole
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi đăng ký tài khoản:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi đăng ký tài khoản',
+      error: error.message
+    });
+  }
+};

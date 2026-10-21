@@ -138,6 +138,12 @@
               <span>ĐĂNG NHẬP</span>
               <i class="fa-solid fa-arrow-right-to-bracket" style="font-size: 14px;"></i>
             </button>
+
+            <!-- Đăng ký tài khoản dành cho TTS (STT 6) -->
+            <div style="text-align: center; margin-top: 16px; font-size: 13.5px; color: var(--text-2, #64748b);">
+              <span>Bạn chưa có tài khoản thực tập sinh? </span>
+              <a href="javascript:void(0)" onclick="openRegisterModal()" style="color: var(--accent, #6366f1); font-weight: 600; text-decoration: none;">Đăng ký ngay</a>
+            </div>
           </form>
         </div>
 
@@ -150,6 +156,68 @@
 
     </div>
   </section>
+
+  <!-- ================================================================= -->
+  <!-- MODAL ĐĂNG KÝ TÀI KHOẢN THỰC TẬP SINH (STT 6)                     -->
+  <!-- ================================================================= -->
+  <div class="modal" id="registerModal" aria-hidden="true">
+    <div class="modal-box" style="max-width: 440px; text-align: left; padding: 28px 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-1, #1e293b);">Đăng ký tài khoản Thực tập sinh</h3>
+        <button type="button" onclick="closeRegisterModal()" style="border: none; background: transparent; font-size: 20px; cursor: pointer; color: var(--text-3, #94a3b8); line-height: 1;">&times;</button>
+      </div>
+
+      <!-- Thông báo lỗi khi đăng ký -->
+      <div id="registerErrorMsg" class="login-error-msg" style="display: none; margin-bottom: 12px;"></div>
+
+      <form id="registerForm" onsubmit="handleRegister(event)">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="regName" style="display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 4px;">Họ và tên <span style="color: #ef4444;">*</span></label>
+          <div class="input-box">
+            <span class="icon"><img src="image/user.svg" alt="User"></span>
+            <input type="text" id="regName" placeholder="Ví dụ: Nguyễn Văn A" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="regEmail" style="display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 4px;">Địa chỉ Email <span style="color: #ef4444;">*</span></label>
+          <div class="input-box">
+            <span class="icon"><i class="fa-regular fa-envelope" style="color: #64748b;"></i></span>
+            <input type="email" id="regEmail" placeholder="name@example.com" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="regPhone" style="display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 4px;">Số điện thoại</label>
+          <div class="input-box">
+            <span class="icon"><i class="fa-solid fa-phone" style="color: #64748b; font-size: 13px;"></i></span>
+            <input type="tel" id="regPhone" placeholder="0901234567">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="regPassword" style="display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 4px;">Mật khẩu (tối thiểu 6 ký tự) <span style="color: #ef4444;">*</span></label>
+          <div class="input-box">
+            <span class="icon"><img src="image/lock.svg" alt="Lock"></span>
+            <input type="password" id="regPassword" placeholder="Nhập mật khẩu" required minlength="6">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label for="regPasswordConfirm" style="display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 4px;">Xác nhận mật khẩu <span style="color: #ef4444;">*</span></label>
+          <div class="input-box">
+            <span class="icon"><img src="image/lock.svg" alt="Lock"></span>
+            <input type="password" id="regPasswordConfirm" placeholder="Nhập lại mật khẩu" required minlength="6">
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login" id="btnRegisterSubmit" style="margin-top: 8px;">
+          <span>ĐĂNG KÝ TÀI KHOẢN</span>
+          <i class="fa-solid fa-user-plus" style="font-size: 14px;"></i>
+        </button>
+      </form>
+    </div>
+  </div>
 
   <!-- ================================================================= -->
   <!-- MODAL THÔNG BÁO ĐĂNG NHẬP THÀNH CÔNG (THIẾT KẾ WEB, KHÔNG DÙNG ALERT) -->

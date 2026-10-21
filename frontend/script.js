@@ -427,3 +427,94 @@ function closeModal(modalId = 'logoutModal') {
 document.addEventListener('DOMContentLoaded', () => {
   checkAuthState();
 });
+
+// ==========================================================================
+// ĐĂNG KÝ TÀI KHOẢN THỰC TẬP SINH TRỰC TUYẾN (STT 6)
+// ==========================================================================
+function openRegisterModal() {
+  const form = document.getElementById('registerForm');
+  if (form) form.reset();
+  hideRegisterError();
+  const modal = document.getElementById('registerModal');
+  if (modal) modal.classList.add('active');
+}
+
+function closeRegisterModal() {
+  const modal = document.getElementById('registerModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function showRegisterError(message) {
+  const errBox = document.getElementById('registerErrorMsg');
+  if (errBox) {
+    errBox.textContent = message;
+    errBox.style.display = 'block';
+  }
+}
+
+function hideRegisterError() {
+  const errBox = document.getElementById('registerErrorMsg');
+  if (errBox) {
+    errBox.textContent = '';
+    errBox.style.display = 'none';
+  }
+}
+
+async function handleRegister(event) {
+  event.preventDefault();
+  hideRegisterError();
+
+  const name = document.getElementById('regName')?.value.trim() || '';
+  const email = document.getElementById('regEmail')?.value.trim() || '';
+  const phone = document.getElementById('regPhone')?.value.trim() || '';
+  const password = document.getElementById('regPassword')?.value || '';
+  const passwordConfirm = document.getElementById('regPasswordConfirm')?.value || '';
+
+  if (!name || !email || !password) {
+    showRegisterError('Vui lòng điền đầy đủ các thông tin bắt buộc (*)!');
+    return;
+  }
+
+  if (password.length < 6) {
+    showRegisterError('Mật khẩu phải có độ dài tối thiểu 6 ký tự!');
+    return;
+  }
+
+  if (password !== passwordConfirm) {
+    showRegisterError('Mật khẩu xác nhận không khớp với mật khẩu đã nhập!');
+    return;
+  }
+
+  const btn = document.getElementById('btnRegisterSubmit');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>Đang xử lý...</span> <i class="fa-solid fa-spinner fa-spin"></i>';
+  }
+
+  try {
+    const res = await apiRegister({ name, email, phone, password });
+    if (res && res.success) {
+      closeRegisterModal();
+      // Điền email vào form đăng nhập để tiện lợi
+      const usernameInput = document.getElementById('username');
+      if (usernameInput) usernameInput.value = email;
+      const passInput = document.getElementById('password');
+      if (passInput) passInput.value = password;
+
+      showWebNotice(
+        'Đăng ký thành công!',
+        `Tài khoản thực tập sinh cho email "${email}" đã được tạo. Vui lòng đăng nhập để bắt đầu hoàn thiện hồ sơ thực tập.`,
+        'success'
+      );
+    } else {
+      showRegisterError(res ? res.message : 'Đăng ký thất bại. Vui lòng thử lại!');
+    }
+  } catch (err) {
+    showRegisterError('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối mạng!');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>ĐĂNG KÝ TÀI KHOẢN</span> <i class="fa-solid fa-user-plus" style="font-size: 14px;"></i>';
+    }
+  }
+}

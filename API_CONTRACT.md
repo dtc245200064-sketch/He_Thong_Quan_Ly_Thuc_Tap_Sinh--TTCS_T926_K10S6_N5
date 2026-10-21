@@ -55,6 +55,7 @@
 | Phân hệ | Phương thức | Endpoint | Chức năng nghiệp vụ | Quyền truy cập |
 |---|---|---|---|---|
 | **Auth** | `POST` | `/api/auth/login` | Đăng nhập tài khoản hệ thống | Công khai |
+| **Auth** | `POST` | `/api/auth/register` | Đăng ký tài khoản Thực tập sinh trực tuyến | Công khai |
 | **Auth** | `GET` | `/api/auth/me` | Lấy profile và permissions người dùng | Authenticated |
 | **Admin** | `GET` | `/api/admin/users` | Xem danh sách người dùng hệ thống | Admin |
 | **Admin** | `POST` | `/api/admin/users` | Tạo mới tài khoản và phân quyền | Admin |
@@ -110,6 +111,36 @@
 ---
 
 ## 3. CHI TIẾT CÁC ENDPOINT QUAN TRỌNG ĐÃ ĐƯỢC CHUẨN HÓA
+
+### 3.1b. Đăng ký tài khoản Thực tập sinh trực tuyến: `POST /api/auth/register`
+- **Quyền truy cập:** Công khai (áp dụng Rate Limiter chống brute-force)
+- **Request Body:**
+  ```json
+  {
+    "name": "Nguyễn Văn A",
+    "email": "nguyenvana@gmail.com",
+    "password": "Password123",
+    "phone": "0901234567"
+  }
+  ```
+- **Quy tắc nghiệp vụ:** Bắt buộc họ tên, email đúng định dạng, mật khẩu tối thiểu 6 ký tự. Kiểm tra trùng email (409). Luôn gán vai trò `Thực tập sinh` (bỏ qua mọi role client gửi). Tự động tạo bản ghi trong bảng `interns` với trạng thái ban đầu `Chưa hoàn thiện`.
+- **Response 201 Created:**
+  ```json
+  {
+    "success": true,
+    "message": "Đăng ký tài khoản Thực tập sinh thành công!",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": 15,
+      "internId": 12,
+      "name": "Nguyễn Văn A",
+      "email": "nguyenvana@gmail.com",
+      "username": "nguyenvana_1234",
+      "phone": "0901234567",
+      "role": "Thực tập sinh"
+    }
+  }
+  ```
 
 ### 3.1. Đăng nhập hệ thống: `POST /api/auth/login`
 - **Request Body:**
