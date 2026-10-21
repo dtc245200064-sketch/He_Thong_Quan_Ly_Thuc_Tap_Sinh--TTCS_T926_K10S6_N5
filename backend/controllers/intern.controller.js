@@ -285,7 +285,10 @@ exports.updateIntern = async (req, res) => {
     } = req.body;
 
     // Kiểm tra xem thực tập sinh có tồn tại không (hỗ trợ cả id và user_id)
-    const [existing] = await db.query('SELECT * FROM interns WHERE id = ? OR user_id = ? LIMIT 1', [id, id]);
+    let [existing] = await db.query('SELECT * FROM interns WHERE id = ? LIMIT 1', [id]);
+    if (existing.length === 0) {
+      [existing] = await db.query('SELECT * FROM interns WHERE user_id = ? LIMIT 1', [id]);
+    }
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
@@ -411,7 +414,10 @@ exports.getInternDocuments = async (req, res) => {
     const { id } = req.params;
 
     // Lấy thông tin thực tập sinh (hỗ trợ cả id và user_id)
-    const [interns] = await db.query('SELECT * FROM interns WHERE id = ? OR user_id = ? LIMIT 1', [id, id]);
+    let [interns] = await db.query('SELECT * FROM interns WHERE id = ? LIMIT 1', [id]);
+    if (interns.length === 0) {
+      [interns] = await db.query('SELECT * FROM interns WHERE user_id = ? LIMIT 1', [id]);
+    }
     if (interns.length === 0) {
       return res.status(404).json({
         success: false,
@@ -524,7 +530,10 @@ exports.updateDocumentStatus = async (req, res) => {
       });
     }
 
-    const [internRows] = await db.query('SELECT * FROM interns WHERE id = ? OR user_id = ? LIMIT 1', [id, id]);
+    let [internRows] = await db.query('SELECT * FROM interns WHERE id = ? LIMIT 1', [id]);
+    if (internRows.length === 0) {
+      [internRows] = await db.query('SELECT * FROM interns WHERE user_id = ? LIMIT 1', [id]);
+    }
     if (internRows.length === 0) {
       return res.status(404).json({
         success: false,
@@ -636,7 +645,10 @@ exports.uploadDocument = async (req, res) => {
     }
 
     // B13: Tìm ID chính xác trong bảng interns. Nếu không tìm thấy, XÓA file tải lên và trả về 404 (Không tạo intern giả)
-    const [internRows] = await db.query('SELECT id FROM interns WHERE id = ? OR user_id = ? LIMIT 1', [internId, internId]);
+    let [internRows] = await db.query('SELECT id, status, name, email FROM interns WHERE id = ? LIMIT 1', [internId]);
+    if (internRows.length === 0) {
+      [internRows] = await db.query('SELECT id, status, name, email FROM interns WHERE user_id = ? LIMIT 1', [internId]);
+    }
     if (internRows.length === 0) {
       if (req.file.path && fs.existsSync(req.file.path)) {
         try { fs.unlinkSync(req.file.path); } catch (e) {}
@@ -774,7 +786,10 @@ exports.deleteDocument = async (req, res) => {
     const { id, docType } = req.params;
 
     // Tìm intern_id thực tế (hỗ trợ cả id và user_id)
-    const [internRows] = await db.query('SELECT id FROM interns WHERE id = ? OR user_id = ? LIMIT 1', [id, id]);
+    let [internRows] = await db.query('SELECT id FROM interns WHERE id = ? LIMIT 1', [id]);
+    if (internRows.length === 0) {
+      [internRows] = await db.query('SELECT id FROM interns WHERE user_id = ? LIMIT 1', [id]);
+    }
     if (internRows.length === 0) {
       return res.status(404).json({
         success: false,
