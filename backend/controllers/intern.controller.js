@@ -324,8 +324,8 @@ exports.updateIntern = async (req, res) => {
     const eDate = (endDate !== undefined || end_date !== undefined) ? parseDateString(endDate || end_date) : undefined;
 
     // B20: Kiểm tra ngày kết thúc >= ngày bắt đầu
-    const effectiveSDate = sDate !== undefined ? sDate : (current.start_date ? current.start_date.toISOString().split('T')[0] : null);
-    const effectiveEDate = eDate !== undefined ? eDate : (current.end_date ? current.end_date.toISOString().split('T')[0] : null);
+    const effectiveSDate = sDate !== undefined ? sDate : (current.start_date ? parseDateString(current.start_date) : null);
+    const effectiveEDate = eDate !== undefined ? eDate : (current.end_date ? parseDateString(current.end_date) : null);
     if (effectiveSDate && effectiveEDate) {
       if (new Date(effectiveEDate).getTime() < new Date(effectiveSDate).getTime()) {
         return res.status(400).json({
