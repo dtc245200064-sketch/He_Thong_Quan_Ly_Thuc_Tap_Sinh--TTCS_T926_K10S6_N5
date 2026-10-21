@@ -365,13 +365,13 @@ function checkAuthState() {
   }
 
   // NẾU ĐÃ ĐĂNG NHẬP VÀ VAI TRÒ LÀ "INTERN"
-  if (isLoggedIn && userRole === 'INTERN') {
+  if (isLoggedIn && (userRole === 'INTERN' || userRole === 'Thực tập sinh')) {
     window.location.href = 'intern.html';
     return;
   }
 
   // NẾU ĐÃ ĐĂNG NHẬP VÀ VAI TRÒ LÀ "ADMIN"
-  if (isLoggedIn && userRole === 'ADMIN') {
+  if (isLoggedIn && (userRole === 'ADMIN' || userRole === 'Admin')) {
     window.location.href = 'admin.html';
     return;
   }
