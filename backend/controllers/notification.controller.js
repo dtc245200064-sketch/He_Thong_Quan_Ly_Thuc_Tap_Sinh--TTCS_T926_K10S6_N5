@@ -89,7 +89,12 @@ exports.markAllAsRead = async (req, res) => {
   }
 };
 
-// DELETE /api/notifications/:id: Xóa thông báo
+/**
+ * DELETE /api/notifications/:id: Xóa thông báo
+ * @param {import('express').Request} req - Request object chứa id thông báo cần xóa
+ * @param {import('express').Response} res - Response object
+ * @returns {Promise<void>} JSON phản hồi trạng thái xóa
+ */
 exports.deleteNotification = async (req, res) => {
   try {
     const { id } = req.params;
@@ -109,7 +114,13 @@ exports.deleteNotification = async (req, res) => {
   }
 };
 
-// POST /api/notifications: Tạo thông báo in-app
+/**
+ * POST /api/notifications: Tạo thông báo in-app mới
+ * @description Kiểm tra dữ liệu đầu vào và lọc chống tấn công XSS qua thuộc tính link (B08)
+ * @param {import('express').Request} req - Request body gồm { user_id, role, title, content, type, link }
+ * @param {import('express').Response} res - Response object
+ * @returns {Promise<void>} JSON chứa id bản ghi thông báo vừa tạo
+ */
 exports.createNotification = async (req, res) => {
   try {
     const { user_id, role, title, content, type, link } = req.body;
