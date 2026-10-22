@@ -38,7 +38,12 @@ exports.getInAppNotifications = async (req, res) => {
   }
 };
 
-// PUT /api/notifications/:id/read: Đánh dấu thông báo đã đọc
+/**
+ * PUT /api/notifications/:id/read: Đánh dấu 1 thông báo cụ thể là đã đọc
+ * @param {import('express').Request} req - Request object chứa param id của thông báo
+ * @param {import('express').Response} res - Response object
+ * @returns {Promise<void>} JSON thông báo kết quả cập nhật trạng thái
+ */
 exports.markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
@@ -58,7 +63,13 @@ exports.markAsRead = async (req, res) => {
   }
 };
 
-// PUT /api/notifications/read-all: Đánh dấu tất cả thông báo của người dùng đã đọc (B04)
+/**
+ * PUT /api/notifications/read-all: Đánh dấu tất cả thông báo của người dùng là đã đọc (B04)
+ * @description Đảm bảo nguyên tắc bảo mật: Chỉ cập nhật các thông báo thuộc user_id của người dùng hiện tại
+ * @param {import('express').Request} req - Request object chứa req.user đã xác thực
+ * @param {import('express').Response} res - Response object
+ * @returns {Promise<void>} JSON kết quả cập nhật thành công
+ */
 exports.markAllAsRead = async (req, res) => {
   try {
     if (!req.user) {
