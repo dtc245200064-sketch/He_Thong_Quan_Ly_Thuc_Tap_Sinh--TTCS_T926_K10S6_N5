@@ -196,6 +196,8 @@ LOCK TABLES `evaluations` WRITE;
 UNLOCK TABLES;
 
 --
+-- STT 36 / Jira: SCRUM-56, SCRUM-176: Thiết kế CSDL Thông báo ứng dụng cho TTS
+-- Phụ trách: Ma Công Đức (dtc245200136@ictu.edu.vn)
 -- Table structure for table `inapp_notifications`
 --
 
