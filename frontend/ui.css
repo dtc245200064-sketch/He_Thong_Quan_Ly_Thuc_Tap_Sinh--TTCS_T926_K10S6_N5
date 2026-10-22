@@ -1356,3 +1356,277 @@ td.empty-state-cell i {
     display: none;
   }
 }
+
+/* ==========================================================================
+   SIDEBAR COLLAPSED / EXPANDED SYSTEM (All 4 Portals: Admin, HR, Mentor, Intern)
+   Hỗ trợ nút 3 gạch thu nhỏ / phóng to thanh điều hướng, ẩn chữ chỉ giữ logo + avatar
+   ========================================================================== */
+
+/* 1. NÚT 3 GẠCH THU GỌN / MỞ RỘNG */
+.sidebar-collapse-btn {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  border-radius: var(--radius-sm, 8px) !important;
+  background: var(--surface-2, #f1f5f9) !important;
+  border: 1px solid var(--border, rgba(20, 30, 70, 0.12)) !important;
+  color: var(--text, #334155) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  flex-shrink: 0 !important;
+  outline: none !important;
+}
+
+.sidebar-collapse-btn:hover {
+  background: var(--accent-soft, #eeeffc) !important;
+  color: var(--accent, #6366f1) !important;
+  border-color: var(--accent, #6366f1) !important;
+  transform: scale(1.05);
+}
+
+.brand-logo-wrap,
+.sidebar-header-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 8px !important;
+}
+
+/* 2. HIỆU ỨNG CHUYỂN ĐỘNG MƯỢT MÀ CHO SIDEBAR VÀ NỘI DUNG */
+.sidebar,
+.portal-sidebar,
+.admin-sidebar,
+.mentor-sidebar {
+  transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              min-width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              max-width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              padding 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.admin-main,
+.mentor-main,
+.main-content,
+.portal-main {
+  transition: margin-left 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              width 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* 3. KHI SIDEBAR THU NHỎ (COLLAPSED): Chiều rộng 72px */
+@media (min-width: 901px) {
+  .sidebar.sidebar-collapsed,
+  .portal-sidebar.sidebar-collapsed,
+  .admin-sidebar.sidebar-collapsed,
+  .mentor-sidebar.sidebar-collapsed,
+  body.sidebar-is-collapsed .sidebar,
+  body.sidebar-is-collapsed .portal-sidebar,
+  body.sidebar-is-collapsed .admin-sidebar,
+  body.sidebar-is-collapsed .mentor-sidebar {
+    width: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
+    padding: 18px 8px 16px 8px !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Đẩy lề cho nội dung chính khi sidebar thu nhỏ */
+  body.sidebar-is-collapsed .admin-main,
+  body.sidebar-is-collapsed .mentor-main {
+    margin-left: 72px !important;
+  }
+
+  /* Header khi thu nhỏ: ẩn chữ dài, căn giữa logo badge & nút 3 gạch */
+  .sidebar.sidebar-collapsed .brand-logo-wrap,
+  .portal-sidebar.sidebar-collapsed .sidebar-header-row,
+  .admin-sidebar.sidebar-collapsed .brand-logo-wrap,
+  .mentor-sidebar.sidebar-collapsed .brand-logo-wrap {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    padding: 0 !important;
+    margin-bottom: 16px !important;
+  }
+
+  .sidebar.sidebar-collapsed .logo-title,
+  .sidebar.sidebar-collapsed .brand-info,
+  .sidebar.sidebar-collapsed .brand-sub,
+  .sidebar.sidebar-collapsed .brand-text,
+  .portal-sidebar.sidebar-collapsed .brand-name,
+  .admin-sidebar.sidebar-collapsed .logo-title,
+  .mentor-sidebar.sidebar-collapsed .logo-title {
+    display: none !important;
+  }
+
+  .sidebar.sidebar-collapsed .brand-logo,
+  .portal-sidebar.sidebar-collapsed .sidebar-brand,
+  .admin-sidebar.sidebar-collapsed .brand-logo,
+  .mentor-sidebar.sidebar-collapsed .brand-logo {
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Ẩn các ô vai trò dài dòng khi thu nhỏ */
+  .sidebar.sidebar-collapsed .role-box,
+  .sidebar.sidebar-collapsed .role-badge-box,
+  .sidebar.sidebar-collapsed .sidebar-role-card,
+  .sidebar.sidebar-collapsed .admin-badge-box,
+  .sidebar.sidebar-collapsed .mentor-badge-box {
+    display: none !important;
+  }
+
+  /* 4. CÁC TAG LÀM VIỆC KHI THU NHỎ: Ẩn chữ, giữ nguyên icon to rõ, bấm vào được */
+  .sidebar.sidebar-collapsed .sidebar-nav ul,
+  .portal-sidebar.sidebar-collapsed .sidebar-nav,
+  .admin-sidebar.sidebar-collapsed .sidebar-nav ul,
+  .mentor-sidebar.sidebar-collapsed .sidebar-nav ul,
+  .sidebar.sidebar-collapsed .sidebar-menu {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 10px 0 !important;
+    gap: 6px !important;
+  }
+
+  .sidebar.sidebar-collapsed .nav-item,
+  .portal-sidebar.sidebar-collapsed .sidebar-menu-btn,
+  .admin-sidebar.sidebar-collapsed .nav-item,
+  .mentor-sidebar.sidebar-collapsed .nav-item,
+  .sidebar.sidebar-collapsed .menu-item {
+    width: 48px !important;
+    height: 44px !important;
+    min-width: 48px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: var(--radius-md, 10px) !important;
+    margin: 0 auto !important;
+    position: relative !important;
+  }
+
+  .sidebar.sidebar-collapsed .nav-item span,
+  .sidebar.sidebar-collapsed .menu-item span,
+  .sidebar.sidebar-collapsed .sidebar-menu-btn span,
+  .sidebar.sidebar-collapsed .menu-badge,
+  .sidebar.sidebar-collapsed .menu-badge-sub,
+  .sidebar.sidebar-collapsed .nav-badge {
+    display: none !important;
+  }
+
+  .sidebar.sidebar-collapsed .nav-item i,
+  .sidebar.sidebar-collapsed .menu-item i,
+  .sidebar.sidebar-collapsed .sidebar-menu-btn i,
+  .portal-sidebar.sidebar-collapsed .sidebar-menu-btn .bi {
+    font-size: 19px !important;
+    margin: 0 !important;
+    width: auto !important;
+    height: auto !important;
+  }
+
+  /* 5. AVATAR NGƯỜI DÙNG KHI THU NHỎ: Luôn hiển thị căn giữa sắc nét */
+  .sidebar.sidebar-collapsed .sidebar-footer,
+  .portal-sidebar.sidebar-collapsed .sidebar-footer,
+  .portal-sidebar.sidebar-collapsed .sidebar-footer-wrapper,
+  .admin-sidebar.sidebar-collapsed .sidebar-footer,
+  .mentor-sidebar.sidebar-collapsed .sidebar-footer {
+    padding: 12px 0 0 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-top: 1px solid var(--border, rgba(20, 30, 70, 0.08)) !important;
+  }
+
+  .sidebar.sidebar-collapsed .user-profile,
+  .portal-sidebar.sidebar-collapsed .user-profile,
+  .admin-sidebar.sidebar-collapsed .user-profile,
+  .mentor-sidebar.sidebar-collapsed .mentor-profile-info,
+  .mentor-sidebar.sidebar-collapsed .mentor-profile-box {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 4px 0 !important;
+    margin: 0 auto 10px auto !important;
+  }
+
+  .sidebar.sidebar-collapsed .user-profile img,
+  .portal-sidebar.sidebar-collapsed .user-profile img,
+  .admin-sidebar.sidebar-collapsed .user-profile img,
+  .mentor-sidebar.sidebar-collapsed .mentor-profile-info img,
+  .mentor-sidebar.sidebar-collapsed .mentor-profile-box img,
+  .sidebar.sidebar-collapsed .admin-avatar,
+  .sidebar.sidebar-collapsed .mentor-avatar,
+  .sidebar.sidebar-collapsed .user-avatar,
+  .sidebar.sidebar-collapsed #sidebarAvatar,
+  .sidebar.sidebar-collapsed #sidebarMentorAvatar {
+    display: block !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    margin: 0 auto !important;
+    border: 2px solid var(--accent, #6366f1) !important;
+  }
+
+  /* Ẩn phần chữ của hồ sơ cá nhân */
+  .sidebar.sidebar-collapsed .user-info,
+  .sidebar.sidebar-collapsed .profile-info,
+  .sidebar.sidebar-collapsed .profile-texts,
+  .sidebar.sidebar-collapsed .profile-arrow,
+  .portal-sidebar.sidebar-collapsed .profile-arrow,
+  .sidebar.sidebar-collapsed .user-name,
+  .sidebar.sidebar-collapsed .user-role,
+  .sidebar.sidebar-collapsed .profile-name,
+  .sidebar.sidebar-collapsed .profile-role {
+    display: none !important;
+  }
+
+  /* 6. NÚT ĐĂNG XUẤT KHI THU NHỎ: Giữ icon căn giữa, ẩn chữ */
+  .sidebar.sidebar-collapsed .sidebar-logout,
+  .portal-sidebar.sidebar-collapsed .sidebar-logout,
+  .admin-sidebar.sidebar-collapsed .sidebar-logout,
+  .mentor-sidebar.sidebar-collapsed .btn-sidebar-logout {
+    width: 44px !important;
+    height: 38px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto !important;
+    border-radius: var(--radius-sm, 8px) !important;
+  }
+
+  .sidebar.sidebar-collapsed .sidebar-logout span,
+  .portal-sidebar.sidebar-collapsed .sidebar-logout span,
+  .admin-sidebar.sidebar-collapsed .sidebar-logout span {
+    display: none !important;
+  }
+
+  .sidebar.sidebar-collapsed .sidebar-logout i,
+  .portal-sidebar.sidebar-collapsed .sidebar-logout i,
+  .admin-sidebar.sidebar-collapsed .sidebar-logout i,
+  .mentor-sidebar.sidebar-collapsed .btn-sidebar-logout i,
+  .portal-sidebar.sidebar-collapsed .sidebar-logout .bi {
+    margin: 0 !important;
+    font-size: 16px !important;
+  }
+
+  .sidebar.sidebar-collapsed .sidebar-toggle-bar {
+    display: none !important;
+  }
+}

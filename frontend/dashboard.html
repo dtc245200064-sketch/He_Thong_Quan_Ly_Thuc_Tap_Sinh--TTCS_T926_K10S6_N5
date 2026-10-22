@@ -40,14 +40,21 @@
 
     <!-- ==================== SIDEBAR (HR MANAGER) ==================== -->
     <aside class="sidebar">
-      <!-- Logo thương hiệu -->
+      <!-- Logo thương hiệu & Nút thu gọn 3 gạch -->
       <div class="sidebar-brand">
-        <div class="brand-icon">
-          <i class="fa-solid fa-user-tie"></i>
-        </div>
-        <div class="brand-info">
-          <span class="brand-text">HR MANAGER</span>
-          <span class="brand-sub">Quản lý thực tập sinh</span>
+        <div class="brand-logo-wrap">
+          <div class="brand-logo-inner" style="display:flex; align-items:center; gap:12px;">
+            <div class="brand-icon">
+              <i class="fa-solid fa-user-tie"></i>
+            </div>
+            <div class="brand-info">
+              <span class="brand-text">HR MANAGER</span>
+              <span class="brand-sub">Quản lý thực tập sinh</span>
+            </div>
+          </div>
+          <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Thu gọn / Mở rộng menu" aria-label="Thu gọn / Mở rộng menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
         </div>
       </div>
 

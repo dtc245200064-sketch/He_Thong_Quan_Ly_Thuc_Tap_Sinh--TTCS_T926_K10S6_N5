@@ -249,3 +249,68 @@ window.UI = (function() {
     setup();
   }
 })();
+
+// ==========================================================================
+// DESKTOP & MOBILE SIDEBAR COLLAPSE CONTROLLER (All 4 Portals)
+// Hỗ trợ nút 3 gạch thu nhỏ / mở rộng sidebar, ẩn chữ giữ icon + avatar
+// ==========================================================================
+(function initSidebarCollapse() {
+  function setup() {
+    const sidebar = document.querySelector('.sidebar, .portal-sidebar, .admin-sidebar, .mentor-sidebar');
+    if (!sidebar) return;
+
+    // Tự động gán title tooltip cho từng item để khi thu nhỏ vẫn biết tên tab
+    const navItems = sidebar.querySelectorAll('.nav-item, .menu-item, .sidebar-menu-btn');
+    navItems.forEach(item => {
+      const span = item.querySelector('span:not(.menu-badge):not(.menu-badge-sub):not(.nav-badge)');
+      if (span && span.textContent && !item.getAttribute('title')) {
+        item.setAttribute('title', span.textContent.trim());
+      }
+    });
+
+    // Tìm tất cả các nút thu gọn (ở header hoặc toggle-bar)
+    let toggleBtns = Array.from(document.querySelectorAll('.sidebar-collapse-btn, #sidebarCollapseBtn, #sidebarToggleBtn'));
+
+    // Đọc trạng thái đã lưu từ localStorage
+    const savedState = localStorage.getItem('sidebar_collapsed');
+    if (savedState === 'true' && window.innerWidth > 900) {
+      sidebar.classList.add('sidebar-collapsed');
+      document.body.classList.add('sidebar-is-collapsed');
+    }
+
+    function toggleSidebarCollapse() {
+      if (window.innerWidth <= 900) {
+        // Màn hình nhỏ: mở/đóng drawer
+        const isOpen = sidebar.classList.contains('mobile-open') || sidebar.classList.contains('open');
+        sidebar.classList.toggle('mobile-open', !isOpen);
+        sidebar.classList.toggle('open', !isOpen);
+        const backdrop = document.getElementById('mobileSidebarBackdrop');
+        if (backdrop) backdrop.classList.toggle('active', !isOpen);
+      } else {
+        // Desktop: thu nhỏ / mở rộng sidebar
+        const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
+        document.body.classList.toggle('sidebar-is-collapsed', isCollapsed);
+        try {
+          localStorage.setItem('sidebar_collapsed', isCollapsed ? 'true' : 'false');
+        } catch (e) {}
+      }
+    }
+
+    toggleBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleSidebarCollapse();
+      });
+    });
+
+    // Export hàm toàn cục để có thể gọi từ bất kỳ đâu nếu cần
+    window.toggleSidebarCollapse = toggleSidebarCollapse;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup);
+  } else {
+    setup();
+  }
+})();

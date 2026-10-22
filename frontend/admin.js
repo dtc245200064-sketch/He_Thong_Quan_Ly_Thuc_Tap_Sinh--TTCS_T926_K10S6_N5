@@ -918,12 +918,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (roleFilter) roleFilter.addEventListener('change', renderAccountsTable);
   if (statusFilter) statusFilter.addEventListener('change', renderAccountsTable);
 
-  // 4. Toggle Sidebar trên màn hình nhỏ
+  // 4. Toggle Sidebar trên màn hình nhỏ & Desktop Collapse
   const toggleBtn = document.getElementById('sidebarToggleBtn');
   const sidebar = document.getElementById('sidebar');
   if (toggleBtn && sidebar) {
-    toggleBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('open');
+    toggleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof window.toggleSidebarCollapse === 'function') {
+        window.toggleSidebarCollapse();
+      } else {
+        sidebar.classList.toggle('open');
+      }
     });
   }
 

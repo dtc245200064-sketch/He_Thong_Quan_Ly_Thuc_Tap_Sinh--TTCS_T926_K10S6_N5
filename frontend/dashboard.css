@@ -5278,3 +5278,162 @@ body {
 }
 
 .avatar-assign-mentor { background: #f3effe; color: #7c3aed; }
+
+/* ==========================================================================
+   HR DASHBOARD SIDEBAR COLLAPSED STYLING
+   ========================================================================== */
+.sidebar-collapse-btn {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  border-radius: var(--radius-sm, 8px) !important;
+  background: var(--surface-2, #f1f5f9) !important;
+  border: 1px solid var(--border, #e5e7eb) !important;
+  color: var(--text, #334155) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  flex-shrink: 0 !important;
+  outline: none !important;
+}
+
+.sidebar-collapse-btn:hover {
+  background: var(--accent-soft, #eeeffc) !important;
+  color: var(--accent, #6366f1) !important;
+  border-color: var(--accent, #6366f1) !important;
+  transform: scale(1.05);
+}
+
+.brand-logo-wrap {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 8px !important;
+}
+
+@media (min-width: 901px) {
+  .sidebar.sidebar-collapsed,
+  body.sidebar-is-collapsed .sidebar {
+    width: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
+    padding: 18px 8px 16px 8px !important;
+    overflow-x: hidden !important;
+  }
+
+  .sidebar.sidebar-collapsed .brand-logo-wrap,
+  body.sidebar-is-collapsed .sidebar .brand-logo-wrap {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .sidebar.sidebar-collapsed .brand-info,
+  body.sidebar-is-collapsed .sidebar .brand-info,
+  .sidebar.sidebar-collapsed .role-box,
+  body.sidebar-is-collapsed .sidebar .role-box {
+    display: none !important;
+  }
+
+  .sidebar.sidebar-collapsed .sidebar-brand,
+  body.sidebar-is-collapsed .sidebar .sidebar-brand {
+    justify-content: center !important;
+    margin-bottom: 16px !important;
+    padding: 0 !important;
+  }
+
+  .sidebar.sidebar-collapsed .sidebar-menu,
+  body.sidebar-is-collapsed .sidebar .sidebar-menu {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 0 !important;
+    gap: 6px !important;
+  }
+
+  .sidebar.sidebar-collapsed .menu-item,
+  body.sidebar-is-collapsed .sidebar .menu-item {
+    width: 48px !important;
+    height: 44px !important;
+    min-width: 48px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: var(--radius-md, 10px) !important;
+    margin: 0 auto !important;
+  }
+
+  .sidebar.sidebar-collapsed .menu-item span,
+  body.sidebar-is-collapsed .sidebar .menu-item span,
+  .sidebar.sidebar-collapsed .menu-badge,
+  .sidebar.sidebar-collapsed .menu-badge-sub,
+  body.sidebar-is-collapsed .sidebar .menu-badge,
+  body.sidebar-is-collapsed .sidebar .menu-badge-sub {
+    display: none !important;
+  }
+
+  .sidebar.sidebar-collapsed .menu-item i,
+  body.sidebar-is-collapsed .sidebar .menu-item i {
+    font-size: 19px !important;
+    margin: 0 !important;
+  }
+
+  .sidebar.sidebar-collapsed .user-profile,
+  body.sidebar-is-collapsed .sidebar .user-profile {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 4px 0 !important;
+    margin: 0 auto 10px auto !important;
+  }
+
+  .sidebar.sidebar-collapsed .user-avatar,
+  body.sidebar-is-collapsed .sidebar .user-avatar,
+  .sidebar.sidebar-collapsed #sidebarAvatar,
+  body.sidebar-is-collapsed .sidebar #sidebarAvatar {
+    display: block !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    margin: 0 auto !important;
+    border: 2px solid var(--accent, #6366f1) !important;
+  }
+
+  .sidebar.sidebar-collapsed .user-info,
+  .sidebar.sidebar-collapsed .profile-arrow,
+  body.sidebar-is-collapsed .sidebar .user-info,
+  body.sidebar-is-collapsed .sidebar .profile-arrow {
+    display: none !important;
+  }
+
+  .sidebar.sidebar-collapsed .sidebar-logout,
+  body.sidebar-is-collapsed .sidebar .sidebar-logout {
+    width: 44px !important;
+    height: 38px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto !important;
+  }
+
+  .sidebar.sidebar-collapsed .sidebar-logout span,
+  body.sidebar-is-collapsed .sidebar .sidebar-logout span {
+    display: none !important;
+  }
+}
