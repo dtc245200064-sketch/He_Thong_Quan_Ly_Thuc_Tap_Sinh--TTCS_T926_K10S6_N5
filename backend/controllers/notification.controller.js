@@ -20,8 +20,19 @@ exports.getInAppNotifications = async (req, res) => {
     const params = [];
 
     // Bảo vệ quyền xem: Người dùng chỉ thấy thông báo của chính mình (B04)
+    // Loại trừ các thông báo tiến độ/báo cáo cá nhân bị lưu thiếu user_id để tránh lộ sang tài khoản khác
     if (req.user) {
-      query += ' AND (user_id = ? OR (user_id IS NULL AND (role = ? OR role IS NULL)))';
+      query += ` AND (
+        user_id = ? 
+        OR (
+          user_id IS NULL 
+          AND (role = ? OR role IS NULL) 
+          AND title NOT LIKE 'Cập nhật tiến độ%' 
+          AND title NOT LIKE 'Đã nộp báo cáo%'
+          AND title NOT LIKE 'Đầu việc%'
+          AND title NOT LIKE '%tiến độ mới%'
+        )
+      )`;
       params.push(req.user.id, req.user.role);
     }
 
@@ -131,9 +142,10 @@ exports.createNotification = async (req, res) => {
     // Kiểm tra link chống XSS (B08)
     const safeLink = (link && typeof link === 'string' && !link.toLowerCase().startsWith('javascript:')) ? link : '';
 
+    const targetUserId = user_id || (req.user ? req.user.id : null);
     const [result] = await db.query(
       'INSERT INTO inapp_notifications (user_id, role, title, content, type, link) VALUES (?, ?, ?, ?, ?, ?)',
-      [user_id || null, role || 'Thực tập sinh', title, content, type || 'info', safeLink]
+      [targetUserId, role || (req.user ? req.user.role : 'Thực tập sinh'), title, content, type || 'info', safeLink]
     );
     return res.status(201).json({ success: true, message: 'Đã tạo thông báo thành công', id: result.insertId });
   } catch (error) {

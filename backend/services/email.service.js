@@ -209,14 +209,17 @@ async function sendReviewResultEmail({ to, candidateName, status, reason, note }
   };
 }
 
-// Lấy danh sách email đã gửi cho TTS hoặc HR
+// Lấy danh sách email đã gửi cho TTS hoặc HR (hỗ trợ lọc chính xác theo địa chỉ email cá nhân)
 async function getEmailHistory(recipientEmail = '') {
   try {
     let sql = 'SELECT * FROM system_emails WHERE 1=1';
     const params = [];
-    if (recipientEmail) {
-      sql += ' AND recipient_email = ?';
-      params.push(recipientEmail);
+    if (Array.isArray(recipientEmail) && recipientEmail.length > 0) {
+      sql += ' AND LOWER(TRIM(recipient_email)) IN (?)';
+      params.push(recipientEmail.map(e => String(e).trim().toLowerCase()));
+    } else if (typeof recipientEmail === 'string' && recipientEmail.trim()) {
+      sql += ' AND LOWER(TRIM(recipient_email)) = LOWER(TRIM(?))';
+      params.push(recipientEmail.trim().toLowerCase());
     }
     sql += ' ORDER BY id DESC LIMIT 50';
     const [rows] = await db.query(sql, params);

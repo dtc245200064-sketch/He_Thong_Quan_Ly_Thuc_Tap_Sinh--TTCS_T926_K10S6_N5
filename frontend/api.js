@@ -380,16 +380,17 @@ async function apiConfirmContract(id, status, reason = '') {
   return await res.json();
 }
 
-// 26. Lấy lịch sử email hệ thống đã gửi: GET /api/interns/emails/history
-async function apiGetSystemEmails(email = '') {
+// 26 & 43. Lấy lịch sử email hệ thống đã gửi (có lọc theo địa chỉ người nhận): GET /api/system-emails
+async function apiGetSystemEmails(recipientEmail = '') {
   try {
-    const query = email ? `?email=${encodeURIComponent(email)}` : '';
-    const res = await fetch(`${API_BASE_URL}/interns/emails/history${query}`, {
+    const p = recipientEmail ? encodeURIComponent(recipientEmail) : '';
+    const query = p ? `?recipient_email=${p}&email=${p}` : '';
+    const res = await fetch(`${API_BASE_URL}/system-emails${query}`, {
       headers: getAuthHeaders()
     });
     return await res.json();
   } catch (e) {
-    console.warn('Lỗi gọi apiGetSystemEmails:', e);
+    console.warn('Lỗi apiGetSystemEmails:', e);
     return { success: false, data: [] };
   }
 }
@@ -800,17 +801,7 @@ async function apiDeleteProgram(id) {
   return await res.json();
 }
 
-// 43. Lấy lịch sử email hệ thống từ MySQL Database: GET /api/system-emails
-async function apiGetSystemEmails(recipientEmail = '') {
-  try {
-    const url = `${API_BASE_URL}/system-emails${recipientEmail ? '?recipient_email=' + encodeURIComponent(recipientEmail) : ''}`;
-    const res = await fetch(url, { headers: getAuthHeaders() });
-    return await res.json();
-  } catch (e) {
-    console.warn('Lỗi apiGetSystemEmails:', e);
-    return { success: false, data: [] };
-  }
-}
+// apiGetSystemEmails đã được hợp nhất ở mục 26
 
 
 

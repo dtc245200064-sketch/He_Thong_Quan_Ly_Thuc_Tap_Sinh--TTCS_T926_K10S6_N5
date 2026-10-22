@@ -3485,13 +3485,18 @@ async function loadSystemEmails() {
   }
 
   let internEmail = '';
-  try {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      const u = JSON.parse(userStr);
-      internEmail = u.email || '';
-    }
-  } catch (e) {}
+  if (internProfileData && internProfileData.email) {
+    internEmail = internProfileData.email;
+  }
+  if (!internEmail) {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        internEmail = u.email || '';
+      }
+    } catch (e) {}
+  }
 
   let emails = [];
 
@@ -3501,7 +3506,7 @@ async function loadSystemEmails() {
       const res = await apiGetSystemEmails(internEmail);
       if (res && res.success && Array.isArray(res.data)) {
         emails = res.data;
-        if (syncStatus) syncStatus.textContent = `Đồng bộ từ MySQL (${emails.length} thư)`;
+        if (syncStatus) syncStatus.textContent = `Hòm thư cá nhân (${emails.length} thư)`;
       }
     } catch (e) {
       console.warn('Không thể nạp email từ MySQL:', e);
@@ -4535,12 +4540,17 @@ async function addPortalNotification(title, content, type = 'info') {
   savePortalNotifications(notifs);
 
   try {
-    await apiCreateInAppNotification({
-      role: 'Thực tập sinh',
-      title,
-      content,
-      type
-    });
+    const uStr = localStorage.getItem('user');
+    const u = uStr ? JSON.parse(uStr) : {};
+    if (typeof apiCreateInAppNotification === 'function') {
+      await apiCreateInAppNotification({
+        user_id: u.id || null,
+        role: 'Thực tập sinh',
+        title,
+        content,
+        type
+      });
+    }
   } catch (e) {
     console.warn('Lỗi lưu thông báo vào CSDL:', e);
   }

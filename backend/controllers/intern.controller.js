@@ -856,11 +856,46 @@ exports.deleteDocument = async (req, res) => {
   }
 };
 
-// 9. GET /api/interns/emails/history (Lấy danh sách email hệ thống đã gửi - User Story 8)
+// 9. GET /api/interns/emails/history hoặc GET /api/system-emails (Lấy danh sách email hệ thống đã gửi - User Story 8 & B04)
 exports.getEmailHistory = async (req, res) => {
   try {
-    const { email } = req.query;
-    const emails = await emailService.getEmailHistory(email || '');
+    let emailFilter = (req.query.recipient_email || req.query.email || '').trim();
+
+    // B04 & Quyền riêng tư: Thực tập sinh BẮT BUỘC chỉ được xem email gửi đến chính mình!
+    if (req.user && req.user.role === 'Thực tập sinh') {
+      const allowedEmails = [];
+      if (req.user.email) allowedEmails.push(req.user.email.trim().toLowerCase());
+
+      // Kiểm tra thêm email được lưu trong bảng interns (nếu khác user.email)
+      const myInternId = req.user.internId;
+      const [internRows] = await db.query(
+        'SELECT email FROM interns WHERE id = ? OR user_id = ?',
+        [myInternId || -1, req.user.id]
+      );
+      internRows.forEach(r => {
+        if (r.email && !allowedEmails.includes(r.email.trim().toLowerCase())) {
+          allowedEmails.push(r.email.trim().toLowerCase());
+        }
+      });
+
+      if (allowedEmails.length === 0) {
+        return res.status(200).json({
+          success: true,
+          total: 0,
+          data: []
+        });
+      }
+
+      const emails = await emailService.getEmailHistory(allowedEmails);
+      return res.status(200).json({
+        success: true,
+        total: emails.length,
+        data: emails
+      });
+    }
+
+    // Đối với HR / Admin: Lọc theo emailFilter nếu có, hoặc trả về toàn bộ nếu không lọc
+    const emails = await emailService.getEmailHistory(emailFilter);
     return res.status(200).json({
       success: true,
       total: emails.length,
