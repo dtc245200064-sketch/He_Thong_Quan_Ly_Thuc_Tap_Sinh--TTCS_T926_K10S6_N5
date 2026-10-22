@@ -1,3 +1,9 @@
+/**
+ * Notification Controller - Module Thông báo ứng dụng cho TTS
+ * Phụ trách Backend & CSDL: Ma Công Đức (dtc245200136@ictu.edu.vn)
+ * Nhiệm vụ Jira: SCRUM-56 / SCRUM-176 (Thiết kế CSDL & API Thông báo)
+ */
+
 const db = require('../config/db');
 const { sendMeetingEmail } = require('../services/email.service');
 

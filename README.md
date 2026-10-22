@@ -317,7 +317,7 @@ Base URL: `http://localhost:5000/api` · Xác thực: `Authorization: Bearer <TO
 | Họ tên | Vai trò theo phân công |
 |---|---|
 | Tạ Văn Đức | Backend |
-| Ma Công Đức | Backend |
+| Ma Công Đức (@dtc245200136-sudo) | Backend (CSDL & Module Thông báo SCRUM-56, SCRUM-176) |
 | Hoàng Minh Đức | Backend |
 | Nông Tiến Tài | Backend |
 | Nguyễn Trọng Xuyên | Frontend |
