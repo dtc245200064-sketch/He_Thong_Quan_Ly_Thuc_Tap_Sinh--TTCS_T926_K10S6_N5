@@ -57,7 +57,7 @@
           </div>
         </div>
 
-        <!-- Menu điều hướng: 5 Mục chuẩn theo mẫu ảnh giao diện -->
+        <!-- Menu điều hướng: 8 Mục chuẩn theo mẫu ảnh giao diện -->
         <nav class="sidebar-nav">
           <button type="button" class="sidebar-menu-btn active" id="menu-overview"
             onclick="switchPortalTab('overview')">
@@ -79,6 +79,18 @@
           <button type="button" class="sidebar-menu-btn" id="menu-contracts" onclick="switchPortalTab('contracts')">
             <i class="bi bi-file-earmark-check-fill"></i>
             <span>Hợp đồng thực tập</span>
+          </button>
+          <button type="button" class="sidebar-menu-btn" id="menu-progress" onclick="switchPortalTab('progress')">
+            <i class="bi bi-bar-chart-line-fill"></i>
+            <span>Tiến độ công việc</span>
+          </button>
+          <button type="button" class="sidebar-menu-btn" id="menu-reports" onclick="switchPortalTab('reports')">
+            <i class="bi bi-journal-text"></i>
+            <span>Báo cáo tuần</span>
+          </button>
+          <button type="button" class="sidebar-menu-btn" id="menu-notifications" onclick="switchPortalTab('notifications')">
+            <i class="bi bi-bell-fill"></i>
+            <span>Thông báo</span>
           </button>
         </nav>
       </div>
@@ -824,7 +836,104 @@
         </section>
 
         <!-- ============================================================= -->
-        <!-- TAB 6: HOÀN THIỆN THÔNG TIN CÁ NHÂN (CHUẨN THEO THIẾT KẾ MẪU) -->
+        <!-- TAB 6: TIẾN ĐỘ CÔNG VIỆC (WORK PROGRESS)                       -->
+        <!-- ============================================================= -->
+        <section class="portal-tab-content" id="tab-progress">
+
+          <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+              <h1 class="page-title">Tiến độ công việc</h1>
+              <p class="page-desc">Cập nhật kết quả công việc và theo dõi phản hồi từ Mentor.</p>
+            </div>
+            <div>
+              <button type="button" class="btn btn-primary px-3 py-2 d-flex align-items-center gap-2" onclick="openProgressModal()" style="border-radius: 10px; font-weight: 600; background: #2563eb; border-color: #2563eb;">
+                <i class="bi bi-plus-lg"></i>
+                <span>Thêm cập nhật tiến độ</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3 Thẻ thống kê số lượng công việc (Chuẩn theo hình ảnh 1) -->
+          <div class="progress-metrics-row mb-4">
+            <div class="progress-metric-card">
+              <div class="progress-metric-label">Tổng công việc</div>
+              <div class="progress-metric-val" id="statTotalProgressTasks">0</div>
+            </div>
+            <div class="progress-metric-card">
+              <div class="progress-metric-label">Đang thực hiện</div>
+              <div class="progress-metric-val" id="statInProgressTasks">0</div>
+            </div>
+            <div class="progress-metric-card">
+              <div class="progress-metric-label">Hoàn thành</div>
+              <div class="progress-metric-val" id="statCompletedTasks">0</div>
+            </div>
+          </div>
+
+          <!-- Khung nội dung chính danh sách tiến độ (Mặc định để trống) -->
+          <div class="portal-main-card" id="progressTasksContainer">
+            <!-- Render động bằng renderProgressList(), mặc định hiển thị Empty State sạch -->
+          </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 7: BÁO CÁO TUẦN (WEEKLY REPORTS)                           -->
+        <!-- ============================================================= -->
+        <section class="portal-tab-content" id="tab-reports">
+
+          <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+              <h1 class="page-title">Báo cáo tuần</h1>
+              <p class="page-desc">Tổng hợp công việc, kết quả và kế hoạch theo từng tuần.</p>
+            </div>
+            <div>
+              <button type="button" class="btn btn-primary px-3 py-2 d-flex align-items-center gap-2" onclick="openReportModal()" style="border-radius: 10px; font-weight: 600; background: #2563eb; border-color: #2563eb;">
+                <i class="bi bi-plus-lg"></i>
+                <span>Tạo báo cáo tuần</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Khung danh sách báo cáo tuần (Mặc định để trống) -->
+          <div class="portal-main-card" id="weeklyReportsContainer">
+            <!-- Render động bằng renderReportsList(), mặc định hiển thị Empty State sạch -->
+          </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 8: THÔNG BÁO (NOTIFICATIONS)                               -->
+        <!-- ============================================================= -->
+        <section class="portal-tab-content" id="tab-notifications">
+
+          <div class="page-header mb-3">
+            <h1 class="page-title">Thông báo</h1>
+            <p class="page-desc">Theo dõi các cập nhật quan trọng trong quá trình thực tập.</p>
+          </div>
+
+          <!-- Thanh tab lọc: Tất cả | Chưa đọc | Đã đọc (Chuẩn hình ảnh 5) -->
+          <div class="notif-filter-wrap mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="notif-pills-bar">
+              <button type="button" class="notif-pill-btn active" id="btnNotifFilter-all" onclick="filterNotifications('all')">Tất cả</button>
+              <button type="button" class="notif-pill-btn" id="btnNotifFilter-unread" onclick="filterNotifications('unread')">Chưa đọc</button>
+              <button type="button" class="notif-pill-btn" id="btnNotifFilter-read" onclick="filterNotifications('read')">Đã đọc</button>
+            </div>
+            <div id="notifActionsBar" style="display: none;">
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="markAllNotificationsAsRead()" style="border-radius: 8px; font-weight: 500;">
+                <i class="bi bi-check2-all me-1"></i>Đánh dấu tất cả đã đọc
+              </button>
+            </div>
+          </div>
+
+          <!-- Khung danh sách thông báo (Mặc định để trống) -->
+          <div class="portal-main-card" id="notificationsContainer">
+            <!-- Render động bằng renderNotificationsList(), mặc định hiển thị Empty State sạch -->
+          </div>
+
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 9: HOÀN THIỆN THÔNG TIN CÁ NHÂN (CHUẨN THEO THIẾT KẾ MẪU) -->
         <!-- ============================================================= -->
         <section class="portal-tab-content" id="tab-profile">
 
@@ -1230,6 +1339,153 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL THÊM / CẬP NHẬT TIẾN ĐỘ (CHUẨN HÌNH ẢNH 2)                 -->
+  <!-- ================================================================= -->
+  <div class="modal-overlay" id="progressModalOverlay">
+    <div class="custom-modal-card" style="max-width: 580px; border-radius: 16px; padding: 24px;">
+      <div class="modal-header-section d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+        <div>
+          <h4 class="m-0 fw-bold text-dark" id="progressModalTitle" style="font-size: 18px;">Thêm cập nhật tiến độ</h4>
+        </div>
+        <button type="button" class="btn-close" onclick="closeProgressModal()" aria-label="Đóng"></button>
+      </div>
+
+      <form id="progressForm" onsubmit="handleSaveProgress(event)">
+        <input type="hidden" id="progressEditId" value="">
+        <div class="modal-body p-0">
+          <div class="mb-3">
+            <label for="progressTaskName" class="visually-hidden">Tên công việc</label>
+            <input type="text" id="progressTaskName" class="form-control" placeholder="Tên công việc" title="Tên công việc" aria-label="Tên công việc" required>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="progressTaskDate" class="visually-hidden">Ngày thực hiện</label>
+              <input type="date" id="progressTaskDate" class="form-control" title="Ngày thực hiện" placeholder="Ngày thực hiện" aria-label="Ngày thực hiện" required>
+            </div>
+            <div class="col-md-6 d-flex align-items-center gap-3">
+              <label for="progressTaskPercent" class="visually-hidden">Tiến độ hoàn thành (%)</label>
+              <input type="range" class="form-range flex-grow-1" id="progressTaskPercent" min="0" max="100" step="5" value="0" title="Tiến độ hoàn thành (%)" aria-label="Tiến độ hoàn thành (%)" oninput="updateProgressPercentDisplay(this.value)">
+              <span id="progressPercentDisplay" class="fw-bold text-primary fs-6" style="min-width: 42px; text-align: right;">0%</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="progressTaskContent" class="visually-hidden">Nội dung đã thực hiện</label>
+            <textarea id="progressTaskContent" class="form-control" rows="3" placeholder="Nội dung đã thực hiện" title="Nội dung đã thực hiện" aria-label="Nội dung đã thực hiện" required></textarea>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="progressTaskBlockers" class="visually-hidden">Khó khăn gặp phải</label>
+              <textarea id="progressTaskBlockers" class="form-control" rows="3" placeholder="Khó khăn gặp phải" title="Khó khăn gặp phải" aria-label="Khó khăn gặp phải"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label for="progressTaskNextPlan" class="visually-hidden">Kế hoạch tiếp theo</label>
+              <textarea id="progressTaskNextPlan" class="form-control" rows="3" placeholder="Kế hoạch tiếp theo" title="Kế hoạch tiếp theo" aria-label="Kế hoạch tiếp theo"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer-row mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-outline-secondary px-4 py-2" onclick="closeProgressModal()" style="border-radius: 10px; font-weight: 500;">
+            Hủy
+          </button>
+          <button type="submit" class="btn btn-primary px-4 py-2" id="btnSubmitProgressModal" style="border-radius: 10px; font-weight: 600; background: #2563eb; border-color: #2563eb;">
+            Lưu cập nhật
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL TẠO / SỬA BÁO CÁO TUẦN (CHUẨN HÌNH ẢNH 4)                   -->
+  <!-- ================================================================= -->
+  <div class="modal-overlay" id="reportModalOverlay">
+    <div class="custom-modal-card" style="max-width: 620px; border-radius: 16px; padding: 24px;">
+      <div class="modal-header-section d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+        <div>
+          <h4 class="m-0 fw-bold text-dark" id="reportModalTitle" style="font-size: 18px;">Tạo báo cáo tuần</h4>
+        </div>
+        <button type="button" class="btn-close" onclick="closeReportModal()" aria-label="Đóng"></button>
+      </div>
+
+      <form id="weeklyReportForm" onsubmit="handleSubmitWeeklyReport(event)">
+        <input type="hidden" id="reportEditId" value="">
+        <div class="modal-body p-0">
+          <div class="mb-3">
+            <label for="reportWeekTitle" class="visually-hidden">Tuần báo cáo</label>
+            <input type="text" id="reportWeekTitle" class="form-control" placeholder="Tuần báo cáo" title="Tuần báo cáo" aria-label="Tuần báo cáo" required>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="reportWorkDone" class="visually-hidden">Công việc đã thực hiện</label>
+              <textarea id="reportWorkDone" class="form-control" rows="3" placeholder="Công việc đã thực hiện" title="Công việc đã thực hiện" aria-label="Công việc đã thực hiện" required></textarea>
+            </div>
+            <div class="col-md-6">
+              <label for="reportResults" class="visually-hidden">Kết quả đạt được</label>
+              <textarea id="reportResults" class="form-control" rows="3" placeholder="Kết quả đạt được" title="Kết quả đạt được" aria-label="Kết quả đạt được" required></textarea>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="reportLearnings" class="visually-hidden">Kiến thức và kỹ năng học được</label>
+              <textarea id="reportLearnings" class="form-control" rows="3" placeholder="Kiến thức và kỹ năng học được" title="Kiến thức và kỹ năng học được" aria-label="Kiến thức và kỹ năng học được"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label for="reportDifficulties" class="visually-hidden">Khó khăn</label>
+              <textarea id="reportDifficulties" class="form-control" rows="3" placeholder="Khó khăn" title="Khó khăn" aria-label="Khó khăn"></textarea>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="reportNextPlan" class="visually-hidden">Kế hoạch tuần tiếp theo</label>
+            <textarea id="reportNextPlan" class="form-control" rows="3" placeholder="Kế hoạch tuần tiếp theo" title="Kế hoạch tuần tiếp theo" aria-label="Kế hoạch tuần tiếp theo"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer-row mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-outline-secondary px-4 py-2" onclick="closeReportModal()" style="border-radius: 10px; font-weight: 500;">
+            Hủy
+          </button>
+          <button type="button" class="btn btn-outline-primary px-4 py-2" onclick="handleSaveReportDraft()" style="border-radius: 10px; font-weight: 600;">
+            Lưu nháp
+          </button>
+          <button type="submit" class="btn btn-primary px-4 py-2" id="btnSubmitReportModal" style="border-radius: 10px; font-weight: 600; background: #2563eb; border-color: #2563eb;">
+            Nộp báo cáo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL XEM CHI TIẾT BÁO CÁO TUẦN -->
+  <div class="modal-overlay" id="reportDetailModalOverlay">
+    <div class="custom-modal-card" style="max-width: 620px; border-radius: 16px; padding: 24px;">
+      <div class="modal-header-section d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+        <div>
+          <h4 class="m-0 fw-bold text-dark" id="reportDetailTitle" style="font-size: 18px;">Chi tiết báo cáo tuần</h4>
+          <span id="reportDetailBadge" class="badge mt-1"></span>
+        </div>
+        <button type="button" class="btn-close" onclick="closeReportDetailModal()" aria-label="Đóng"></button>
+      </div>
+
+      <div class="modal-body p-0" id="reportDetailBody" style="max-height: 60vh; overflow-y: auto;">
+        <!-- Render nội dung chi tiết -->
+      </div>
+
+      <div class="modal-footer-row mt-4 pt-3 border-top d-flex justify-content-end">
+        <button type="button" class="btn btn-secondary px-4 py-2" onclick="closeReportDetailModal()" style="border-radius: 10px; font-weight: 500;">
+          Đóng
+        </button>
+      </div>
     </div>
   </div>
 

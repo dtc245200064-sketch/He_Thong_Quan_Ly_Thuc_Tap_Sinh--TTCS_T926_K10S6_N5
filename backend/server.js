@@ -9,6 +9,12 @@ const programRoutes = require('./routes/program.routes');
 const attendanceRoutes = require('./routes/attendance.routes');
 const leaveRoutes = require('./routes/leave.routes');
 const contractRoutes = require('./routes/contract.routes');
+const taskRoutes = require('./routes/task.routes');
+const reportRoutes = require('./routes/report.routes');
+const evaluationRoutes = require('./routes/evaluation.routes');
+const mentorRoutes = require('./routes/mentor.routes');
+const notificationRoutes = require('./routes/notification.routes');
+const integrationRoutes = require('./routes/integration.routes');
 const db = require('./config/db');
 
 const app = express();
@@ -37,12 +43,24 @@ app.use('/api/programs', programRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/contracts', contractRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/evaluations', evaluationRoutes);
+app.use('/api/mentors', mentorRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/integrations', integrationRoutes);
 app.get('/api/system-emails', require('./controllers/intern.controller').getEmailHistory);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'HR Portal Backend is running smoothly!' });
+  res.json({ status: 'OK', message: 'HR Portal Backend is running smoothly with Sprint 1, 2, 3!' });
 });
+
+// Chạy tự động migration Sprint 3 nếu chưa có bảng
+try {
+  const migrateSprint3 = require('./migrate_sprint3');
+  setTimeout(() => migrateSprint3(), 1500);
+} catch (mErr) {}
 
 // Tự động kiểm tra và nâng cấp DB cho phân hệ Admin (Self-healing migration)
 async function ensureAdminDBSchema() {

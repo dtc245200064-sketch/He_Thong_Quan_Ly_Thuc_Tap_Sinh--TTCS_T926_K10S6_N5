@@ -211,7 +211,68 @@ async function getEmailHistory(recipientEmail = '') {
   }
 }
 
+// Gửi email thông báo lịch họp tự động cho thực tập sinh (STT 35)
+async function sendMeetingEmail({ to, internName, meetingTitle, meetingDate, startTime, endTime, location, link, hostName, notes }) {
+  const subject = `[THÔNG BÁO LỊCH HỌP] ${meetingTitle} - Hệ thống Quản lý Thực tập sinh CodeGym`;
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+      <div style="background-color: #0d6efd; color: #ffffff; padding: 20px; text-align: center;">
+        <h2 style="margin: 0; font-size: 20px;">LỊCH HỌP MỚI DÀNH CHO THỰC TẬP SINH</h2>
+        <p style="margin: 5px 0 0; opacity: 0.9; font-size: 14px;">Hệ thống Đào tạo & Quản lý CodeGym</p>
+      </div>
+      <div style="padding: 24px;">
+        <p>Xin chào <strong>${internName || 'Thực tập sinh'}</strong>,</p>
+        <p>Bạn có một lịch họp mới được sắp xếp trên hệ thống. Dưới đây là thông tin chi tiết:</p>
+        <div style="background-color: #f8fafc; border-left: 4px solid #0d6efd; padding: 16px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+          <p style="margin: 0 0 8px;">📅 <strong>Chủ đề cuộc họp:</strong> ${meetingTitle}</p>
+          <p style="margin: 0 0 8px;">⏰ <strong>Thời gian:</strong> ${startTime} - ${endTime}, ngày <strong>${meetingDate}</strong></p>
+          <p style="margin: 0 0 8px;">📍 <strong>Địa điểm / Hình thức:</strong> ${location || 'Online Meet'}</p>
+          ${link ? `<p style="margin: 0 0 8px;">🔗 <strong>Đường dẫn tham gia:</strong> <a href="${link}" target="_blank" style="color: #0d6efd;">${link}</a></p>` : ''}
+          <p style="margin: 0 0 8px;">👤 <strong>Người chủ trì:</strong> ${hostName || 'Mentor / HR'}</p>
+          ${notes ? `<p style="margin: 0;">📝 <strong>Ghi chú:</strong> ${notes}</p>` : ''}
+        </div>
+        <p style="font-size: 13px; color: #64748b;">Vui lòng sắp xếp thời gian tham gia đúng giờ và chuẩn bị nội dung báo cáo theo yêu cầu.</p>
+      </div>
+      <div style="background-color: #f1f5f9; padding: 12px; text-align: center; font-size: 12px; color: #64748b;">
+        © 2026 CodeGym Vietnam - Email thông báo tự động từ Hệ thống Quản lý Thực tập sinh.
+      </div>
+    </div>
+  `;
+
+  let previewUrl = null;
+  let sentStatus = 'sent';
+
+  try {
+    const transporter = await getTransporter();
+    const info = await transporter.sendMail({
+      from: '"CodeGym HR & Intern Portal" <no-reply@codegym.vn>',
+      to: to,
+      subject: subject,
+      html: htmlContent
+    });
+    if (nodemailer.getTestMessageUrl) {
+      previewUrl = nodemailer.getTestMessageUrl(info);
+      if (previewUrl) {
+        console.log(`✉️ Link xem trước Ethereal Email lịch họp gửi tới ${to}: ${previewUrl}`);
+      }
+    }
+  } catch (err) {
+    console.warn(`⚠️ Gửi mail thất bại tới ${to}:`, err.message);
+    sentStatus = 'failed';
+  }
+
+  try {
+    await db.query(`
+      INSERT INTO system_emails (recipient_email, recipient_name, subject, email_type, content, preview_url, status)
+      VALUES (?, ?, ?, 'general', ?, ?, ?)
+    `, [to, internName || null, subject, htmlContent, previewUrl, sentStatus]);
+  } catch (dbErr) {}
+
+  return { success: sentStatus === 'sent', recipient: to, previewUrl };
+}
+
 module.exports = {
   sendReviewResultEmail,
-  getEmailHistory
+  getEmailHistory,
+  sendMeetingEmail
 };

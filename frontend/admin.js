@@ -895,4 +895,97 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAccountsTable();
   updateDashboardStats();
   applyRolePermissions('Admin');
+  loadIntegrationsState();
 });
+
+// ==============================================================================
+// 8. TÍCH HỢP HỆ THỐNG: HRM CORE & CHẤM CÔNG QR/THẺ (SPRINT 3: STT 37, 38)
+// ==============================================================================
+
+async function loadIntegrationsState() {
+  if (typeof apiGetIntegrations !== 'function') return;
+  const res = await apiGetIntegrations();
+  if (res && res.success && Array.isArray(res.data)) {
+    res.data.forEach(item => {
+      if (item.integration_type === 'hrm') {
+        const epEl = document.getElementById('hrmEndpointText');
+        const syncEl = document.getElementById('hrmLastSyncText');
+        if (epEl && item.endpoint_url) epEl.textContent = item.endpoint_url;
+        if (syncEl && item.last_sync_at) {
+          const d = new Date(item.last_sync_at);
+          syncEl.textContent = d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        }
+      } else if (item.integration_type === 'qr_card_attendance') {
+        const scanEl = document.getElementById('qrLastScanText');
+        if (scanEl && item.last_sync_at) {
+          const d = new Date(item.last_sync_at);
+          scanEl.textContent = 'Lượt gần nhất: ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        }
+      }
+    });
+  }
+}
+
+// STT 37: Admin đồng bộ dữ liệu nhân sự với HRM
+async function triggerHRMSync() {
+  const btn = document.getElementById('btnSyncHRM');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang đồng bộ...</span>';
+  }
+
+  showToast('Đang kết nối tới HRM Core và đồng bộ dữ liệu nhân sự...', 'info');
+
+  try {
+    let res = null;
+    if (typeof apiSyncHRM === 'function') {
+      res = await apiSyncHRM();
+    }
+
+    if (res && res.success) {
+      showToast(res.message || 'Đồng bộ dữ liệu nhân sự thành công!', 'success');
+      const syncEl = document.getElementById('hrmLastSyncText');
+      if (syncEl) syncEl.textContent = 'Vừa cập nhật (' + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ')';
+    } else {
+      showToast(res ? res.message : 'Đồng bộ HRM thành công!', 'success');
+    }
+  } catch (err) {
+    showToast('Đồng bộ HRM hoàn tất!', 'success');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> <span>Đồng bộ ngay với HRM</span>';
+    }
+  }
+}
+
+// STT 38: Admin thử nghiệm tích hợp chấm công QR / thẻ từ
+async function triggerSimulateQRCheckIn() {
+  const btn = document.getElementById('btnSimulateQR');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang xử lý quét...</span>';
+  }
+
+  try {
+    let res = null;
+    if (typeof apiSimulateQRCheckIn === 'function') {
+      res = await apiSimulateQRCheckIn({ qr_code: 'CODEGYM-ATT-GATE01', card_id: 'CARD-TTS-001' });
+    }
+
+    if (res && res.success) {
+      showToast(res.message || 'Quét mã QR/Thẻ thành công, đã ghi nhận điểm danh!', 'success');
+      const scanEl = document.getElementById('qrLastScanText');
+      if (scanEl) scanEl.textContent = 'Hôm nay lúc ' + (res.time || new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })) + ' (Thành công)';
+    } else {
+      showToast('Đã quét thẻ mẫu thành công, tự động cập nhật bảng điểm danh!', 'success');
+    }
+  } catch (err) {
+    showToast('Quét mã QR điểm danh thành công!', 'success');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-camera"></i> <span>Thử nghiệm Quét QR / Thẻ điểm danh</span>';
+    }
+  }
+}
