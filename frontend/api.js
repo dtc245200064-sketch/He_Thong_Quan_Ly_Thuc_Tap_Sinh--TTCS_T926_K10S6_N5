@@ -485,13 +485,21 @@ async function apiDeleteWeeklyReport(id) {
 }
 
 async function apiFeedbackWeeklyReport(id, data) {
-  const res = await fetch(`${API_BASE_URL}/reports/weekly/${id}/feedback`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data)
-  });
-  return await res.json();
+  try {
+    const res = await fetch(`${API_BASE_URL}/reports/weekly/${id}/feedback`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn('Lỗi apiFeedbackWeeklyReport:', e);
+    return { success: false, message: e.message };
+  }
 }
+const apiFeedbackReport = apiFeedbackWeeklyReport;
+window.apiFeedbackReport = apiFeedbackWeeklyReport;
+window.apiFeedbackWeeklyReport = apiFeedbackWeeklyReport;
 
 // 29. Statistics: Thống kê trường/ngành & tỷ lệ hoàn thành (STT 32, 33)
 async function apiGetStatisticsDemographics() {

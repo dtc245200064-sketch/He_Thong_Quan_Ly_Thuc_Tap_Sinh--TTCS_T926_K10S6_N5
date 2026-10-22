@@ -20,8 +20,8 @@ exports.getWeeklyReports = async (req, res) => {
       params.push(myInternId, req.user.id);
     } else if (req.user && req.user.role === 'Mentor') {
       const myMentorId = req.user.mentorId || -1;
-      query += ` AND (r.mentor_id = ? OR i.mentor_id = ?)`;
-      params.push(myMentorId, myMentorId);
+      query += ` AND (r.mentor_id = ? OR i.mentor_id = ? OR m.user_id = ? OR i.mentor = ?)`;
+      params.push(myMentorId, myMentorId, req.user.id, req.user.name);
     } else {
       if (intern_id) {
         query += ` AND r.intern_id = ?`;
@@ -178,9 +178,9 @@ exports.feedbackWeeklyReport = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Vui lòng nhập nội dung nhận xét/phản hồi!' });
     }
 
-    const rating = parseInt(mentor_rating, 10);
-    if (isNaN(rating) || rating < 1 || rating > 5) {
-      return res.status(400).json({ success: false, message: 'Đánh giá xếp loại của mentor phải từ 1 đến 5 sao!' });
+    const rating = parseFloat(mentor_rating);
+    if (isNaN(rating) || rating < 1 || rating > 10) {
+      return res.status(400).json({ success: false, message: 'Đánh giá xếp loại của mentor phải từ 1 đến 10 điểm!' });
     }
 
     const [existing] = await db.query('SELECT * FROM weekly_reports WHERE id = ?', [id]);
@@ -188,12 +188,37 @@ exports.feedbackWeeklyReport = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy báo cáo tuần!' });
     }
 
+    const report = existing[0];
+    const mentorIdToAssign = (req.user && req.user.role === 'Mentor' && req.user.mentorId) ? req.user.mentorId : null;
+
     await db.query(
       `UPDATE weekly_reports 
-       SET mentor_feedback = ?, mentor_rating = ?, status = 'reviewed', reviewed_at = NOW() 
+       SET mentor_feedback = ?, 
+           mentor_rating = ?, 
+           status = 'reviewed', 
+           reviewed_at = NOW(),
+           mentor_id = COALESCE(mentor_id, ?)
        WHERE id = ?`,
-      [mentor_feedback.trim(), rating, id]
+      [mentor_feedback.trim(), rating, mentorIdToAssign, id]
     );
+
+    // Gửi thông báo In-app tự động cho thực tập sinh khi có phản hồi mới từ Mentor (STT 36)
+    try {
+      const [internRows] = await db.query('SELECT user_id, name FROM interns WHERE id = ?', [report.intern_id]);
+      if (internRows.length > 0 && internRows[0].user_id) {
+        await db.query(
+          `INSERT INTO inapp_notifications (user_id, role, title, content, type, link)
+           VALUES (?, 'Thực tập sinh', ?, ?, 'success', 'intern.html#reports')`,
+          [
+            internRows[0].user_id,
+            `Mentor đã phản hồi báo cáo Tuần ${report.week_number}`,
+            `Mentor đã đánh giá ${rating}/10 điểm và gửi nhận xét cho báo cáo tuần của bạn.`
+          ]
+        );
+      }
+    } catch (notifErr) {
+      console.warn('Không thể tạo thông báo in-app cho TTS:', notifErr.message);
+    }
 
     return res.status(200).json({
       success: true,

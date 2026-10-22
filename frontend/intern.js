@@ -4422,44 +4422,62 @@ function renderReportsList() {
   `;
 
   reports.forEach(rep => {
-    const isSubmitted = rep.status === 'Đã nộp';
-    const statusBadge = isSubmitted
-      ? `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-send-check-fill me-1"></i>Đã nộp</span>`
-      : `<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="bi bi-pencil-square me-1"></i>Bản nháp</span>`;
+    const isReviewed = rep.status === 'Đã phản hồi' || Boolean(rep.mentorFeedback);
+    const isDraft = rep.status === 'Bản nháp';
+    let statusBadge = '';
+    if (isReviewed) {
+      statusBadge = `<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="bi bi-chat-left-check-fill me-1"></i>Mentor đã phản hồi</span>`;
+    } else if (isDraft) {
+      statusBadge = `<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="bi bi-pencil-square me-1"></i>Bản nháp</span>`;
+    } else {
+      statusBadge = `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-send-check-fill me-1"></i>Đã nộp (Chờ phản hồi)</span>`;
+    }
 
     html += `
-      <div class="report-card-item">
-        <div class="report-header-row">
+      <div class="report-card-item mb-3 p-3 rounded" style="border: 1px solid #e2e8f0; background: #ffffff;">
+        <div class="report-header-row d-flex justify-content-between align-items-start gap-2 mb-2">
           <div>
             <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-              <span class="report-week-badge">${escapeHtml(rep.weekTitle)}</span>
+              <span class="report-week-badge fw-bold">${escapeHtml(rep.weekTitle)}</span>
               ${statusBadge}
             </div>
             <div class="text-muted small">
-              <i class="bi bi-calendar3 me-1"></i>${escapeHtml(rep.date || 'Gần đây')}
+              <i class="bi bi-calendar3 me-1"></i>Ngày ghi nhận: ${escapeHtml(rep.date || 'Gần đây')}
             </div>
           </div>
           <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-sm btn-outline-primary px-2 py-1" onclick="openReportDetailModal('${rep.id}')" title="Xem chi tiết" style="border-radius: 8px;">
-              <i class="bi bi-eye"></i> Xem chi tiết
+            <button type="button" class="btn btn-sm btn-outline-primary px-3 py-1" onclick="openReportDetailModal('${rep.id}')" title="Xem chi tiết" style="border-radius: 8px; font-weight: 500;">
+              <i class="bi bi-eye me-1"></i>Xem chi tiết
             </button>
-            ${!isSubmitted ? `
-              <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-1" onclick="openReportModal('${rep.id}')" title="Chỉnh sửa" style="border-radius: 8px;">
+            ${isDraft ? `
+              <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-1" onclick="openReportModal('${rep.id}')" title="Chỉnh sửa bản nháp" style="border-radius: 8px;">
                 <i class="bi bi-pencil-square"></i> Sửa
               </button>
             ` : ''}
-            <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1" onclick="deleteWeeklyReport('${rep.id}')" title="Xóa" style="border-radius: 8px;">
-              <i class="bi bi-trash3"></i>
-            </button>
+            ${isDraft ? `
+              <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1" onclick="deleteWeeklyReport('${rep.id}')" title="Xóa" style="border-radius: 8px;">
+                <i class="bi bi-trash3"></i>
+              </button>
+            ` : ''}
           </div>
         </div>
 
-        <div class="report-section-snippet">
-          <strong>Công việc:</strong> ${escapeHtml(rep.workDone || 'Chưa cập nhật')}
+        <div class="report-section-snippet text-dark mb-1 small">
+          <strong><i class="bi bi-check2-circle text-primary me-1"></i>Công việc:</strong> ${escapeHtml(rep.workDone || 'Chưa cập nhật')}
         </div>
-        <div class="report-section-snippet">
-          <strong>Kết quả:</strong> ${escapeHtml(rep.results || 'Chưa cập nhật')}
+        <div class="report-section-snippet text-dark mb-2 small">
+          <strong><i class="bi bi-award text-success me-1"></i>Kết quả:</strong> ${escapeHtml(rep.results || 'Chưa cập nhật')}
         </div>
+
+        ${rep.mentorFeedback ? `
+          <div class="mt-2 p-2 rounded bg-primary-subtle border border-primary-subtle small text-dark" style="background-color: #f0fdf4; border-color: #bbf7d0;">
+            <div class="fw-bold text-success mb-1 d-flex align-items-center gap-1">
+              <i class="bi bi-chat-quote-fill"></i>
+              <span>Nhận xét từ Mentor (${rep.mentorRating || '-'}/10 điểm):</span>
+            </div>
+            <div class="text-secondary" style="line-height: 1.5;">${escapeHtml(rep.mentorFeedback)}</div>
+          </div>
+        ` : ''}
       </div>
     `;
   });

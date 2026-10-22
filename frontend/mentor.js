@@ -1125,3 +1125,25 @@ function escapeHtml(str) {
   if (typeof str !== 'string') return str || '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
+
+
+// ==============================================================================
+// GẮN CÁC HÀM XỬ LÝ TOÀN CỤC CHO SỰ KIỆN ONCLICK & ONSUBMIT TRÊN MENTOR.HTML
+// ==============================================================================
+window.switchMentorTab = switchMentorTab;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.openCreateTaskModal = openCreateTaskModal;
+window.handleCreateTaskSubmit = handleCreateTaskSubmit;
+window.openFeedbackReportModal = openFeedbackReportModal;
+window.handleFeedbackReportSubmit = handleFeedbackReportSubmit;
+window.openEvaluationModal = openEvaluationModal;
+window.handleEvaluationSubmit = handleEvaluationSubmit;
+window.openCreateMeetingModal = openCreateMeetingModal;
+window.handleCreateMeetingSubmit = handleCreateMeetingSubmit;
+window.openLogoutModal = openLogoutModal;
+window.confirmLogout = confirmLogout;
+window.proceedToLoginPage = proceedToLoginPage;
+window.showMentorToast = showMentorToast;
+window.filterMentorReports = filterMentorReports;
+window.markAllMentorNotifsRead = markAllMentorNotifsRead;
