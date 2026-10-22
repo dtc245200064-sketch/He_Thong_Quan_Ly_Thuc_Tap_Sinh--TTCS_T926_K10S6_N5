@@ -142,7 +142,13 @@ exports.createNotification = async (req, res) => {
   }
 };
 
-// POST /api/notifications/meetings: Tạo lịch họp & gửi email cho TTS (STT 35)
+/**
+ * POST /api/notifications/meetings: Tạo lịch họp & gửi email thông báo cho TTS (STT 35)
+ * @description Lưu lịch họp vào bảng meetings, tự động gửi email thông báo qua SMTP và tạo thông báo in-app
+ * @param {import('express').Request} req - Request body chứa { title, meeting_date, start_time, end_time, location, link, host_name, intern_ids, notes }
+ * @param {import('express').Response} res - Response object
+ * @returns {Promise<void>} JSON chứa kết quả tạo cuộc họp và thống kê gửi email
+ */
 exports.createMeeting = async (req, res) => {
   try {
     const { title, meeting_date, start_time, end_time, location, link, host_name, intern_ids, notes } = req.body;
@@ -230,7 +236,13 @@ exports.createMeeting = async (req, res) => {
   }
 };
 
-// GET /api/notifications/meetings: Lấy danh sách các lịch họp (B17: TTS chỉ thấy cuộc họp của mình)
+/**
+ * GET /api/notifications/meetings: Lấy danh sách các lịch họp
+ * @description Lọc quyền xem: TTS chỉ thấy các cuộc họp mà mình được mời tham gia (B17)
+ * @param {import('express').Request} req - Request object chứa thông tin phiên người dùng
+ * @param {import('express').Response} res - Response object
+ * @returns {Promise<void>} JSON danh sách cuộc họp
+ */
 exports.getMeetings = async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM meetings ORDER BY meeting_date DESC, id DESC');
