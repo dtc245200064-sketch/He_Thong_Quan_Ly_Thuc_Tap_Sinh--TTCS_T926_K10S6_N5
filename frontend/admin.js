@@ -8,6 +8,8 @@
 
 // 1. STATE QUẢN LÝ DỮ LIỆU TÀI KHOẢN & PHÂN QUYỀN (KẾT NỐI TRỰC TIẾP MYSQL QUA API)
 let accounts = [];
+let adminWeeklyReports = [];
+let adminReportsLoadError = false;
 let AdminPermissions = null;
 let AdminCurrentUser = null;
 
@@ -71,6 +73,155 @@ async function loadAccountsFromDB() {
 
 function initAccountsState() {
   loadAccountsFromDB();
+}
+
+async function loadAdminWeeklyReports() {
+  adminReportsLoadError = false;
+  try {
+    if (typeof apiGetWeeklyReports !== 'function') {
+      throw new Error('API báo cáo tuần chưa được khởi tạo.');
+    }
+
+    const response = await apiGetWeeklyReports();
+    if (!response || !response.success || !Array.isArray(response.data)) {
+      throw new Error(response?.message || 'Không thể tải danh sách báo cáo tuần.');
+    }
+
+    adminWeeklyReports = response.data;
+    renderAdminWeeklyReports();
+  } catch (error) {
+    adminWeeklyReports = [];
+    adminReportsLoadError = true;
+    console.error('Lỗi tải danh sách báo cáo tuần:', error);
+    renderAdminWeeklyReports();
+    showToast('Không thể tải danh sách báo cáo tuần. Vui lòng thử lại sau.', 'error');
+  }
+}
+
+function getAdminReportStatus(report) {
+  if (report.status === 'reviewed' || (report.mentor_feedback && report.mentor_feedback.length > 0)) {
+    return 'reviewed';
+  }
+  return report.status === 'draft' ? 'draft' : 'submitted';
+}
+
+function populateAdminReportFilters() {
+  const internSelect = document.getElementById('adminReportInternFilter');
+  const weekSelect = document.getElementById('adminReportWeekFilter');
+  if (!internSelect || !weekSelect) return;
+
+  const selectedIntern = internSelect.value;
+  const selectedWeek = weekSelect.value;
+  const internsById = new Map();
+
+  adminWeeklyReports.forEach(report => {
+    const internId = String(report.intern_id);
+    internsById.set(internId, report.intern_name || `TTS #${internId}`);
+  });
+
+  internSelect.innerHTML = '<option value="">Tất cả TTS</option>' +
+    [...internsById.entries()]
+      .sort((a, b) => a[1].localeCompare(b[1], 'vi'))
+      .map(([id, name]) => `<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`)
+      .join('');
+
+  const weeks = [...new Set(adminWeeklyReports.map(report => String(report.week_number)))]
+    .sort((a, b) => Number(b) - Number(a));
+  weekSelect.innerHTML = '<option value="">Tất cả tuần</option>' +
+    weeks.map(week => `<option value="${escapeHtml(week)}">Tuần ${escapeHtml(week)}</option>`).join('');
+
+  if (internsById.has(selectedIntern)) internSelect.value = selectedIntern;
+  if (weeks.includes(selectedWeek)) weekSelect.value = selectedWeek;
+}
+
+function getFilteredAdminWeeklyReports() {
+  const query = (document.getElementById('adminReportSearch')?.value || '').trim().toLowerCase();
+  const internId = document.getElementById('adminReportInternFilter')?.value || '';
+  const weekNumber = document.getElementById('adminReportWeekFilter')?.value || '';
+  const status = document.getElementById('adminReportStatusFilter')?.value || '';
+
+  return adminWeeklyReports.filter(report => {
+    const searchText = [
+      report.intern_name,
+      report.intern_email,
+      report.week_number,
+      report.tasks_completed,
+      report.issues_faced,
+      report.plans_next_week
+    ].join(' ').toLowerCase();
+
+    return (!query || searchText.includes(query)) &&
+      (!internId || String(report.intern_id) === internId) &&
+      (!weekNumber || String(report.week_number) === weekNumber) &&
+      (!status || getAdminReportStatus(report) === status);
+  });
+}
+
+function formatAdminReportDate(value) {
+  if (!value) return '—';
+  const parts = String(value).slice(0, 10).split('-');
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : String(value);
+}
+
+function renderAdminWeeklyReports() {
+  const tbody = document.getElementById('adminReportTableBody');
+  if (!tbody) return;
+
+  populateAdminReportFilters();
+  const filteredReports = getFilteredAdminWeeklyReports();
+  const count = document.getElementById('adminReportCount');
+  const results = document.getElementById('adminReportResults');
+  if (count) count.textContent = adminWeeklyReports.length;
+  if (results) results.textContent = `Đang hiển thị ${filteredReports.length} / ${adminWeeklyReports.length} báo cáo`;
+
+  if (adminReportsLoadError) {
+    tbody.innerHTML = '<tr class="empty-table-row"><td colspan="6" class="report-empty-cell">Không thể tải dữ liệu. Hãy tải lại trang để thử lại.</td></tr>';
+    return;
+  }
+  if (adminWeeklyReports.length === 0) {
+    tbody.innerHTML = '<tr class="empty-table-row"><td colspan="6" class="report-empty-cell">Chưa có báo cáo tuần nào.</td></tr>';
+    return;
+  }
+  if (filteredReports.length === 0) {
+    tbody.innerHTML = '<tr class="empty-table-row"><td colspan="6" class="report-empty-cell">Không tìm thấy báo cáo phù hợp với bộ lọc.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filteredReports.map(report => {
+    const status = getAdminReportStatus(report);
+    const statusLabel = status === 'reviewed' ? 'Đã phản hồi' : status === 'draft' ? 'Bản nháp' : 'Chờ phản hồi';
+    const internName = report.intern_name || `TTS #${report.intern_id}`;
+    const completed = report.tasks_completed || 'Chưa cập nhật công việc';
+    const issues = report.issues_faced || 'Không có khó khăn';
+    const nextPlan = report.plans_next_week || '';
+    const rating = report.mentor_rating ? `${escapeHtml(String(report.mentor_rating))} / 10` : 'Chưa chấm';
+
+    return `
+      <tr>
+        <td><span class="report-week-label">Tuần ${escapeHtml(String(report.week_number))}</span></td>
+        <td>
+          <div class="report-intern-name">${escapeHtml(internName)}</div>
+          <div class="report-intern-email">${escapeHtml(report.intern_email || '')}</div>
+        </td>
+        <td class="report-period">${formatAdminReportDate(report.start_date)}<span>đến</span>${formatAdminReportDate(report.end_date)}</td>
+        <td class="report-summary-cell">
+          <div class="report-content-item"><strong>Đã làm</strong><span title="${escapeHtml(completed)}">${escapeHtml(completed)}</span></div>
+          <div class="report-content-item report-content-issues"><strong>Khó khăn</strong><span title="${escapeHtml(issues)}">${escapeHtml(issues)}</span></div>
+          ${nextPlan ? `<div class="report-content-item report-content-plan"><strong>Kế hoạch</strong><span title="${escapeHtml(nextPlan)}">${escapeHtml(nextPlan)}</span></div>` : ''}
+        </td>
+        <td>${rating}</td>
+        <td><span class="report-status-badge status-${status}">${statusLabel}</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function resetAdminReportFilters() {
+  ['adminReportSearch', 'adminReportInternFilter', 'adminReportWeekFilter', 'adminReportStatusFilter'].forEach(id => {
+    const control = document.getElementById(id);
+    if (control) control.value = '';
+  });
+  renderAdminWeeklyReports();
 }
 
 // Đồng bộ trực tiếp qua MySQL Database API
@@ -899,6 +1050,7 @@ function proceedToLoginPage() {
 document.addEventListener('DOMContentLoaded', () => {
   // 1. Khởi tạo trạng thái danh sách tài khoản (rỗng)
   initAccountsState();
+  loadAdminWeeklyReports();
 
   // 2. Gán sự kiện click cho các menu navigation sidebar
   const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
@@ -918,17 +1070,20 @@ document.addEventListener('DOMContentLoaded', () => {
   if (roleFilter) roleFilter.addEventListener('change', renderAccountsTable);
   if (statusFilter) statusFilter.addEventListener('change', renderAccountsTable);
 
-  // 4. Toggle Sidebar trên màn hình nhỏ & Desktop Collapse
+  // 4. Sự kiện tìm kiếm và lọc danh sách báo cáo tuần
+  ['adminReportSearch', 'adminReportInternFilter', 'adminReportWeekFilter', 'adminReportStatusFilter'].forEach(id => {
+    const control = document.getElementById(id);
+    if (control) control.addEventListener(id === 'adminReportSearch' ? 'input' : 'change', renderAdminWeeklyReports);
+  });
+  const resetReportFiltersButton = document.getElementById('resetAdminReportFilters');
+  if (resetReportFiltersButton) resetReportFiltersButton.addEventListener('click', resetAdminReportFilters);
+
+  // 5. Toggle Sidebar trên màn hình nhỏ
   const toggleBtn = document.getElementById('sidebarToggleBtn');
   const sidebar = document.getElementById('sidebar');
   if (toggleBtn && sidebar) {
-    toggleBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (typeof window.toggleSidebarCollapse === 'function') {
-        window.toggleSidebarCollapse();
-      } else {
-        sidebar.classList.toggle('open');
-      }
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
     });
   }
 

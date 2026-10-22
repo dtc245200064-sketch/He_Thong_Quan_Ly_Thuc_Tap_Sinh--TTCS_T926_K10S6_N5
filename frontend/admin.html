@@ -25,16 +25,11 @@
     <!-- 1. SIDEBAR BÊN TRÁI                                           -->
     <!-- ============================================================== -->
     <aside class="admin-sidebar" id="sidebar">
-      <!-- Thương hiệu & Logo & Nút thu gọn 3 gạch -->
+      <!-- Thương hiệu & Logo -->
       <div class="sidebar-header">
-        <div class="brand-logo-wrap">
-          <div class="brand-logo">
-            <span class="logo-badge">TTS</span>
-            <span class="logo-title">Quản lý thực tập sinh</span>
-          </div>
-          <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Thu gọn / Mở rộng menu" aria-label="Thu gọn / Mở rộng menu">
-            <i class="fa-solid fa-bars"></i>
-          </button>
+        <div class="brand-logo">
+          <span class="logo-badge">TTS</span>
+          <span class="logo-title">Quản lý thực tập sinh</span>
         </div>
       </div>
 
@@ -60,6 +55,12 @@
             <a href="javascript:void(0)" class="nav-item" data-section="accounts" id="nav-accounts">
               <i class="fa-solid fa-shield-halved"></i>
               <span>Quản lý tài khoản</span>
+            </a>
+          </li>
+          <li>
+            <a href="javascript:void(0)" class="nav-item" data-section="reports" id="nav-reports">
+              <i class="fa-solid fa-file-lines"></i>
+              <span>Báo cáo tuần</span>
             </a>
           </li>
           <li>
@@ -319,7 +320,76 @@
       </section>
 
       <!-- ------------------------------------------------------------ -->
-      <!-- TAB 3: PHÂN QUYỀN HỆ THỐNG                                    -->
+      <!-- TAB 3: DANH SÁCH BÁO CÁO TUẦN                               -->
+      <!-- ------------------------------------------------------------ -->
+      <section class="admin-section" id="section-reports">
+        <div class="section-topbar">
+          <div class="page-header">
+            <h1 class="page-title">Danh sách báo cáo tuần</h1>
+            <p class="page-subtitle"><span id="adminReportCount">0</span> báo cáo trong hệ thống</p>
+          </div>
+        </div>
+
+        <div class="report-filter-card">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="adminReportSearch" placeholder="Tìm theo tên TTS hoặc nội dung báo cáo..." aria-label="Tìm báo cáo">
+          </div>
+          <div class="filter-group report-filter-group">
+            <div class="custom-select-wrap">
+              <select id="adminReportInternFilter" aria-label="Lọc báo cáo theo TTS">
+                <option value="">Tất cả TTS</option>
+              </select>
+              <i class="fa-solid fa-chevron-down select-arrow"></i>
+            </div>
+            <div class="custom-select-wrap">
+              <select id="adminReportWeekFilter" aria-label="Lọc báo cáo theo tuần">
+                <option value="">Tất cả tuần</option>
+              </select>
+              <i class="fa-solid fa-chevron-down select-arrow"></i>
+            </div>
+            <div class="custom-select-wrap">
+              <select id="adminReportStatusFilter" aria-label="Lọc báo cáo theo trạng thái">
+                <option value="">Tất cả trạng thái</option>
+                <option value="draft">Bản nháp</option>
+                <option value="submitted">Chờ phản hồi</option>
+                <option value="reviewed">Đã phản hồi</option>
+              </select>
+              <i class="fa-solid fa-chevron-down select-arrow"></i>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" id="resetAdminReportFilters">
+              <i class="fa-solid fa-rotate-left"></i>
+              <span>Xóa bộ lọc</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="report-results-label" id="adminReportResults" aria-live="polite"></div>
+        <div class="table-card">
+          <div class="table-responsive">
+            <table class="data-table" id="adminReportsTable">
+              <thead>
+                <tr>
+                  <th>TUẦN</th>
+                  <th>THỰC TẬP SINH</th>
+                  <th>THỜI GIAN</th>
+                  <th>NỘI DUNG BÁO CÁO</th>
+                  <th>ĐIỂM</th>
+                  <th>TRẠNG THÁI</th>
+                </tr>
+              </thead>
+              <tbody id="adminReportTableBody">
+                <tr class="empty-table-row">
+                  <td colspan="6" class="report-empty-cell">Đang tải danh sách báo cáo...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------------ -->
+      <!-- TAB 4: PHÂN QUYỀN HỆ THỐNG                                    -->
       <!-- ------------------------------------------------------------ -->
       <section class="admin-section" id="section-permissions">
         <div class="page-header">

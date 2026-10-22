@@ -24,6 +24,7 @@ const MentorState = {
   notifications: [],
   activeTab: 'overview'
 };
+let activeTaskModalMode = 'create';
 
 // 1. KHỞI TẠO HỆ THỐNG KHI TRANG TẢI XONG
 document.addEventListener('DOMContentLoaded', async () => {
@@ -57,7 +58,7 @@ function checkMentorAuth() {
       const user = JSON.parse(rawUser);
       if (user.name) MentorState.currentMentor.name = user.name;
       if (user.email) MentorState.currentMentor.email = user.email;
-      if (user.mentorId || user.mentor_id) MentorState.currentMentor.id = user.mentorId || user.mentor_id;
+      if (user.mentor_id) MentorState.currentMentor.id = user.mentor_id;
       if (user.dept) MentorState.currentMentor.dept = user.dept;
       if (user.avatar) MentorState.currentMentor.avatar = user.avatar;
     }
@@ -424,7 +425,7 @@ function renderTasksView() {
   if (internSelect) {
     const curVal = internSelect.value;
     internSelect.innerHTML = `<option value="">Tất cả TTS</option>` + MentorState.interns.map(i => `<option value="${i.id}">${escapeHtml(i.name)}</option>`).join('');
-    internSelect.value = curVal;
+    internSelect.value = MentorState.interns.some(intern => String(intern.id) === curVal) ? curVal : '';
   }
 
   if (MentorState.tasks.length === 0) {
@@ -432,7 +433,23 @@ function renderTasksView() {
     return;
   }
 
-  tbody.innerHTML = MentorState.tasks.map(t => {
+  const query = (document.getElementById('searchTaskInput')?.value || '').toLowerCase().trim();
+  const selectedInternId = internSelect?.value || '';
+  const selectedStatus = document.getElementById('filterTaskStatus')?.value || '';
+  const filteredTasks = MentorState.tasks.filter(task => {
+    const internName = task.intern_name || (MentorState.interns.find(intern => String(intern.id) === String(task.intern_id))?.name) || '';
+    const matchesQuery = !query || `${task.title || ''} ${task.description || ''} ${internName}`.toLowerCase().includes(query);
+    return matchesQuery &&
+      (!selectedInternId || String(task.intern_id) === selectedInternId) &&
+      (!selectedStatus || task.status === selectedStatus);
+  });
+
+  if (filteredTasks.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 32px; color:#94a3b8;">Không tìm thấy nhiệm vụ phù hợp với bộ lọc.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filteredTasks.map(t => {
     const priorityBadges = {
       high: '<span class="badge badge-danger">Ưu tiên cao</span>',
       medium: '<span class="badge badge-warning">Trung bình</span>',
@@ -441,9 +458,12 @@ function renderTasksView() {
     const statusBadges = {
       todo: '<span class="badge badge-secondary">Cần làm</span>',
       in_progress: '<span class="badge badge-primary">Đang làm</span>',
+      review: '<span class="badge badge-warning">Chờ duyệt</span>',
+      canceled: '<span class="badge badge-secondary">Đã hủy</span>',
       done: '<span class="badge badge-success">Hoàn thành</span>'
     };
-    const progress = Math.min(100, Math.max(0, parseInt(t.progress || 0)));
+    const parsedProgress = parseInt(t.progress, 10);
+    const progress = Math.min(100, Math.max(0, Number.isFinite(parsedProgress) ? parsedProgress : 0));
     const internName = t.intern_name || (MentorState.interns.find(i => i.id === t.intern_id)?.name) || `TTS #${t.intern_id}`;
 
     return `
@@ -456,7 +476,7 @@ function renderTasksView() {
         </td>
         <td><strong>${escapeHtml(internName)}</strong></td>
         <td><i class="fa-regular fa-clock me-1 text-muted"></i> ${formatDate(t.deadline)}</td>
-        <td>${priorityBadges[t.priority] || priorityBadges.medium}</td>
+        <td>${priorityBadges[t.priority] || (t.priority === 'urgent' ? '<span class="badge badge-danger">Khẩn cấp</span>' : priorityBadges.medium)}</td>
         <td>
           <div class="progress-wrap">
             <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress}%;"></div></div>
@@ -466,7 +486,13 @@ function renderTasksView() {
         <td>${statusBadges[t.status] || statusBadges.todo}</td>
         <td style="text-align:right;">
           <div style="display:flex; justify-content:flex-end; gap:6px;">
-            ${t.status !== 'done' ? `
+            <button type="button" class="btn btn-outline btn-sm btn-icon-only" onclick="openTaskDetails(${t.id})" title="Xem chi tiết nhiệm vụ" aria-label="Xem chi tiết nhiệm vụ">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm btn-icon-only" onclick="openEditTaskModal(${t.id})" title="Sửa nhiệm vụ" aria-label="Sửa nhiệm vụ">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            ${t.status !== 'done' && t.status !== 'canceled' ? `
               <button type="button" class="btn btn-success btn-sm btn-icon-only" onclick="updateTaskStatusQuick(${t.id}, 'done')" title="Đánh dấu hoàn thành">
                 <i class="fa-solid fa-check"></i>
               </button>
@@ -482,17 +508,7 @@ function renderTasksView() {
 }
 
 function filterMentorTasks() {
-  const query = (document.getElementById('searchTaskInput')?.value || '').toLowerCase().trim();
-  const internId = document.getElementById('filterTaskIntern')?.value || '';
-  const status = document.getElementById('filterTaskStatus')?.value || '';
-  const rows = document.querySelectorAll('#mentorTasksTableBody tr');
-
-  rows.forEach(row => {
-    const text = row.innerText.toLowerCase();
-    const matchesQuery = !query || text.includes(query);
-    const matchesStatus = !status || text.includes(status === 'done' ? 'hoàn thành' : (status === 'in_progress' ? 'đang làm' : 'cần làm'));
-    row.style.display = matchesQuery && matchesStatus ? '' : 'none';
-  });
+  renderTasksView();
 }
 
 // Mở modal giao việc mới (STT 15)
@@ -503,15 +519,130 @@ function openCreateTaskModal() {
       MentorState.interns.map(i => `<option value="${i.id}">${escapeHtml(i.name)} (${escapeHtml(i.school || 'Đại học')})</option>`).join('');
   }
 
+  document.getElementById('createTaskForm')?.reset();
+  document.getElementById('taskIdInput').value = '';
+  setTaskModalMode('create');
+
   // Đặt hạn chót mặc định sau 7 ngày
   const deadInput = document.getElementById('taskDeadlineInput');
   if (deadInput) {
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
-    deadInput.value = nextWeek.toISOString().split('T')[0];
+    const localDate = new Date(nextWeek.getTime() - nextWeek.getTimezoneOffset() * 60000);
+    deadInput.value = localDate.toISOString().split('T')[0];
   }
 
   openModal('createTaskModal');
+}
+
+function setTaskModalMode(mode) {
+  activeTaskModalMode = mode;
+  const title = document.getElementById('taskModalTitle');
+  const internSelect = document.getElementById('taskInternSelect');
+  const submitButton = document.getElementById('taskModalSubmitButton');
+  const cancelButton = document.getElementById('taskModalCancelButton');
+  const editButton = document.getElementById('taskModalEditButton');
+  const details = document.getElementById('taskReadonlyDetails');
+  const formFields = [
+    internSelect,
+    document.getElementById('taskTitleInput'),
+    document.getElementById('taskDeadlineInput'),
+    document.getElementById('taskPrioritySelect'),
+    document.getElementById('taskDescInput')
+  ];
+  const isView = mode === 'view';
+
+  if (title) {
+    const labels = {
+      create: ['fa-list-check', 'Giao nhiệm vụ cho Thực tập sinh'],
+      edit: ['fa-pen', 'Chỉnh sửa nhiệm vụ'],
+      view: ['fa-eye', 'Chi tiết nhiệm vụ']
+    };
+    const [icon, label] = labels[mode] || labels.create;
+    title.innerHTML = `<i class="fa-solid ${icon}" style="color:var(--primary);"></i> ${label}`;
+  }
+  if (details) details.hidden = !isView;
+  formFields.forEach(field => {
+    if (field) field.disabled = isView || (mode === 'edit' && field === internSelect);
+  });
+  if (submitButton) {
+    submitButton.hidden = isView;
+    submitButton.innerHTML = mode === 'edit'
+      ? '<i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi'
+      : '<i class="fa-solid fa-paper-plane"></i> Giao việc ngay';
+  }
+  if (cancelButton) cancelButton.textContent = isView ? 'Đóng' : 'Hủy bỏ';
+  if (editButton) editButton.hidden = !isView;
+}
+
+function fillTaskForm(task) {
+  const internSelect = document.getElementById('taskInternSelect');
+  if (internSelect) {
+    internSelect.innerHTML = '<option value="">-- Chọn Thực tập sinh trong nhóm --</option>' +
+      MentorState.interns.map(intern => `<option value="${intern.id}">${escapeHtml(intern.name)} (${escapeHtml(intern.school || 'Đại học')})</option>`).join('');
+    const selectedInternId = String(task.intern_id);
+    if (![...internSelect.options].some(option => option.value === selectedInternId)) {
+      internSelect.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(selectedInternId)}">${escapeHtml(task.intern_name || `TTS #${selectedInternId}`)}</option>`);
+    }
+    internSelect.value = selectedInternId;
+  }
+
+  document.getElementById('taskIdInput').value = task.id;
+  document.getElementById('taskTitleInput').value = task.title || '';
+  document.getElementById('taskDeadlineInput').value = task.deadline ? String(task.deadline).slice(0, 10) : '';
+  document.getElementById('taskPrioritySelect').value = task.priority || 'medium';
+  document.getElementById('taskDescInput').value = task.description || '';
+
+  const statuses = {
+    todo: 'Cần làm',
+    in_progress: 'Đang làm',
+    review: 'Chờ duyệt',
+    done: 'Hoàn thành',
+    canceled: 'Đã hủy'
+  };
+  const progress = Math.min(100, Math.max(0, parseInt(task.progress, 10) || 0));
+  document.getElementById('taskDetailStatus').textContent = statuses[task.status] || 'Cần làm';
+  document.getElementById('taskDetailProgress').textContent = `${progress}%`;
+  document.getElementById('taskDetailProgressBar').style.width = `${progress}%`;
+
+  const internNoteGroup = document.getElementById('taskInternNoteGroup');
+  const mentorNoteGroup = document.getElementById('taskMentorNoteGroup');
+  internNoteGroup.hidden = !task.intern_note;
+  mentorNoteGroup.hidden = !task.mentor_note;
+  document.getElementById('taskDetailInternNote').textContent = task.intern_note || '';
+  document.getElementById('taskDetailMentorNote').textContent = task.mentor_note || '';
+}
+
+function getMentorTask(taskId) {
+  return MentorState.tasks.find(task => String(task.id) === String(taskId));
+}
+
+function openTaskDetails(taskId) {
+  const task = getMentorTask(taskId);
+  if (!task) {
+    showMentorToast('Không tìm thấy nhiệm vụ cần xem.', 'error');
+    return;
+  }
+  fillTaskForm(task);
+  setTaskModalMode('view');
+  openModal('createTaskModal');
+}
+
+function openEditTaskModal(taskId) {
+  const task = getMentorTask(taskId);
+  if (!task) {
+    showMentorToast('Không tìm thấy nhiệm vụ cần chỉnh sửa.', 'error');
+    return;
+  }
+  fillTaskForm(task);
+  setTaskModalMode('edit');
+  openModal('createTaskModal');
+}
+
+function editTaskFromDetails() {
+  const taskId = document.getElementById('taskIdInput')?.value;
+  closeModal('createTaskModal');
+  openEditTaskModal(taskId);
 }
 
 function prefillTaskIntern(internId) {
@@ -520,7 +651,7 @@ function prefillTaskIntern(internId) {
   if (select) select.value = internId;
 }
 
-// Xử lý gửi Form giao việc mới
+// Xử lý tạo mới hoặc cập nhật nhiệm vụ
 async function handleCreateTaskSubmit(event) {
   event.preventDefault();
   const intern_id = document.getElementById('taskInternSelect')?.value;
@@ -528,83 +659,95 @@ async function handleCreateTaskSubmit(event) {
   const deadline = document.getElementById('taskDeadlineInput')?.value;
   const priority = document.getElementById('taskPrioritySelect')?.value || 'medium';
   const description = document.getElementById('taskDescInput')?.value.trim() || '';
+  const taskId = document.getElementById('taskIdInput')?.value;
+  const isEdit = activeTaskModalMode === 'edit';
 
-  if (!intern_id || !title || !deadline) {
+  if ((!isEdit && !intern_id) || !title || !deadline) {
     showMentorToast('Vui lòng điền đầy đủ các thông tin bắt buộc!', 'error');
     return;
   }
 
+  const submitButton = document.getElementById('taskModalSubmitButton');
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+  }
+
   try {
-    const payload = {
-      intern_id: parseInt(intern_id),
-      mentor_id: MentorState.currentMentor.id,
-      title,
-      description,
-      deadline,
-      priority,
-      progress: 0,
-      status: 'todo'
-    };
-
-    if (typeof apiCreateTask === 'function') {
-      const res = await apiCreateTask(payload);
-      if (res && res.success) {
-        showMentorToast('Giao nhiệm vụ cho thực tập sinh thành công!', 'success');
-        closeModal('createTaskModal');
-        document.getElementById('createTaskForm')?.reset();
-        await loadAllMentorData();
-        return;
+    if (isEdit) {
+      if (!taskId || typeof apiUpdateTask !== 'function') {
+        throw new Error('Không thể cập nhật nhiệm vụ lúc này.');
       }
+      const response = await apiUpdateTask(taskId, { title, description, deadline, priority });
+      if (!response || !response.success) {
+        throw new Error(response?.message || 'Cập nhật nhiệm vụ thất bại.');
+      }
+      showMentorToast('Cập nhật nhiệm vụ thành công!', 'success');
+    } else {
+      if (typeof apiCreateTask !== 'function') {
+        throw new Error('Dịch vụ tạo nhiệm vụ chưa sẵn sàng.');
+      }
+      const response = await apiCreateTask({
+        intern_id: parseInt(intern_id, 10),
+        mentor_id: MentorState.currentMentor.id,
+        title,
+        description,
+        deadline,
+        priority,
+        progress: 0,
+        status: 'todo'
+      });
+      if (!response || !response.success) {
+        throw new Error(response?.message || 'Giao nhiệm vụ thất bại.');
+      }
+      showMentorToast('Giao nhiệm vụ cho thực tập sinh thành công!', 'success');
     }
-
-    // Dự phòng offline
-    MentorState.tasks.unshift({ ...payload, id: Date.now() });
-    showMentorToast('Đã lưu nhiệm vụ vào hệ thống!', 'success');
     closeModal('createTaskModal');
-    renderTasksView();
+    await loadAllMentorData();
   } catch (err) {
     console.error('Lỗi khi giao task:', err);
-    showMentorToast('Lỗi máy chủ khi giao nhiệm vụ!', 'error');
+    showMentorToast(err.message || 'Không thể lưu nhiệm vụ. Vui lòng thử lại.', 'error');
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+    setTaskModalMode(activeTaskModalMode);
   }
 }
 
 async function updateTaskStatusQuick(taskId, newStatus) {
   try {
     if (typeof apiUpdateTask === 'function') {
-      await apiUpdateTask(taskId, { status: newStatus, progress: newStatus === 'done' ? 100 : 50 });
+      const response = await apiUpdateTask(taskId, { status: newStatus, progress: newStatus === 'done' ? 100 : 50 });
+      if (!response || !response.success) {
+        throw new Error(response?.message || 'Cập nhật trạng thái nhiệm vụ thất bại.');
+      }
       showMentorToast('Đã cập nhật trạng thái nhiệm vụ!', 'success');
       await loadAllMentorData();
       return;
     }
-  } catch (e) {
-    console.warn(e);
+    throw new Error('Dịch vụ cập nhật nhiệm vụ chưa sẵn sàng.');
+  } catch (error) {
+    console.error('Lỗi cập nhật trạng thái nhiệm vụ:', error);
+    showMentorToast(error.message || 'Không thể cập nhật trạng thái nhiệm vụ.', 'error');
   }
 }
 
 async function deleteMentorTask(taskId) {
-  const confirmed = typeof UI !== 'undefined'
-    ? await UI.confirm({
-        title: 'Xác nhận xóa nhiệm vụ',
-        message: 'Bạn có chắc chắn muốn xóa nhiệm vụ này không?',
-        confirmText: 'Xóa nhiệm vụ',
-        cancelText: 'Hủy',
-        danger: true
-      })
-    : confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này không?');
+  const confirmed = typeof UI !== 'undefined' ? await UI.confirm({ title: 'Xác nhận xóa nhiệm vụ', message: 'Bạn có chắc chắn muốn xóa nhiệm vụ này không?', danger: true }) : true;
   if (!confirmed) return;
   try {
     if (typeof apiDeleteTask === 'function') {
-      const res = await apiDeleteTask(taskId);
-      if (res && res.success) {
-        showMentorToast('Đã xóa nhiệm vụ thành công!', 'info');
-        await loadAllMentorData();
-      } else {
-        showMentorToast(res?.message || 'Lỗi khi xóa nhiệm vụ', 'error');
+      const response = await apiDeleteTask(taskId);
+      if (!response || !response.success) {
+        throw new Error(response?.message || 'Xóa nhiệm vụ thất bại.');
       }
+      showMentorToast('Đã xóa nhiệm vụ thành công!', 'info');
+      await loadAllMentorData();
+      return;
     }
-  } catch (e) {
-    console.error('Lỗi khi xóa nhiệm vụ:', e);
-    showMentorToast('Lỗi máy chủ khi xóa nhiệm vụ!', 'error');
+    throw new Error('Dịch vụ xóa nhiệm vụ chưa sẵn sàng.');
+  } catch (error) {
+    console.error('Lỗi xóa nhiệm vụ:', error);
+    showMentorToast(error.message || 'Không thể xóa nhiệm vụ.', 'error');
   }
 }
 
@@ -1138,31 +1281,3 @@ function escapeHtml(str) {
   if (typeof str !== 'string') return str || '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
-
-
-// ==============================================================================
-// GẮN CÁC HÀM XỬ LÝ TOÀN CỤC CHO SỰ KIỆN ONCLICK & ONSUBMIT TRÊN MENTOR.HTML
-// ==============================================================================
-window.switchMentorTab = switchMentorTab;
-window.openModal = openModal;
-window.closeModal = closeModal;
-window.openCreateTaskModal = openCreateTaskModal;
-window.handleCreateTaskSubmit = handleCreateTaskSubmit;
-window.openFeedbackReportModal = openFeedbackReportModal;
-window.handleFeedbackReportSubmit = handleFeedbackReportSubmit;
-window.openEvaluationModal = openEvaluationModal;
-window.handleEvaluationSubmit = handleEvaluationSubmit;
-window.openCreateMeetingModal = openCreateMeetingModal;
-window.handleCreateMeetingSubmit = handleCreateMeetingSubmit;
-window.openLogoutModal = openLogoutModal;
-window.confirmLogout = confirmLogout;
-window.proceedToLoginPage = proceedToLoginPage;
-window.showMentorToast = showMentorToast;
-window.filterMentorReports = filterMentorReports;
-window.markAllMentorNotifsRead = markAllMentorNotifsRead;
-window.deleteMentorTask = deleteMentorTask;
-window.updateTaskStatusQuick = updateTaskStatusQuick;
-window.prefillTaskIntern = prefillTaskIntern;
-window.filterMentorInterns = filterMentorInterns;
-window.filterMentorTasks = filterMentorTasks;
-window.calcEvalTotalScore = calcEvalTotalScore;

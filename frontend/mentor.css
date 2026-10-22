@@ -576,21 +576,6 @@ body {
   border-radius: var(--radius-sm);
 }
 
-.text-danger {
-  color: var(--danger, #ef4444) !important;
-}
-
-.btn-outline.text-danger {
-  color: var(--danger, #ef4444) !important;
-  border-color: rgba(239, 68, 68, 0.35) !important;
-}
-
-.btn-outline.text-danger:hover {
-  background: #fef2f2 !important;
-  border-color: var(--danger, #ef4444) !important;
-  color: #dc2626 !important;
-}
-
 /* ==============================================================
    6. BẢNG DỮ LIỆU (DATA TABLES)
    ============================================================== */
@@ -880,6 +865,54 @@ textarea.form-control {
   gap: 16px;
 }
 
+.task-readonly-details {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
+.task-detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+}
+
+.task-detail-item > span,
+.task-detail-note > span {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.task-detail-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(260px, 65%);
+}
+
+.task-detail-progress .progress-bar-bg {
+  flex: 1;
+}
+
+.task-detail-note {
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+  font-size: 13px;
+}
+
+.task-detail-note p {
+  margin: 6px 0 0;
+  color: var(--text-main);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* Score Pill Display */
 .score-pill-card {
   background: var(--surface-2);
@@ -1046,470 +1079,4 @@ textarea.form-control {
 
 .page-title, .stat-value {
   color: var(--text);
-}
-
-
-/* ==============================================================
-   NÂNG CẤP CSS CHO MODAL XÁC NHẬN VÀ THÔNG BÁO ĐĂNG XUẤT MENTOR
-   ============================================================== */
-.btn-primary {
-  background: var(--primary, #4f46e5);
-  color: #ffffff !important;
-  border: 1px solid transparent;
-}
-.btn-primary:hover {
-  background: var(--primary-hover, #4338ca);
-}
-
-.btn-danger {
-  background: var(--danger, #ef4444);
-  color: #ffffff !important;
-  border: 1px solid transparent;
-}
-.btn-danger:hover {
-  background: #dc2626;
-}
-
-/* Modal thông báo đăng xuất thành công */
-.login-success-box {
-  background: var(--surface, #ffffff);
-  width: 100%;
-  max-width: 420px;
-  padding: 36px 28px 28px;
-  border-radius: var(--radius-xl, 16px);
-  text-align: center;
-  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.22);
-  border: 1px solid var(--border-color, #e2e8f0);
-  animation: modalPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  margin: 0 auto;
-}
-
-@keyframes modalPopIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.88) translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.modal-icon.success-icon {
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  background: #ecfdf5;
-  color: #10b981;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 20px;
-  font-size: 38px;
-  border: 2px solid #a7f3d0;
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.22);
-  animation: iconPulse 1.8s infinite ease-in-out;
-}
-
-@keyframes iconPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 8px 24px rgba(16, 185, 129, 0.22); }
-  50% { transform: scale(1.06); box-shadow: 0 12px 30px rgba(16, 185, 129, 0.38); }
-}
-
-.login-success-box h3 {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--text-main, #1e293b);
-  margin-bottom: 10px;
-}
-
-.login-success-box p {
-  font-size: 14.5px;
-  color: var(--text-muted, #64748b);
-  line-height: 1.6;
-  margin-bottom: 22px;
-}
-
-.login-success-box .redirect-hint {
-  font-size: 13px;
-  color: var(--text-muted, #94a3b8);
-  display: block;
-  margin-top: 6px;
-}
-
-.redirect-progress-bar {
-  width: 100%;
-  height: 6px;
-  background: var(--border-color, #e2e8f0);
-  border-radius: 9999px;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-
-.redirect-progress-fill {
-  width: 0%;
-  height: 100%;
-  background: #10b981;
-  border-radius: 9999px;
-  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.btn-continue-now {
-  width: 100%;
-  height: 44px;
-  background: #4f46e5;
-  border: none;
-  border-radius: var(--radius-md, 10px);
-  color: #ffffff;
-  font-size: 14.5px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25);
-  transition: all 0.2s;
-}
-
-.btn-continue-now:hover {
-  background: #4338ca;
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
-}
-
-/* UI Dynamic Confirm & Alert Dialogs on Mentor Portal */
-.ui-modal-backdrop {
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 100000 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 16px !important;
-  background-color: rgba(15, 23, 42, 0.65) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.ui-modal-backdrop.active,
-.ui-modal-backdrop.show {
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
-
-.ui-modal-box {
-  background: var(--surface, #ffffff) !important;
-  border: 1px solid var(--border-color, #e2e8f0) !important;
-  border-radius: 18px !important;
-  width: 100% !important;
-  max-width: 440px !important;
-  padding: 28px 24px 22px !important;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.28) !important;
-  text-align: center !important;
-  transform: scale(0.92) translateY(12px);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  color: var(--text-main, #1e293b) !important;
-  position: relative !important;
-  overflow: hidden !important;
-  margin: 0 auto !important;
-}
-
-.ui-modal-backdrop.active .ui-modal-box,
-.ui-modal-backdrop.show .ui-modal-box {
-  transform: scale(1) translateY(0) !important;
-}
-
-.ui-modal-header {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  margin-bottom: 12px !important;
-  border: none !important;
-  padding: 0 !important;
-  background: transparent !important;
-}
-
-.ui-modal-icon {
-  width: 60px !important;
-  height: 60px !important;
-  border-radius: 50% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 26px !important;
-  margin: 0 auto 16px !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
-}
-
-.ui-modal-icon.danger {
-  background: #fdeeee !important;
-  color: #dc2626 !important;
-  border: 2px solid #fecaca !important;
-}
-
-.ui-modal-icon.primary {
-  background: #eff6ff !important;
-  color: #2563eb !important;
-  border: 2px solid #bfdbfe !important;
-}
-
-.ui-modal-icon.info {
-  background: #f0fdf4 !important;
-  color: #16a34a !important;
-  border: 2px solid #bbf7d0 !important;
-}
-
-.ui-modal-title {
-  font-family: var(--font-sans, 'Inter', sans-serif) !important;
-  font-size: 19px !important;
-  font-weight: 700 !important;
-  color: var(--text-main, #0f172a) !important;
-  margin: 0 !important;
-  line-height: 1.35 !important;
-}
-
-.ui-modal-body {
-  font-family: var(--font-sans, 'Inter', sans-serif) !important;
-  font-size: 14.5px !important;
-  color: var(--text-muted, #475569) !important;
-  line-height: 1.55 !important;
-  margin: 0 0 24px !important;
-  padding: 0 8px !important;
-  word-break: break-word !important;
-  background: transparent !important;
-}
-
-.ui-modal-footer {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 12px !important;
-  border: none !important;
-  padding: 0 !important;
-  background: transparent !important;
-}
-
-.ui-btn {
-  font-family: var(--font-sans, 'Inter', sans-serif) !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  padding: 10px 22px !important;
-  border-radius: 10px !important;
-  border: 1px solid transparent !important;
-  cursor: pointer !important;
-  transition: all 0.18s ease !important;
-  min-width: 105px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  outline: none !important;
-}
-
-.ui-btn:focus-visible {
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35) !important;
-}
-
-.ui-btn-cancel {
-  background: #f1f5f9 !important;
-  color: #475569 !important;
-  border-color: #cbd5e1 !important;
-}
-
-.ui-btn-cancel:hover {
-  background: #e2e8f0 !important;
-  color: #1e293b !important;
-}
-
-.ui-btn-confirm.ui-btn-danger,
-.ui-btn-danger {
-  background: #dc2626 !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.28) !important;
-}
-
-.ui-btn-confirm.ui-btn-danger:hover,
-.ui-btn-danger:hover {
-  background: #b91c1c !important;
-  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.38) !important;
-  transform: translateY(-1px) !important;
-}
-
-.ui-btn-confirm.ui-btn-primary,
-.ui-btn-primary {
-  background: #4f46e5 !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.28) !important;
-}
-
-.ui-btn-confirm.ui-btn-primary:hover,
-.ui-btn-primary:hover {
-  background: #4338ca !important;
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.38) !important;
-  transform: translateY(-1px) !important;
-}
-
-/* ==============================================================
-   MENTOR PORTAL SIDEBAR COLLAPSED STYLING
-   ============================================================== */
-.sidebar-collapse-btn {
-  width: 34px !important;
-  height: 34px !important;
-  min-width: 34px !important;
-  border-radius: var(--radius-sm, 8px) !important;
-  background: var(--surface-2, #f1f5f9) !important;
-  border: 1px solid var(--border-color, #e2e8f0) !important;
-  color: var(--text-main, #334155) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  padding: 0 !important;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  flex-shrink: 0 !important;
-  outline: none !important;
-}
-
-.sidebar-collapse-btn:hover {
-  background: var(--accent-soft, #eeeffc) !important;
-  color: var(--accent, #6366f1) !important;
-  border-color: var(--accent, #6366f1) !important;
-  transform: scale(1.05);
-}
-
-.brand-logo-wrap {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  width: 100% !important;
-  gap: 8px !important;
-}
-
-@media (min-width: 901px) {
-  .mentor-sidebar.sidebar-collapsed,
-  body.sidebar-is-collapsed .mentor-sidebar {
-    width: 72px !important;
-    min-width: 72px !important;
-    max-width: 72px !important;
-    padding: 18px 8px 16px 8px !important;
-    overflow-x: hidden !important;
-  }
-
-  body.sidebar-is-collapsed .mentor-main {
-    margin-left: 72px !important;
-  }
-
-  .mentor-sidebar.sidebar-collapsed .brand-logo-wrap,
-  body.sidebar-is-collapsed .mentor-sidebar .brand-logo-wrap {
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 10px !important;
-    padding: 0 !important;
-    margin-bottom: 16px !important;
-  }
-
-  .mentor-sidebar.sidebar-collapsed .logo-title,
-  body.sidebar-is-collapsed .mentor-sidebar .logo-title,
-  .mentor-sidebar.sidebar-collapsed .mentor-badge-box,
-  body.sidebar-is-collapsed .mentor-sidebar .mentor-badge-box {
-    display: none !important;
-  }
-
-  .mentor-sidebar.sidebar-collapsed .sidebar-nav ul,
-  body.sidebar-is-collapsed .mentor-sidebar .sidebar-nav ul {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    width: 100% !important;
-    padding: 0 !important;
-    margin: 10px 0 !important;
-    gap: 6px !important;
-  }
-
-  .mentor-sidebar.sidebar-collapsed .nav-item,
-  body.sidebar-is-collapsed .mentor-sidebar .nav-item {
-    width: 48px !important;
-    height: 44px !important;
-    min-width: 48px !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: var(--radius-md, 10px) !important;
-    margin: 0 auto !important;
-    position: relative !important;
-  }
-
-  .mentor-sidebar.sidebar-collapsed .nav-item span,
-  body.sidebar-is-collapsed .mentor-sidebar .nav-item span,
-  .mentor-sidebar.sidebar-collapsed .nav-badge,
-  body.sidebar-is-collapsed .mentor-sidebar .nav-badge {
-    display: none !important;
-  }
-
-  .mentor-sidebar.sidebar-collapsed .nav-item i,
-  body.sidebar-is-collapsed .mentor-sidebar .nav-item i {
-    font-size: 19px !important;
-    margin: 0 !important;
-  }
-
-  .mentor-sidebar.sidebar-collapsed .sidebar-footer,
-  body.sidebar-is-collapsed .mentor-sidebar .sidebar-footer {
-    padding: 12px 0 0 0 !important;
-    width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-top: 1px solid var(--border-color, #e2e8f0) !important;
-  }
-
-  .mentor-sidebar.sidebar-collapsed .mentor-profile-info,
-  body.sidebar-is-collapsed .mentor-sidebar .mentor-profile-info {
-    width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 4px 0 !important;
-    margin: 0 auto 10px auto !important;
-  }
-
-  .mentor-sidebar.sidebar-collapsed .mentor-avatar,
-  body.sidebar-is-collapsed .mentor-sidebar .mentor-avatar {
-    display: block !important;
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    max-width: 42px !important;
-    border-radius: 50% !important;
-    object-fit: cover !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
-    margin: 0 auto !important;
-    border: 2px solid var(--accent, #6366f1) !important;
-  }
-
-  .mentor-sidebar.sidebar-collapsed .profile-texts,
-  body.sidebar-is-collapsed .mentor-sidebar .profile-texts {
-    display: none !important;
-  }
-
-  .mentor-sidebar.sidebar-collapsed .btn-sidebar-logout,
-  body.sidebar-is-collapsed .mentor-sidebar .btn-sidebar-logout {
-    width: 44px !important;
-    height: 38px !important;
-    min-width: 44px !important;
-    max-width: 44px !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    margin: 0 auto !important;
-    border-radius: var(--radius-sm, 8px) !important;
-  }
 }
