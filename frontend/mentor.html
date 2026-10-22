@@ -25,16 +25,11 @@
     <!-- 1. SIDEBAR BÊN TRÁI DÀNH RIÊNG CHO MENTOR                      -->
     <!-- ============================================================== -->
     <aside class="mentor-sidebar" id="mentorSidebar">
-      <!-- Thương hiệu & Logo & Nút thu gọn 3 gạch -->
+      <!-- Thương hiệu & Logo -->
       <div class="sidebar-header">
-        <div class="brand-logo-wrap">
-          <div class="brand-logo">
-            <span class="logo-badge">MENTOR</span>
-            <span class="logo-title">Portal Hướng Dẫn</span>
-          </div>
-          <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Thu gọn / Mở rộng menu" aria-label="Thu gọn / Mở rộng menu">
-            <i class="fa-solid fa-bars"></i>
-          </button>
+        <div class="brand-logo">
+          <span class="logo-badge">MENTOR</span>
+          <span class="logo-title">Portal Hướng Dẫn</span>
         </div>
       </div>
 
@@ -358,7 +353,9 @@
                     <option value="">Tất cả trạng thái</option>
                     <option value="todo">Chưa thực hiện (To-Do)</option>
                     <option value="in_progress">Đang làm (In-Progress)</option>
+                    <option value="review">Chờ duyệt</option>
                     <option value="done">Hoàn thành (Done)</option>
+                    <option value="canceled">Đã hủy</option>
                   </select>
                 </div>
               </div>
@@ -550,16 +547,17 @@
   </div>
 
   <!-- ============================================================== -->
-  <!-- MODAL 1: GIAO NHIỆM VỤ MỚI CHO TTS (STT 15)                    -->
+  <!-- MODAL 1: TẠO, SỬA VÀ XEM CHI TIẾT NHIỆM VỤ                     -->
   <!-- ============================================================== -->
   <div class="mentor-modal" id="createTaskModal">
     <div class="mentor-modal-box">
       <div class="modal-header">
-        <h3 class="modal-title"><i class="fa-solid fa-list-check" style="color:var(--primary);"></i> Giao nhiệm vụ cho Thực tập sinh</h3>
+        <h3 class="modal-title" id="taskModalTitle"><i class="fa-solid fa-list-check" style="color:var(--primary);"></i> Giao nhiệm vụ cho Thực tập sinh</h3>
         <button type="button" class="modal-close-btn" onclick="closeModal('createTaskModal')">&times;</button>
       </div>
       <form id="createTaskForm" onsubmit="handleCreateTaskSubmit(event)">
         <div class="modal-body">
+          <input type="hidden" id="taskIdInput">
           <div class="form-group">
             <label class="form-label" for="taskInternSelect">Chọn Thực tập sinh <span style="color:#ef4444;">*</span></label>
             <select class="form-control" id="taskInternSelect" required>
@@ -582,6 +580,7 @@
               <select class="form-control" id="taskPrioritySelect">
                 <option value="medium">Trung bình</option>
                 <option value="high">Ưu tiên cao</option>
+                <option value="urgent">Khẩn cấp</option>
                 <option value="low">Thấp</option>
               </select>
             </div>
@@ -591,10 +590,33 @@
             <label class="form-label" for="taskDescInput">Mô tả chi tiết & Yêu cầu kỹ thuật</label>
             <textarea class="form-control" id="taskDescInput" placeholder="Ghi chú chi tiết mục tiêu cần đạt, tài liệu tham khảo..."></textarea>
           </div>
+
+          <div class="task-readonly-details" id="taskReadonlyDetails" hidden>
+            <div class="task-detail-item">
+              <span>Trạng thái</span>
+              <strong id="taskDetailStatus">—</strong>
+            </div>
+            <div class="task-detail-item">
+              <span>Tiến độ</span>
+              <div class="task-detail-progress">
+                <div class="progress-bar-bg"><div class="progress-bar-fill" id="taskDetailProgressBar"></div></div>
+                <strong id="taskDetailProgress">0%</strong>
+              </div>
+            </div>
+            <div class="task-detail-note" id="taskInternNoteGroup" hidden>
+              <span>Ghi chú của TTS</span>
+              <p id="taskDetailInternNote"></p>
+            </div>
+            <div class="task-detail-note" id="taskMentorNoteGroup" hidden>
+              <span>Ghi chú của Mentor</span>
+              <p id="taskDetailMentorNote"></p>
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline" onclick="closeModal('createTaskModal')">Hủy bỏ</button>
-          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Giao việc ngay</button>
+          <button type="button" class="btn btn-outline" id="taskModalCancelButton" onclick="closeModal('createTaskModal')">Hủy bỏ</button>
+          <button type="button" class="btn btn-outline" id="taskModalEditButton" onclick="editTaskFromDetails()" hidden><i class="fa-solid fa-pen"></i> Sửa nhiệm vụ</button>
+          <button type="submit" class="btn btn-primary" id="taskModalSubmitButton"><i class="fa-solid fa-paper-plane"></i> Giao việc ngay</button>
         </div>
       </form>
     </div>
