@@ -807,6 +807,184 @@ tbody tr td {
   background-color: rgba(15, 23, 42, 0.45);
 }
 
+/* ==========================================================================
+   UI DYNAMIC DIALOG SYSTEM (UI.confirm & UI.alert in ui.js)
+   ========================================================================== */
+.ui-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 100000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  background-color: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ui-modal-backdrop.active,
+.ui-modal-backdrop.show {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.ui-modal-box {
+  background: var(--surface, #ffffff) !important;
+  border: 1px solid var(--border-strong, rgba(20, 30, 70, 0.16)) !important;
+  border-radius: 18px !important;
+  width: 100% !important;
+  max-width: 440px !important;
+  padding: 28px 24px 22px !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.8) inset !important;
+  text-align: center !important;
+  transform: scale(0.92) translateY(12px);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--text, #1e293b) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  margin: 0 auto !important;
+}
+
+.ui-modal-backdrop.active .ui-modal-box,
+.ui-modal-backdrop.show .ui-modal-box {
+  transform: scale(1) translateY(0) !important;
+}
+
+.ui-modal-header {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  margin-bottom: 12px !important;
+  border: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.ui-modal-icon {
+  width: 60px !important;
+  height: 60px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 26px !important;
+  margin: 0 auto 16px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+}
+
+.ui-modal-icon.danger {
+  background: #fdeeee !important;
+  color: #dc2626 !important;
+  border: 2px solid #fecaca !important;
+}
+
+.ui-modal-icon.primary {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  border: 2px solid #bfdbfe !important;
+}
+
+.ui-modal-icon.info {
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+  border: 2px solid #bbf7d0 !important;
+}
+
+.ui-modal-title {
+  font-family: var(--font-sans, 'Inter', sans-serif) !important;
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  color: var(--text, #0f172a) !important;
+  margin: 0 !important;
+  line-height: 1.35 !important;
+}
+
+.ui-modal-body {
+  font-family: var(--font-sans, 'Inter', sans-serif) !important;
+  font-size: 14.5px !important;
+  color: var(--text-2, #475569) !important;
+  line-height: 1.55 !important;
+  margin: 0 0 24px !important;
+  padding: 0 8px !important;
+  word-break: break-word !important;
+  background: transparent !important;
+}
+
+.ui-modal-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  border: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.ui-btn {
+  font-family: var(--font-sans, 'Inter', sans-serif) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  padding: 10px 22px !important;
+  border-radius: 10px !important;
+  border: 1px solid transparent !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+  min-width: 105px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  outline: none !important;
+}
+
+.ui-btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35) !important;
+}
+
+.ui-btn-cancel {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.ui-btn-cancel:hover {
+  background: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+.ui-btn-confirm.ui-btn-danger,
+.ui-btn-danger {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.28) !important;
+}
+
+.ui-btn-confirm.ui-btn-danger:hover,
+.ui-btn-danger:hover {
+  background: #b91c1c !important;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.38) !important;
+  transform: translateY(-1px) !important;
+}
+
+.ui-btn-confirm.ui-btn-primary,
+.ui-btn-primary {
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.28) !important;
+}
+
+.ui-btn-confirm.ui-btn-primary:hover,
+.ui-btn-primary:hover {
+  background: #4338ca !important;
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.38) !important;
+  transform: translateY(-1px) !important;
+}
+
 /* Thanh tiến trình chuyển hướng khi Đăng nhập / Đăng xuất thành công */
 .redirect-progress-bar {
   width: 100%;
@@ -838,6 +1016,23 @@ tbody tr td {
 }
 .hidden, .d-none {
   display: none !important; /* utility class */
+}
+
+/* Tiện ích màu sắc trạng thái dùng chung WCAG */
+.text-danger { color: #dc2626 !important; }
+.text-success { color: #059669 !important; }
+.text-warning { color: #d97706 !important; }
+.text-primary { color: #4f46e5 !important; }
+.text-info { color: #0284c7 !important; }
+
+.btn-outline.text-danger {
+  color: #dc2626 !important;
+  border-color: rgba(220, 38, 38, 0.35) !important;
+}
+.btn-outline.text-danger:hover {
+  background: #fdeeee !important;
+  border-color: #dc2626 !important;
+  color: #dc2626 !important;
 }
 
 /* Modal Dropzone */

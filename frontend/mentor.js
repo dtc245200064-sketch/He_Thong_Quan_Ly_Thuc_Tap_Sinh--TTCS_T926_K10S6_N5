@@ -57,7 +57,7 @@ function checkMentorAuth() {
       const user = JSON.parse(rawUser);
       if (user.name) MentorState.currentMentor.name = user.name;
       if (user.email) MentorState.currentMentor.email = user.email;
-      if (user.mentor_id) MentorState.currentMentor.id = user.mentor_id;
+      if (user.mentorId || user.mentor_id) MentorState.currentMentor.id = user.mentorId || user.mentor_id;
       if (user.dept) MentorState.currentMentor.dept = user.dept;
       if (user.avatar) MentorState.currentMentor.avatar = user.avatar;
     }
@@ -582,16 +582,29 @@ async function updateTaskStatusQuick(taskId, newStatus) {
 }
 
 async function deleteMentorTask(taskId) {
-  const confirmed = typeof UI !== 'undefined' ? await UI.confirm({ title: 'Xác nhận xóa nhiệm vụ', message: 'Bạn có chắc chắn muốn xóa nhiệm vụ này không?', danger: true }) : true;
+  const confirmed = typeof UI !== 'undefined'
+    ? await UI.confirm({
+        title: 'Xác nhận xóa nhiệm vụ',
+        message: 'Bạn có chắc chắn muốn xóa nhiệm vụ này không?',
+        confirmText: 'Xóa nhiệm vụ',
+        cancelText: 'Hủy',
+        danger: true
+      })
+    : confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này không?');
   if (!confirmed) return;
   try {
     if (typeof apiDeleteTask === 'function') {
-      await apiDeleteTask(taskId);
-      showMentorToast('Đã xóa nhiệm vụ thành công!', 'info');
-      await loadAllMentorData();
+      const res = await apiDeleteTask(taskId);
+      if (res && res.success) {
+        showMentorToast('Đã xóa nhiệm vụ thành công!', 'info');
+        await loadAllMentorData();
+      } else {
+        showMentorToast(res?.message || 'Lỗi khi xóa nhiệm vụ', 'error');
+      }
     }
   } catch (e) {
-    console.error(e);
+    console.error('Lỗi khi xóa nhiệm vụ:', e);
+    showMentorToast('Lỗi máy chủ khi xóa nhiệm vụ!', 'error');
   }
 }
 
@@ -1147,3 +1160,9 @@ window.proceedToLoginPage = proceedToLoginPage;
 window.showMentorToast = showMentorToast;
 window.filterMentorReports = filterMentorReports;
 window.markAllMentorNotifsRead = markAllMentorNotifsRead;
+window.deleteMentorTask = deleteMentorTask;
+window.updateTaskStatusQuick = updateTaskStatusQuick;
+window.prefillTaskIntern = prefillTaskIntern;
+window.filterMentorInterns = filterMentorInterns;
+window.filterMentorTasks = filterMentorTasks;
+window.calcEvalTotalScore = calcEvalTotalScore;

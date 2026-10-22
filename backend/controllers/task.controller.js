@@ -331,6 +331,24 @@ exports.deleteTask = async (req, res) => {
       }
     }
 
+    // Phân quyền bảo vệ: Nếu là Mentor
+    if (req.user && req.user.role === 'Mentor') {
+      let mentorId = req.user.mentorId;
+      if (!mentorId) {
+        const [mRows] = await db.query('SELECT id FROM mentors WHERE user_id = ? OR email = ? LIMIT 1', [req.user.id, req.user.email]);
+        if (mRows.length > 0) mentorId = mRows[0].id;
+      }
+      if (mentorId) {
+        const [internRows] = await db.query('SELECT id FROM interns WHERE id = ? AND mentor_id = ?', [task.intern_id, mentorId]);
+        if (task.mentor_id !== mentorId && internRows.length === 0) {
+          return res.status(403).json({
+            success: false,
+            message: 'Bạn chỉ có quyền xóa nhiệm vụ do chính bạn phân công hoặc thuộc về thực tập sinh bạn phụ trách!'
+          });
+        }
+      }
+    }
+
     const [result] = await db.query('DELETE FROM tasks WHERE id = ?', [id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy nhiệm vụ để xóa!' });
