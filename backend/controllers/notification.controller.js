@@ -7,7 +7,13 @@
 const db = require('../config/db');
 const { sendMeetingEmail } = require('../services/email.service');
 
-// GET /api/notifications: Lấy danh sách thông báo in-app cho TTS / người dùng (STT 36)
+/**
+ * GET /api/notifications: Lấy danh sách thông báo in-app cho TTS / người dùng (STT 36)
+ * @description Trả về tối đa 50 thông báo mới nhất thuộc quyền xem của người dùng
+ * @param {import('express').Request} req - Request object từ Express chứa thông tin người dùng đã xác thực
+ * @param {import('express').Response} res - Response object gửi kết quả về client
+ * @returns {Promise<void>} Trả về JSON { success: true, data: Array<Notification> }
+ */
 exports.getInAppNotifications = async (req, res) => {
   try {
     let query = 'SELECT * FROM inapp_notifications WHERE 1=1';
