@@ -225,3 +225,71 @@
     }
   }
   ```
+
+---
+
+### 3.4. Quản lý thông báo ứng dụng: `/api/notifications`
+* **Người phụ trách:** Ma Công Đức (`dtc245200136@ictu.edu.vn`)
+* **Jira Ticket:** SCRUM-56 / SCRUM-176 (Thiết kế CSDL & Backend API Thông báo)
+
+#### A. Lấy danh sách thông báo: `GET /api/notifications`
+- **Quyền truy cập:** Đã xác thực (JWT Token).
+- **Quy tắc bảo mật:** TTS chỉ xem được thông báo gửi riêng cho `user_id` của mình hoặc thông báo chung cho vai trò `Thực tập sinh`.
+- **Response Success (200 OK):**
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "id": 15,
+        "user_id": 9,
+        "role": "Thực tập sinh",
+        "title": "Lịch họp: Review Sprint 3",
+        "content": "Cuộc họp diễn ra lúc 09:00 - 10:30 ngày 2026-10-25 tại Văn phòng CodeGym",
+        "type": "info",
+        "is_read": 0,
+        "link": "intern.html#schedule",
+        "created_at": "2026-10-22T08:00:00.000Z"
+      }
+    ]
+  }
+  ```
+
+#### B. Đánh dấu đã đọc tất cả: `PUT /api/notifications/read-all`
+- **Quyền truy cập:** TTS / Authenticated.
+- **Quy tắc bảo mật (B04):** Chỉ cập nhật thông báo của chính `req.user.id`, không ảnh hưởng người dùng khác.
+- **Response Success (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Đã đánh dấu tất cả thông báo của bạn là đã đọc"
+  }
+  ```
+
+#### C. Tạo lịch họp & Gửi email thông báo: `POST /api/notifications/meetings`
+- **Quyền truy cập:** HR Manager, Mentor.
+- **Validation (B17 & S3-29):** Bắt buộc `end_time > start_time`, lọc link chống XSS. Tự động gửi email qua SMTP và tạo in-app notification.
+- **Request Body:**
+  ```json
+  {
+    "title": "Phỏng vấn tiến độ thực tập",
+    "meeting_date": "2026-10-25",
+    "start_time": "09:00",
+    "end_time": "10:30",
+    "location": "Phòng họp A3 - CodeGym",
+    "link": "https://meet.google.com/xyz-abcd-efg",
+    "intern_ids": [9, 10],
+    "notes": "Mang theo laptop và báo cáo tuần"
+  }
+  ```
+- **Response Success (201 Created):**
+  ```json
+  {
+    "success": true,
+    "message": "Tạo lịch họp thành công và đã gửi email thông báo tự động cho thực tập sinh!",
+    "meetingId": 25,
+    "email_sent": true,
+    "emailsSentCount": 2
+  }
+  ```
+
